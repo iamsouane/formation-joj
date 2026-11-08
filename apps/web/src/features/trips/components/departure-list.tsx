@@ -12,12 +12,9 @@ interface DepartureListProps {
   renderBooking?: (trip: TripResponse) => ReactNode;
 }
 
-/** Les départs à venir d'un site, dans l'ordre où l'API les renvoie : par heure. */
+/** Les départs à venir d'un site, dans l'ordre où l'API les renvoie : par heure (au moins un). */
 export function DepartureList({ site, trips, onBook, renderBooking }: DepartureListProps) {
   const siteLabel = SITE_LABELS[site];
-  if (trips.length === 0) {
-    return <p className="text-muted-foreground">Aucun départ à venir vers {siteLabel}.</p>;
-  }
 
   return (
     <ul aria-label={`Départs vers ${siteLabel}`} data-layout="grid" className="departure-grid">

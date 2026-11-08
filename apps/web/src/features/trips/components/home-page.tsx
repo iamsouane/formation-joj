@@ -6,6 +6,7 @@ import { BookingConfirmation } from './booking-confirmation';
 import { BookingForm } from './booking-form';
 import { DepartureList } from './departure-list';
 import { Hero } from './hero';
+import { NoDepartures } from './no-departures';
 
 interface HomePageProps {
   site: TripSite | undefined;
@@ -19,7 +20,7 @@ export function HomePage({ site, onSiteChange }: HomePageProps) {
       <Hero site={site} onSiteChange={onSiteChange} />
       <div data-slot="departures" className="departures departures-enter">
         {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
-        {site && <UpcomingDepartures key={site} site={site} />}
+        {site && <UpcomingDepartures key={site} site={site} onSiteChange={onSiteChange} />}
       </div>
     </>
   );
@@ -30,7 +31,13 @@ interface Booked {
   confirmation: BookingConfirmationResponse;
 }
 
-function UpcomingDepartures({ site }: { site: TripSite }) {
+function UpcomingDepartures({
+  site,
+  onSiteChange,
+}: {
+  site: TripSite;
+  onSiteChange: (site: TripSite, gesture: SiteChoiceGesture) => void;
+}) {
   const trips = useUpcomingTrips(site);
   const [chosenTripId, setChosenTripId] = useState<string>();
   const [booked, setBooked] = useState<Booked>();
@@ -46,6 +53,7 @@ function UpcomingDepartures({ site }: { site: TripSite }) {
       </p>
     );
   }
+  if (trips.data.length === 0) return <NoDepartures site={site} onSiteChange={onSiteChange} />;
   return (
     <DepartureList
       site={site}

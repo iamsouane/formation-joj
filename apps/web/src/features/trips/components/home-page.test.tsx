@@ -70,7 +70,27 @@ describe('HomePage', () => {
 
     await user.click(screen.getByRole('radio', { name: 'Saly' }));
 
-    expect(await screen.findByText('Aucun départ à venir vers Saly.')).toBeInTheDocument();
+    const empty = await screen.findByRole('region', {
+      name: 'Aucun départ pour l’instant vers Saly',
+    });
+    expect(empty.querySelector('img[src="/brand/mascotte-debout-800.png"]')).not.toBeNull();
     expect(screen.queryByRole('list', { name: 'Départs vers Saly' })).not.toBeInTheDocument();
+  });
+
+  it('005-AS2: offers the other sites that have departures, next to the mascot', async () => {
+    fixture.trips = fixture.trips.filter((trip) => trip.site === 'dakar');
+    const { user, router } = await open('/?site=saly');
+
+    const empty = await screen.findByRole('region', {
+      name: 'Aucun départ pour l’instant vers Saly',
+    });
+    const offer = await within(empty).findByRole('button', { name: 'Voir les départs vers Dakar' });
+    // Diamniadio n'a aucun départ : il n'est pas proposé.
+    expect(within(empty).getAllByRole('button')).toHaveLength(1);
+
+    await user.click(offer);
+
+    expect(await screen.findByRole('list', { name: 'Départs vers Dakar' })).toBeInTheDocument();
+    expect(router.state.location.search).toEqual({ site: 'dakar' });
   });
 });

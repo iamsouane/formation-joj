@@ -965,6 +965,31 @@ body {
   }
 }
 
+/* Aucun départ : la mascotte, le message et les autres sites, dans une bulle comme les départs. */
+.no-departures {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid var(--joj-black);
+  background: #fff6dc;
+}
+
+.no-departures-mascot {
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 640px) {
+  .no-departures {
+    max-width: 40rem;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    padding: 1.5rem;
+  }
+}
+
 /*
  * Un départ, encadré comme les bulles du logo : un trait noir et le coin haut droit replié.
  * Le pli est un triangle blanc traversé d'une diagonale noire, posé sur le coin.
