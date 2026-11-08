@@ -1,6 +1,6 @@
 # 003 — Annuler une réservation ou un trajet
 
-**Statut** : Validée
+**Statut** : Implémentée
 **PRD** : specs/prd-covoiturage.md, TR3
 
 ## Contexte
