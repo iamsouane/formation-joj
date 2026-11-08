@@ -65,4 +65,34 @@ describe('MascotStage', () => {
       'reduced',
     );
   });
+
+  it('005-AS6: dances by alternating the standing and flame poses under the pointer tilt', () => {
+    prefersReducedMotion(false);
+    const stage = renderStage();
+    const part = (name: string) => stage.querySelectorAll(`[data-part="${name}"]`);
+
+    const poses = [...stage.querySelectorAll('img[data-pose]')];
+    expect(poses.map((pose) => pose.getAttribute('data-pose'))).toEqual(['standing', 'flame']);
+    expect(poses.map((pose) => pose.getAttribute('src'))).toEqual([
+      '/brand/mascotte-debout-800.png',
+      '/brand/mascotte-flamme-800.png',
+    ]);
+    // Une seule mascotte pour les lecteurs d'écran : la pose à la flamme est décorative.
+    expect(screen.getAllByRole('img')).toHaveLength(1);
+    expect(part('dance')).toHaveLength(1);
+    expect(part('waves')).toHaveLength(1);
+    expect(part('halo')).toHaveLength(1);
+
+    fireEvent.pointerMove(stage, { clientX: 0, clientY: 300 });
+    expect(tilt(stage)).toEqual({ x: '-1', y: '1' });
+  });
+
+  it('005-AS6: holds one still standing pose on reduced motion', () => {
+    prefersReducedMotion(true);
+    const stage = renderStage();
+
+    const poses = [...stage.querySelectorAll('img[data-pose]')];
+    expect(poses.map((pose) => pose.getAttribute('data-pose'))).toEqual(['standing']);
+    expect(stage.querySelectorAll('[data-part="waves"], [data-part="halo"]')).toHaveLength(0);
+  });
 });

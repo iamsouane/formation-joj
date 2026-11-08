@@ -512,14 +512,6 @@ body {
   animation: mascot-enter 900ms var(--ease-bounce) both;
 }
 
-/* La respiration : à peine visible, elle dit seulement que la mascotte est vivante. */
-.mascot-figure {
-  height: 100%;
-  width: auto;
-  transform-origin: 50% 100%;
-  animation: mascot-breath 4.8s var(--ease-breath) 900ms infinite;
-}
-
 @keyframes mascot-enter {
   from {
     opacity: 0;
@@ -534,14 +526,173 @@ body {
   }
 }
 
-@keyframes mascot-breath {
+/*
+ * La danse, une mesure de quatre temps (2,4 s, 100 battements par minute), toujours en pivotant
+ * autour des pieds : balancement à gauche, saut, balancement à droite, petit saut. À chaque saut,
+ * la mascotte s'écrase en touchant le sol et s'étire en l'air. Les échelles restent positives :
+ * jamais de miroir, le texte du maillot reste lisible.
+ */
+.mascot-dance {
+  --beat: 0.6s;
+  position: relative;
+  height: 100%;
+  transform-origin: 50% 100%;
+  animation: mascot-dance calc(var(--beat) * 4) cubic-bezier(0.33, 0, 0.2, 1) 900ms infinite;
+}
+
+@keyframes mascot-dance {
   0%,
+  25%,
+  50%,
+  75%,
   100% {
     transform: none;
   }
-  50% {
-    transform: scale(1.012, 1.022);
+  12.5% {
+    transform: rotate(-4deg);
   }
+  28% {
+    transform: scale(1.06, 0.93);
+  }
+  36% {
+    transform: translateY(-12%) scale(0.96, 1.06);
+  }
+  44% {
+    transform: scale(1.07, 0.92);
+  }
+  62.5% {
+    transform: rotate(4deg);
+  }
+  78% {
+    transform: scale(1.04, 0.95);
+  }
+  85% {
+    transform: translateY(-6%) scale(0.98, 1.03);
+  }
+  92% {
+    transform: scale(1.05, 0.94);
+  }
+}
+
+/* Les deux poses alternent sur le temps fort : une mesure debout, une mesure la flamme levée. */
+.mascot-pose {
+  height: 100%;
+  width: auto;
+}
+
+.mascot-pose-standing {
+  animation: mascot-pose-a calc(var(--beat) * 8) linear 900ms infinite;
+}
+
+.mascot-flame {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  height: 100%;
+  aspect-ratio: 504 / 800;
+  translate: -50% 0;
+  opacity: 0;
+  animation: mascot-pose-b calc(var(--beat) * 8) linear 900ms infinite;
+}
+
+@keyframes mascot-pose-a {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  50%,
+  98% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes mascot-pose-b {
+  0%,
+  48% {
+    opacity: 0;
+  }
+  50%,
+  98% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Le halo de la flamme, posé sur la torche (en haut à gauche de l'image) : il vacille. */
+.mascot-halo {
+  position: absolute;
+  top: 1%;
+  left: -8%;
+  width: 36%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 236 140 / 0.9) 0%,
+    rgb(255 160 0 / 0.45) 45%,
+    transparent 70%
+  );
+  animation: mascot-halo 0.42s var(--ease-breath) infinite alternate;
+}
+
+@keyframes mascot-halo {
+  from {
+    opacity: 0.65;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) rotate(6deg);
+  }
+  to {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+/* Les ondes du djembé, derrière la mascotte : une onde par temps, pendant la mesure à la flamme. */
+.mascot-waves {
+  position: absolute;
+  bottom: 30%;
+  left: 50%;
+  width: 70%;
+  aspect-ratio: 1;
+  translate: -50% 0;
+  opacity: 0;
+  animation: mascot-pose-b calc(var(--beat) * 8) linear 900ms infinite;
+}
+
+.mascot-waves span {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgb(255 255 255 / 0.85);
+  border-radius: 50%;
+  animation: mascot-wave var(--beat) var(--ease-out-soft) 900ms infinite;
+}
+
+.mascot-waves span:nth-child(2) {
+  border-color: rgb(227 27 35 / 0.6);
+  animation-delay: calc(900ms + var(--beat) / 2);
+}
+
+@keyframes mascot-wave {
+  from {
+    opacity: 0.9;
+    transform: scale(0.55);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+.hero[data-state='band'] .mascot-waves {
+  display: none;
 }
 
 /* Les boutons de site, posés en bas du hero, à portée du pouce ; la légende reste pour les lecteurs d'écran. */
