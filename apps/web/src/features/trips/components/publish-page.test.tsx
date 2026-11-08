@@ -189,6 +189,30 @@ describe('PublishPage', () => {
     expect(fixture.trips.at(-1)).toMatchObject({ seats: 3, pricePerSeat: 1000 });
   });
 
+  it('006-AS2: disables the switch to the form while the announcement is read', async () => {
+    mockControl.setTripDraft(understood({ site: 'Thiès' }));
+    mockControl.setLatency(80);
+    const { user, seen } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre annonce WhatsApp'), ANNOUNCEMENT);
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+
+    // Pendant la lecture, le formulaire ne s'ouvre pas : pas de seconde publication en route.
+    const wait = await screen.findByRole('button', { name: 'Patientez…' });
+    expect(wait).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Remplir le formulaire' })).not.toBeInTheDocument();
+    await user.click(wait);
+    expect(
+      screen.queryByRole('form', { name: 'Publier avec le formulaire' }),
+    ).not.toBeInTheDocument();
+
+    // La réponse arrivée (ici un refus), le passage au formulaire redevient possible.
+    await screen.findByRole('alert');
+    expect(screen.getByRole('button', { name: 'Remplir le formulaire' })).toBeEnabled();
+    expect(writes(seen)).toHaveLength(1);
+  });
+
   it('006-AS3: falls back to the form with the announcement above and the missing fields marked', async () => {
     mockControl.setTripDraft(
       understood({ departurePlace: null, departureAt: null, seats: null, pricePerSeat: null }),

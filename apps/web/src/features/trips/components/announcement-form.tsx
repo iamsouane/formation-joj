@@ -79,8 +79,14 @@ export function AnnouncementForm({
       {children}
       <p className="publish-switch">
         Vous préférez saisir le trajet vous-même ?{' '}
-        <button type="button" onClick={onSwitchToForm} className="publish-switch-button">
-          Remplir le formulaire
+        {/* Pendant la lecture, pas de formulaire : l'annonce pourrait encore être publiée. */}
+        <button
+          type="button"
+          onClick={onSwitchToForm}
+          disabled={pending}
+          className="publish-switch-button"
+        >
+          {pending ? 'Patientez…' : 'Remplir le formulaire'}
         </button>
       </p>
     </form>

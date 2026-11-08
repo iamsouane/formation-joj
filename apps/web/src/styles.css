@@ -1940,3 +1940,9 @@ body {
 .whatsapp-action:hover {
   background: #006b32;
 }
+
+.publish-switch-button:disabled {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  cursor: progress;
+}
