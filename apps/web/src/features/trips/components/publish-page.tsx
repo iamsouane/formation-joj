@@ -1,35 +1,79 @@
 import type { PublishedTripResponse, PublishTripInput } from '@joj/shared';
 import { Link } from '@tanstack/react-router';
 import { useId, useState } from 'react';
+import { ApiError } from '@/lib/api';
 import { usePublishTrip, usePublishTripFromMessage } from '../api/trips.queries';
 import { AnnouncementForm } from './announcement-form';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
+import { missingFieldsOf } from './missing-fields';
 import { PublishedTrip } from './published-trip';
-import { TripForm } from './trip-form';
+import { TripForm, type TripFormFieldErrors } from './trip-form';
+
+/**
+ * Pourquoi l'application a amené le conducteur au formulaire : une annonce incomplète (avec ce
+ * qui y manque), ou un assistant qui ne répond pas.
+ */
+type Fallback = { reason: 'unreadable'; missing: TripFormFieldErrors } | { reason: 'unavailable' };
+
+const MISSING_IN_ANNOUNCEMENT = 'Absent de votre annonce';
+
+/** L'annonce n'a pas pu être lue jusqu'au bout : le conducteur la complète dans le formulaire. */
+function fallbackFor(error: unknown): Fallback | null {
+  const missing = missingFieldsOf(error);
+  if (missing) {
+    return {
+      reason: 'unreadable',
+      missing: Object.fromEntries(missing.map((field) => [field, MISSING_IN_ANNOUNCEMENT])),
+    };
+  }
+  return error instanceof ApiError && error.code === 'ASSISTANT_UNAVAILABLE'
+    ? { reason: 'unavailable' }
+    : null;
+}
 
 /**
  * Publier un trajet depuis son téléphone. Sous le bandeau de l'accueil (le ciel, la frise, la
  * mascotte au repos), le conducteur colle son annonce WhatsApp avec son téléphone, ou passe à
- * tout moment au formulaire classique, sans perdre son téléphone ; le trajet publié s'affiche
- * ensuite en billet, avec son code et son lien de gestion.
+ * tout moment au formulaire classique, sans perdre son téléphone. L'application l'y amène
+ * d'elle-même quand l'annonce est incomplète (son annonce reste au-dessus, ce qui y manque est
+ * signalé) ou quand l'assistant ne répond pas. Le trajet publié s'affiche ensuite en billet, avec
+ * son code et son lien de gestion.
  */
 export function PublishPage() {
   const [mode, setMode] = useState<'announcement' | 'form'>('announcement');
   const [message, setMessage] = useState('');
   const [phone, setPhone] = useState('');
   const [published, setPublished] = useState<PublishedTripResponse>();
+  const [fallback, setFallback] = useState<Fallback>();
   const fromMessage = usePublishTripFromMessage();
   const fromForm = usePublishTrip();
   const waiting = fromMessage.isPending || fromForm.isPending;
 
   function publishFromMessage() {
-    fromMessage.mutate({ message, driverPhone: phone }, { onSuccess: setPublished });
+    fromMessage.mutate(
+      { message, driverPhone: phone },
+      {
+        onSuccess: setPublished,
+        onError: (error) => {
+          const next = fallbackFor(error);
+          if (!next) return;
+          setFallback(next);
+          setMode('form');
+        },
+      },
+    );
   }
 
   function publishFromForm(input: PublishTripInput) {
     fromForm.mutate(input, { onSuccess: setPublished });
   }
+
+  // Les champs absents de l'annonce restent signalés jusqu'à la publication par le formulaire.
+  const missing =
+    fallback?.reason === 'unreadable' && !fromForm.isError && !fromForm.isPending
+      ? fallback.missing
+      : undefined;
 
   return (
     <>
@@ -38,16 +82,20 @@ export function PublishPage() {
         {published ? (
           <PublishedTrip trip={published} />
         ) : mode === 'form' ? (
-          <TripForm
-            phone={phone}
-            onPhoneChange={setPhone}
-            pending={waiting}
-            onPublish={publishFromForm}
-          >
-            <p role="status" className="publish-status">
-              {waiting && 'Publication en cours…'}
-            </p>
-          </TripForm>
+          <>
+            {fallback && <AnnouncementRecall message={message} fallback={fallback} />}
+            <TripForm
+              phone={phone}
+              onPhoneChange={setPhone}
+              pending={waiting}
+              onPublish={publishFromForm}
+              fieldErrors={missing}
+            >
+              <p role="status" className="publish-status">
+                {waiting && 'Publication en cours…'}
+              </p>
+            </TripForm>
+          </>
         ) : (
           <AnnouncementForm
             message={message}
@@ -65,6 +113,33 @@ export function PublishPage() {
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * Au-dessus du formulaire, l'annonce du conducteur, telle qu'il l'a collée, pour qu'il la
+ * relise en complétant ; et pourquoi il est là.
+ */
+function AnnouncementRecall({ message, fallback }: { message: string; fallback: Fallback }) {
+  const captionId = useId();
+  return (
+    <div className="announcement-recall">
+      {fallback.reason === 'unavailable' ? (
+        <p role="alert" className="publish-notice">
+          L’assistant ne répond pas. Remplissez le formulaire, c’est rapide.
+        </p>
+      ) : (
+        <p className="publish-notice">
+          Il manque des informations dans votre annonce : complétez les champs signalés.
+        </p>
+      )}
+      <figure aria-labelledby={captionId} className="announcement-recall-figure">
+        <figcaption id={captionId} className="announcement-recall-caption">
+          Votre annonce
+        </figcaption>
+        <blockquote className="announcement-bubble announcement-recall-quote">{message}</blockquote>
+      </figure>
+    </div>
   );
 }
 

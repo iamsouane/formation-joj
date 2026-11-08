@@ -1841,3 +1841,44 @@ body {
   text-decoration-thickness: 2px;
   text-underline-offset: 0.25em;
 }
+
+/* L'annonce relue au-dessus du formulaire : la même bulle, en lecture seule, un peu en retrait. */
+.announcement-recall {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.publish-notice {
+  padding: 0.7rem 0.9rem;
+  border-left: 6px solid var(--joj-orange);
+  background: var(--secondary);
+  font-weight: 600;
+}
+
+.announcement-recall-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.announcement-recall-caption {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.announcement-recall-quote {
+  min-height: 0;
+  white-space: pre-wrap;
+  color: var(--muted-foreground);
+}
+
+.field-error {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--destructive);
+}
+
+.publish-field[data-invalid] .site-choice-option {
+  border-color: var(--destructive);
+}

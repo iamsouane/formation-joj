@@ -140,6 +140,58 @@ describe('PublishPage', () => {
     );
   });
 
+  it('006-AS3: falls back to the form with the announcement above and the missing fields marked', async () => {
+    mockControl.setTripDraft(
+      understood({ departurePlace: null, departureAt: null, seats: null, pricePerSeat: null }),
+    );
+    const before = fixture.trips.length;
+    const { user } = await openPublishPage();
+    await user.type(
+      screen.getByLabelText('Votre annonce WhatsApp'),
+      'je vais à Diamniadio, qui vient ?',
+    );
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+
+    const form = await screen.findByRole('form', { name: 'Publier avec le formulaire' });
+    // L'annonce reste au-dessus du formulaire, pour que le conducteur la relise.
+    const recall = screen.getByRole('figure', { name: 'Votre annonce' });
+    expect(recall).toHaveTextContent('je vais à Diamniadio, qui vient ?');
+    expect(recall.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const label of [
+      'Lieu de départ',
+      'Jour et heure de départ',
+      'Places proposées',
+      'Participation par place, en FCFA',
+    ]) {
+      const field = within(form).getByLabelText(label);
+      expect(field).toHaveAttribute('aria-invalid', 'true');
+      expect(field).toHaveAccessibleDescription('Absent de votre annonce');
+    }
+    expect(within(form).getByLabelText('Votre téléphone')).not.toHaveAttribute('aria-invalid');
+    expect(within(form).getByLabelText('Votre téléphone')).toHaveValue('77 123 45 67');
+    expect(fixture.trips).toHaveLength(before);
+  });
+
+  it('006-AS4: falls back to the form when the assistant does not answer', async () => {
+    mockControl.failAssistant();
+    const before = fixture.trips.length;
+    const { user } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre annonce WhatsApp'), ANNOUNCEMENT);
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+
+    const form = await screen.findByRole('form', { name: 'Publier avec le formulaire' });
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'L’assistant ne répond pas. Remplissez le formulaire, c’est rapide.',
+    );
+    expect(within(form).getByLabelText('Votre téléphone')).toHaveValue('77 123 45 67');
+    expect(screen.queryByRole('region', { name: 'Trajet publié' })).not.toBeInTheDocument();
+    expect(fixture.trips).toHaveLength(before);
+  });
+
   it('006-AS1: leads the driver from the home page to the publication page', async () => {
     const user = userEvent.setup();
     const { router } = await renderRoute({ initialEntries: ['/'] });
