@@ -2,6 +2,7 @@ import type { PublishTripInput } from '@joj/shared';
 import { describe, expect, it } from 'vitest';
 import { Trip } from '../domain/trip';
 import { InMemoryTripRepository } from './testing/in-memory-trip.repository';
+import { BookSeat } from './use-cases/book-seat';
 import { ListUpcomingTrips } from './use-cases/list-upcoming-trips';
 import { PublishTrip } from './use-cases/publish-trip';
 
@@ -14,6 +15,7 @@ function setup() {
     trips,
     publishTrip: new PublishTrip(trips),
     listUpcomingTrips: new ListUpcomingTrips(trips),
+    bookSeat: new BookSeat(trips),
   };
 }
 
@@ -25,6 +27,8 @@ const tripTo = (site: string, departureAt: Date): PublishTripInput => ({
   pricePerSeat: 1000,
   driverPhone: '+221771234567',
 });
+
+const awa = { passengerName: 'Awa', passengerPhone: '77 123 45 67' };
 
 /** Un trajet déjà parti ne peut pas être publié : on le place directement dans le dépôt. */
 const departedTrip = () =>
@@ -89,5 +93,35 @@ describe('trips (application layer)', () => {
       code: 'DEPARTURE_IN_PAST',
     });
     expect(await listUpcomingTrips.execute('diamniadio')).toEqual([]);
+  });
+
+  it('002-AS1: books a seat and returns the booking code and the driver phone', async () => {
+    const { publishTrip, bookSeat } = setup();
+    const trip = await publishTrip.execute(tripTo('diamniadio', inHours(24)));
+
+    const { booking, driverPhone } = await bookSeat.execute(trip.id, awa);
+
+    expect(driverPhone).toBe('771234567');
+    expect(booking).toMatchObject({ tripId: trip.id, passengerName: 'Awa' });
+    expect(booking.bookingCode).toMatch(/^\S{8,}$/);
+    await expect(bookSeat.execute(trip.id, awa)).rejects.toMatchObject({
+      code: 'PASSENGER_ALREADY_BOOKED',
+    });
+  });
+
+  it('002-AS2: lists remaining seats once a seat is booked', async () => {
+    const { publishTrip, bookSeat, listUpcomingTrips } = setup();
+    const trip = await publishTrip.execute(tripTo('diamniadio', inHours(24)));
+    await bookSeat.execute(trip.id, awa);
+
+    const [listed] = await listUpcomingTrips.execute('diamniadio');
+    expect(listed?.remainingSeats).toBe(2);
+  });
+
+  it('002-AS6: rejects a booking on an unknown trip', async () => {
+    const { bookSeat } = setup();
+    await expect(
+      bookSeat.execute('0199f5c2-0000-7000-8000-0000000000ff', awa),
+    ).rejects.toMatchObject({ code: 'TRIP_NOT_FOUND', kind: 'NOT_FOUND' });
   });
 });

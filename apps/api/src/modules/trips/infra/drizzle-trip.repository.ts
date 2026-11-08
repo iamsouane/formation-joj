@@ -4,6 +4,7 @@ import { and, asc, eq, gt } from 'drizzle-orm';
 import type { Database } from '../../../core/database/database';
 import { DATABASE } from '../../../core/database/database.module';
 import { TripRepository } from '../application/trip.repository';
+import type { Booking } from '../domain/booking';
 import type { Trip } from '../domain/trip';
 import { toDomain, toRow } from './trip.mapper';
 import { trips } from './trips.schema';
@@ -25,5 +26,9 @@ export class DrizzleTripRepository extends TripRepository {
       .where(and(eq(trips.site, site), gt(trips.departureAt, now)))
       .orderBy(asc(trips.departureAt));
     return rows.map(toDomain);
+  }
+
+  async reserve(_tripId: string, _book: (trip: Trip) => Booking): Promise<Booking | undefined> {
+    throw new Error('non implémenté');
   }
 }
