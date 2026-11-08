@@ -109,3 +109,11 @@ Cinq tâches, dans l'ordre des couches ; chacune tient dans un commit.
 - [x] T03 [002-AS2, AS4] Écrire d'abord les tests de `apps/api/src/modules/trips/infra/drizzle-trip.repository.int.spec.ts` (« 002-AS2: lists trips with their booked passengers », « 002-AS4: the database refuses a second booking with the same phone »), puis `bookings.schema.ts`, les ajouts à `trip.mapper.ts` et à `drizzle-trip.repository.ts`, et la migration générée
 - [x] T04 [002-AS1, AS2, AS3, AS4, AS5, AS6] Écrire d'abord les tests de `apps/api/test/trips.e2e.spec.ts` (un par scénario, « 002-AS1: … » à « 002-AS6: … »), puis la route de réservation et `remainingSeats` dans `trips.controller.ts`, et `BookSeat` dans `trips.module.ts`
 - [x] T05 [002-AS1, AS2, AS3, AS4, AS5, AS6] Écrire d'abord les tests de `apps/web/src/mocks/handlers.test.ts` (« 002-AS1: … » à « 002-AS6: … »), puis le handler de réservation, les places restantes et la normalisation des téléphones dans `handlers.ts`, et la liste `bookings` dans `fixture.ts`
+
+## 7. Corrections
+
+### Passage 1
+
+Le relecteur a trouvé un écart bloquant. La spec a tranché, dans « Questions ouvertes », qu'un téléphone mal formé est refusé comme saisie invalide. Pourtant, `bookSeatSchema` (`packages/shared/src/trips.ts:59`) accepte « abc », « +221 » ou « ---- ». `normalisePhone()` (`apps/api/src/modules/trips/domain/phone.ts:4`) réduit alors « +221 » et « ---- » à une chaîne vide, qui est enregistrée : deux supporters différents se voient l'un l'autre comme « déjà inscrit ». La fausse API (`apps/web/src/mocks/handlers.ts`) se comporte de la même façon.
+
+- [ ] T06 [002-AS1] Écrire d'abord, dans `packages/shared/src/trips.spec.ts`, le test « 002-AS1: rejects a malformed phone » : « abc », « +221 », « ---- » et « hello world » sont refusés comme téléphone du supporter (`bookSeatSchema`) et comme téléphone du conducteur (`publishTripSchema`). Écrire aussi le test e2e correspondant dans `apps/api/test/trips.e2e.spec.ts` (400 `VALIDATION_FAILED`, aucune réservation créée) et celui de `apps/web/src/mocks/handlers.test.ts`. Puis ajouter aux deux schémas la règle suivante : une fois retirés les espaces, les tirets et le préfixe `+221` ou `00221`, le téléphone ne contient que des chiffres et n'est pas vide.
