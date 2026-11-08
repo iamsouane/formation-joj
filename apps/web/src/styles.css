@@ -294,6 +294,66 @@
   }
 }
 
+/*
+ * Le mode compact, une fois le site choisi : sur un écran de 360 × 640, la scène laisse la place au
+ * choix du site et au premier départ. Le changement suit le geste de l'utilisateur, sans animation
+ * de hauteur (la mise en page serait recalculée à chaque image).
+ */
+.mascot-stage[data-compact='true'] {
+  --figure-height: 6.75rem;
+  height: 8.5rem;
+}
+
+.mascot-stage[data-compact='true'] .mascot-sun {
+  top: 0.75rem;
+  width: 6rem;
+  margin-left: -3rem;
+}
+
+.mascot-stage[data-compact='true'] .mascot-frieze {
+  bottom: 2.4rem;
+  height: 0.9rem;
+}
+
+.mascot-stage[data-compact='true'] .mascot-ground {
+  height: 2.5rem;
+}
+
+.mascot-stage[data-compact='true'] .mascot-shadow {
+  bottom: 1.7rem;
+  width: 3.5rem;
+  margin-left: -1.75rem;
+}
+
+.mascot-stage[data-compact='true'] .mascot-tilt {
+  bottom: 1.9rem;
+}
+
+/*
+ * Un départ, encadré comme les bulles du logo : un trait noir et le coin haut droit replié.
+ * Le pli est un triangle blanc traversé d'une diagonale noire, posé sur le coin.
+ */
+.departure-bubble {
+  position: relative;
+  border: 2px solid var(--joj-black);
+  background: var(--joj-white);
+}
+
+.departure-bubble::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 1.1rem;
+  height: 1.1rem;
+  background: linear-gradient(
+    to bottom left,
+    var(--background) calc(50% - 1px),
+    var(--joj-black) calc(50% - 1px) calc(50% + 1px),
+    transparent calc(50% + 1px)
+  );
+}
+
 /* Moins d'animations : la mascotte est posée, immobile, et le reste aussi. */
 @media (prefers-reduced-motion: reduce) {
   .mascot-stage *,

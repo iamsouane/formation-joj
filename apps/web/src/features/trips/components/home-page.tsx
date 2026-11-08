@@ -16,7 +16,7 @@ interface HomePageProps {
 export function HomePage({ site, onSiteChange }: HomePageProps) {
   return (
     <div className="flex flex-col gap-5">
-      <MascotStage />
+      <MascotStage compact={site !== undefined} />
       <h1 className="font-display text-4xl leading-none font-extrabold uppercase">
         Où allez-vous pour les Jeux ?
       </h1>

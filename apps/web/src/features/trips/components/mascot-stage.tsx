@@ -18,9 +18,10 @@ function setTilt(stage: HTMLElement, x: string, y: string) {
  * qui glissent à des vitesses différentes ; la mascotte s'incline vers le doigt ou la souris et
  * son ombre s'éloigne d'autant. Le JavaScript ne pose que `--tilt-x` et `--tilt-y` ; le reste
  * (transitions, entrée avec rebond, respiration) est dans `styles.css`, coupé sous
- * `prefers-reduced-motion`.
+ * `prefers-reduced-motion`. En mode compact, une fois le site choisi, la scène se resserre pour
+ * laisser les départs tenir dans l'écran d'un téléphone.
  */
-export function MascotStage() {
+export function MascotStage({ compact = false }: { compact?: boolean }) {
   const reduced = useReducedMotion();
 
   function follow(event: PointerEvent<HTMLDivElement>) {
@@ -42,6 +43,7 @@ export function MascotStage() {
     <div
       className="mascot-stage"
       data-motion={reduced ? 'reduced' : 'full'}
+      data-compact={compact}
       onPointerMove={follow}
       onPointerLeave={settle}
       onPointerCancel={settle}

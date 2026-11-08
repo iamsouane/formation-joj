@@ -22,9 +22,9 @@ export function DepartureList({ site, trips, onBook, renderBooking }: DepartureL
   return (
     <ul aria-label={`Départs vers ${siteLabel}`} className="flex flex-col gap-3">
       {trips.map((trip) => (
-        <li key={trip.id} className="flex flex-col gap-1 border-2 border-foreground p-3">
+        <li key={trip.id} className="departure-bubble flex flex-col gap-1 p-3">
           <div className="flex items-baseline justify-between gap-3">
-            <h3 className="text-lg font-bold">{trip.departurePlace}</h3>
+            <h2 className="font-display text-2xl leading-tight font-bold">{trip.departurePlace}</h2>
             <span className="font-semibold tabular-nums">{formatPrice(trip.pricePerSeat)}</span>
           </div>
           <div className="flex items-baseline justify-between gap-3 text-sm">
@@ -37,6 +37,7 @@ export function DepartureList({ site, trips, onBook, renderBooking }: DepartureL
           </div>
           {trip.remainingSeats > 0 && (
             <Button
+              size="lg"
               className="mt-2 self-start"
               aria-label={`Réserver une place depuis ${trip.departurePlace}`}
               onClick={() => onBook?.(trip)}
