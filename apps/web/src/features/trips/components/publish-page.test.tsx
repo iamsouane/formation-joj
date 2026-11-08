@@ -135,8 +135,18 @@ describe('PublishPage', () => {
     expect(confirmation.querySelector('[data-part="ticket-route"]')).toHaveTextContent(
       'Pikine → Diamniadio',
     );
+    // Comme en AS1 : le trajet compris, puis le code et le lien de gestion.
+    const published = fixture.trips.at(-1)!;
+    expect(confirmation.querySelector('[data-part="ticket-time"]')).toHaveTextContent(
+      /08:00\s*lun\. 9 nov\./,
+    );
+    expect(confirmation).toHaveTextContent('3 places');
+    expect(confirmation).toHaveTextContent('1 000 FCFA par place');
     expect(confirmation.querySelector('[data-part="management-code"]')).toHaveTextContent(
-      fixture.trips.at(-1)!.managementCode,
+      published.managementCode,
+    );
+    expect(confirmation.querySelector('[data-part="management-link"]')).toHaveTextContent(
+      `${window.location.origin}/trajets/${published.id}/gestion`,
     );
   });
 
