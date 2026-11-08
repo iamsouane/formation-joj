@@ -12,6 +12,7 @@ import type { Request, Response } from 'express';
 import { ZodValidationException } from 'nestjs-zod';
 import { z } from 'zod';
 import { AppError, type ErrorKind } from './app-error';
+import { InvalidInputError } from './invalid-input.error';
 
 const STATUS_BY_KIND: Record<ErrorKind, HttpStatus> = {
   VALIDATION: HttpStatus.BAD_REQUEST,
@@ -50,6 +51,15 @@ export class ProblemDetailsFilter implements ExceptionFilter {
 }
 
 export function toProblem(exception: unknown): ProblemDetails {
+  // Même forme qu'un corps invalide (ZodValidationException) : les champs dans `errors`.
+  if (exception instanceof InvalidInputError) {
+    return {
+      ...base(HttpStatus.BAD_REQUEST, exception.code),
+      detail: exception.message,
+      errors: [...exception.errors],
+    };
+  }
+
   if (exception instanceof AppError) {
     return {
       ...base(STATUS_BY_KIND[exception.kind], exception.code),

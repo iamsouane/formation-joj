@@ -242,4 +242,17 @@ describe('tripDraftSchema', () => {
   it('rejects a departure that is not a local date and time', () => {
     expect(tripDraftSchema.safeParse({ ...draft, departureAt: 'demain 8h' }).success).toBe(false);
   });
+
+  it.each(['2026-11-09T25:00', '2026-13-45T08:00', '2026-02-30T08:00', '2026-11-09T08:60'])(
+    '004-AS1: rejects a departure that is not a real date (%s)',
+    (departureAt) => {
+      expect(tripDraftSchema.safeParse({ ...draft, departureAt }).success).toBe(false);
+    },
+  );
+
+  it('004-AS1: accepts the 29th of February of a leap year', () => {
+    expect(tripDraftSchema.safeParse({ ...draft, departureAt: '2028-02-29T08:00' }).success).toBe(
+      true,
+    );
+  });
 });

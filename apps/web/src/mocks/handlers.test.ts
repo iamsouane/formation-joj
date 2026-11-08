@@ -416,6 +416,23 @@ describe('mock publication from a message', () => {
     const response = await publishFromMessage({ message, driverPhone });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toMatchObject({ code: 'VALIDATION_FAILED' });
+    const body: unknown = await response.json();
+    // Même forme qu'un corps invalide : les erreurs au premier niveau, dans `errors`.
+    expect(body).toMatchObject({
+      code: 'VALIDATION_FAILED',
+      errors: [{ path: 'seats', message: expect.any(String) }],
+    });
+    expect(body).not.toHaveProperty('details');
+  });
+
+  it('answers 503 ASSISTANT_UNAVAILABLE for an impossible departure date', async () => {
+    mockControl.setTripDraft(understood({ departureAt: '2026-02-30T08:00' }));
+    const before = fixture.trips.length;
+
+    const response = await publishFromMessage({ message, driverPhone });
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ code: 'ASSISTANT_UNAVAILABLE' });
+    expect(fixture.trips).toHaveLength(before);
   });
 });

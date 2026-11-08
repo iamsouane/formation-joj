@@ -1,4 +1,4 @@
-import type { TripDraft } from '@joj/shared';
+import { type TripDraft, tripDraftSchema } from '@joj/shared';
 import { TripError } from '../../domain/trips.errors';
 import { TripMessageReader } from '../trip-message.reader';
 
@@ -24,9 +24,11 @@ export class FakeTripMessageReader extends TripMessageReader {
 
   async read(message: string, now: Date): Promise<TripDraft> {
     this.received.push({ message, now });
-    if (this.answer === 'unavailable') {
+    // Comme l'adaptateur réel, qui tient le contrat du port : un brouillon hors schéma est inexploitable.
+    const draft = tripDraftSchema.safeParse(this.answer);
+    if (!draft.success) {
       throw new TripError('ASSISTANT_UNAVAILABLE', 'The assistant is unavailable');
     }
-    return this.answer;
+    return draft.data;
   }
 }

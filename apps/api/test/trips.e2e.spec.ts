@@ -463,7 +463,21 @@ describe('/api/trips (e2e)', () => {
 
       const response = await publishFromMessage({ message, driverPhone }).expect(400);
 
-      expect(response.body).toMatchObject({ code: 'VALIDATION_FAILED' });
+      // Même forme qu'un corps invalide : les erreurs au premier niveau, dans `errors`.
+      expect(response.body).toMatchObject({
+        code: 'VALIDATION_FAILED',
+        errors: [{ path: 'seats', message: expect.any(String) }],
+      });
+      expect(response.body).not.toHaveProperty('details');
+      expect(await storedTrips()).toEqual([]);
+    });
+
+    it('answers 503 ASSISTANT_UNAVAILABLE for an impossible departure date', async () => {
+      assistant().willRead(understood({ departureAt: '2026-11-09T25:00' }));
+
+      const response = await publishFromMessage({ message, driverPhone }).expect(503);
+
+      expect(response.body).toMatchObject({ code: 'ASSISTANT_UNAVAILABLE' });
       expect(await storedTrips()).toEqual([]);
     });
   });

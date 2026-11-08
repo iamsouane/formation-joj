@@ -54,6 +54,15 @@ export type PublishTripFromMessageInput = z.infer<typeof publishTripFromMessageS
 const DAKAR_LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
 /**
+ * Vrai si la date et l'heure existent : relues après conversion (Dakar est à UTC+0), elles sont
+ * inchangées. « 2026-02-30T08:00 » deviendrait le 2 mars, « 25:00 » une date invalide.
+ */
+function isRealDakarDateTime(localDateTime: string): boolean {
+  const instant = new Date(`${localDateTime}:00.000Z`);
+  return !Number.isNaN(instant.getTime()) && instant.toISOString().slice(0, 16) === localDateTime;
+}
+
+/**
  * Le brouillon de trajet que l'assistant tire d'un message : une information absente du message
  * vaut `null`, elle n'est jamais devinée. Ni le site ni les nombres ne sont vérifiés ici : le
  * trajet complété passe ensuite par les contrôles de la publication.
@@ -61,7 +70,11 @@ const DAKAR_LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 export const tripDraftSchema = z.object({
   departurePlace: z.string().nullable(),
   site: z.string().nullable(),
-  departureAt: z.string().regex(DAKAR_LOCAL_DATE_TIME).nullable(),
+  departureAt: z
+    .string()
+    .regex(DAKAR_LOCAL_DATE_TIME)
+    .refine(isRealDakarDateTime, { message: 'This date or time does not exist' })
+    .nullable(),
   seats: z.int().nullable(),
   pricePerSeat: z.int().nullable(),
 });

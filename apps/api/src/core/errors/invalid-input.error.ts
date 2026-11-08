@@ -6,12 +6,14 @@ import { AppError } from './app-error';
  * extérieur a produit) : le même refus 400 VALIDATION_FAILED qu'une saisie invalide.
  */
 export class InvalidInputError extends AppError<'VALIDATION_FAILED'> {
+  /** Les champs invalides, rendus dans `errors` comme ceux d'un corps invalide. */
+  readonly errors: readonly { path: string; message: string }[];
+
   constructor(error: z.ZodError) {
-    super('VALIDATION_FAILED', 'VALIDATION', 'The request is invalid.', {
-      errors: error.issues.map((issue) => ({
-        path: issue.path.join('.'),
-        message: issue.message,
-      })),
-    });
+    super('VALIDATION_FAILED', 'VALIDATION', 'The request is invalid.');
+    this.errors = error.issues.map((issue) => ({
+      path: issue.path.join('.'),
+      message: issue.message,
+    }));
   }
 }

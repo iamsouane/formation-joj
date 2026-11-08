@@ -11,6 +11,7 @@ import {
   type PublishTripInput,
   publishTripSchema,
   TRIP_DRAFT_FIELDS,
+  tripDraftSchema,
   TRIP_SITES,
   type TripResponse,
   tripIdParamSchema,
@@ -196,10 +197,12 @@ export const handlers: RequestHandler[] = [
     }
 
     // Comme l'API : le brouillon du faux assistant, puis les champs manquants, puis TR1.
-    const draft = mockControl.assistant;
-    if (draft === 'unavailable') {
+    // Comme l'adaptateur Claude : une panne ou un brouillon hors schéma est inexploitable.
+    const understood = tripDraftSchema.safeParse(mockControl.assistant);
+    if (!understood.success) {
       return problem(503, 'ASSISTANT_UNAVAILABLE', 'The assistant could not read the message');
     }
+    const draft = understood.data;
     const missingFields = TRIP_DRAFT_FIELDS.filter((field) => draft[field] === null);
     if (missingFields.length > 0) {
       return problem(422, 'MESSAGE_UNREADABLE', 'The message lacks trip information', {
@@ -211,16 +214,7 @@ export const handlers: RequestHandler[] = [
       departureAt: draft.departureAt && `${draft.departureAt}:00.000Z`,
       driverPhone: body.data.driverPhone,
     });
-    if (!input.success) {
-      return problem(400, 'VALIDATION_FAILED', 'The request is invalid.', {
-        details: {
-          errors: input.error.issues.map((issue) => ({
-            path: issue.path.join('.'),
-            message: issue.message,
-          })),
-        },
-      });
-    }
+    if (!input.success) return validationFailed(input.error);
     return publishChecked(input.data);
   }),
 

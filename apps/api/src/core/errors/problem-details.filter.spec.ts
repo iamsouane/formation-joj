@@ -35,7 +35,7 @@ describe('toProblem', () => {
     });
   });
 
-  it('maps an InvalidInputError to 400 VALIDATION_FAILED, with the invalid fields', () => {
+  it('maps an InvalidInputError to 400 VALIDATION_FAILED with the invalid fields in errors', () => {
     const result = z.object({ seats: z.int().min(1) }).safeParse({ seats: 0 });
     if (result.success) throw new Error('expected an invalid input');
     expect(toProblem(new InvalidInputError(result.error))).toEqual({
@@ -44,7 +44,7 @@ describe('toProblem', () => {
       status: 400,
       code: 'VALIDATION_FAILED',
       detail: 'The request is invalid.',
-      details: { errors: [{ path: 'seats', message: expect.any(String) }] },
+      errors: [{ path: 'seats', message: expect.any(String) }],
     });
   });
 

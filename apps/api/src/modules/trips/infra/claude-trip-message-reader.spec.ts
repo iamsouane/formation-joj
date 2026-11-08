@@ -84,6 +84,11 @@ describe('ClaudeTripMessageReader', () => {
     ['an answer that is not JSON', () => claudeAnswer('Désolé, je ne sais pas.')],
     ['an answer outside the schema', () => claudeAnswer('{"seats":"trois"}')],
     [
+      'an impossible departure date',
+      () =>
+        claudeAnswer(JSON.stringify({ ...pikineToDiamniadio, departureAt: '2026-11-09T25:00' })),
+    ],
+    [
       'a server error',
       () => Response.json({}, { status: 500, headers: { 'retry-after-ms': '0' } }),
     ],
