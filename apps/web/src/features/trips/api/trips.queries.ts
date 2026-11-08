@@ -5,6 +5,7 @@ import type {
   TripSite,
 } from '@joj/shared';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { tripsApi } from './trips.api';
 
 /** Clés du cache TanStack Query pour cette fonctionnalité. */
@@ -13,13 +14,29 @@ export const tripKeys = {
   upcoming: (site: TripSite) => [...tripKeys.all, 'upcoming', site] as const,
 };
 
+/**
+ * Les départs d'un site. Ils sont relus à chaque retour sur l'accueil, même encore frais : un
+ * trajet a pu être publié entre-temps, ailleurs que dans cet onglet.
+ */
 export const upcomingTripsQueryOptions = (site: TripSite) =>
   queryOptions({
     queryKey: tripKeys.upcoming(site),
     queryFn: ({ signal }) => tripsApi.upcoming(site, signal),
+    refetchOnMount: 'always',
   });
 
-export const useUpcomingTrips = (site: TripSite) => useQuery(upcomingTripsQueryOptions(site));
+export function useUpcomingTrips(site: TripSite) {
+  const queryClient = useQueryClient();
+  // Safari restaure une page depuis son cache (retour arrière) sans la remonter : on relit.
+  useEffect(() => {
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) void queryClient.invalidateQueries({ queryKey: tripKeys.all });
+    };
+    window.addEventListener('pageshow', onPageShow);
+    return () => window.removeEventListener('pageshow', onPageShow);
+  }, [queryClient]);
+  return useQuery(upcomingTripsQueryOptions(site));
+}
 
 export function useBookSeat() {
   const queryClient = useQueryClient();

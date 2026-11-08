@@ -2,11 +2,11 @@
  * L'accueil `/`, monté par sa vraie route sur la fausse API (`mocks/handlers.ts`) : choisir un
  * site, puis voir ses départs à venir, triés par heure. Chaque test vérifie ce que l'écran montre.
  */
-import { screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { mockControl } from '@/mocks/control';
-import { fixture, guediawayeToDiamniadio, pikineToDiamniadio } from '@/mocks/fixture';
+import { fixture, fullToDakar, guediawayeToDiamniadio, pikineToDiamniadio } from '@/mocks/fixture';
 import { renderRoute } from '@/test/utils';
 import { formatDepartureDay, formatDepartureTime, formatPrice } from './format';
 
@@ -176,5 +176,33 @@ describe('HomePage', () => {
 
     expect(await screen.findByRole('list', { name: 'Départs vers Dakar' })).toBeInTheDocument();
     expect(router.state.location.search).toEqual({ site: 'dakar' });
+  });
+
+  it('006-AS1: shows a trip published elsewhere once back on the home page', async () => {
+    const { router } = await open('/?site=dakar');
+    await screen.findByText(/Yoff/);
+    const publishedElsewhere = (id: string, departurePlace: string) =>
+      fixture.trips.push({
+        ...fullToDakar,
+        id,
+        departurePlace,
+        seats: 3,
+        managementCode: `${id}-code`,
+      });
+
+    // Publié dans un autre onglet pendant que la liste est en cache : le retour la relit.
+    await act(() => router.navigate({ to: '/publier' }));
+    publishedElsewhere('0199f5c2-0000-7000-8000-000000000901', 'Comico 4');
+    await act(() => router.navigate({ to: '/', search: { site: 'dakar' } }));
+    expect(await screen.findByText(/Comico 4/)).toBeInTheDocument();
+
+    // Safari restaure la page depuis son cache (retour arrière) : la liste est relue aussi.
+    publishedElsewhere('0199f5c2-0000-7000-8000-000000000902', 'Ouakam');
+    const restored = new Event('pageshow');
+    Object.defineProperty(restored, 'persisted', { value: true });
+    act(() => {
+      window.dispatchEvent(restored);
+    });
+    await waitFor(() => expect(screen.getByText(/Ouakam/)).toBeInTheDocument());
   });
 });
