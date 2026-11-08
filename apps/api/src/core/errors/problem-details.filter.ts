@@ -18,6 +18,8 @@ const STATUS_BY_KIND: Record<ErrorKind, HttpStatus> = {
   NOT_FOUND: HttpStatus.NOT_FOUND,
   CONFLICT: HttpStatus.CONFLICT,
   BUSINESS_RULE: HttpStatus.UNPROCESSABLE_ENTITY,
+  // Un secret (code de gestion…) qui ne correspond pas à la ressource visée.
+  FORBIDDEN: HttpStatus.FORBIDDEN,
 };
 
 const INTERNAL_DETAIL = 'An unexpected error occurred.';

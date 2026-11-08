@@ -11,7 +11,23 @@ class SampleError extends AppError<'SAMPLE_TAKEN'> {
   }
 }
 
+class SampleForbiddenError extends AppError<'SAMPLE_SECRET_INVALID'> {
+  constructor() {
+    super('SAMPLE_SECRET_INVALID', 'FORBIDDEN', 'Sample secret does not match');
+  }
+}
+
 describe('toProblem', () => {
+  it('003-AS6: maps a FORBIDDEN error to 403', () => {
+    expect(toProblem(new SampleForbiddenError())).toEqual({
+      type: 'urn:problem-type:sample-secret-invalid',
+      title: 'Forbidden',
+      status: 403,
+      code: 'SAMPLE_SECRET_INVALID',
+      detail: 'Sample secret does not match',
+    });
+  });
+
   it('maps an AppError by its kind, with its code and details', () => {
     expect(toProblem(new SampleError())).toEqual({
       type: 'urn:problem-type:sample-taken',

@@ -2,7 +2,7 @@
  * Catégorie d'erreur : la seule information que la couche HTTP utilise pour choisir le statut.
  * Le domaine ne connaît pas HTTP.
  */
-export type ErrorKind = 'VALIDATION' | 'NOT_FOUND' | 'CONFLICT' | 'BUSINESS_RULE';
+export type ErrorKind = 'VALIDATION' | 'NOT_FOUND' | 'CONFLICT' | 'BUSINESS_RULE' | 'FORBIDDEN';
 
 /**
  * Base de toutes les erreurs applicatives. Chaque domaine en dérive une classe dont le `code`
