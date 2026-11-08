@@ -93,3 +93,9 @@ La relecture indépendante relève qu'une participation ou un nombre de places m
 
 - [x] T07 [006-AS2] Écrire d'abord le cas « 006-AS2: sends the seats and the price as typed, never a truncated number » dans `publish-page.test.tsx` (« 1 000 » est lu 1000 ; « 3,5 » ou « 2 places » part tel quel et revient en VALIDATION_FAILED, champ signalé), puis lire places et participation sans `parseInt` : chiffres et espaces seulement, sinon la saisie illisible n'est pas convertie (preuve : relecteur, `trip-form.tsx:35`, `Number.parseInt('1 000', 10)` vaut 1, un trajet à 1 F par place est publié)
 - [x] T08 [006-AS3] Écrire d'abord le cas « 006-AS3: focuses the site choice when only the site is missing » dans `routes/publier.a11y.test.tsx`, puis donner le focus au premier champ signalé, et seulement à défaut au premier champ (preuve : relecteur, `trip-form.tsx:58-63`, le sélecteur prend le premier `input` du document avant le site signalé)
+
+### Passage 2
+
+La relecture indépendante du passage 1 relève que le test d'AS2 ne vérifie pas tout ce que l'« Alors » promet après une publication par le formulaire : le lien de gestion et le trajet compris.
+
+- [ ] T09 [006-AS2] Compléter d'abord le cas « 006-AS2: switches to the form at any time, keeping the phone » dans `publish-page.test.tsx` : après la publication, le billet montre le jour et l'heure (9 nov. 08:00), 3 places, « 1 000 FCFA par place », le code et le lien `<origine>/trajets/<id>/gestion`, comme en AS1 ; corriger le billet si le test échoue (preuve : relecteur, `publish-page.test.tsx:120-140`, `[data-part="management-link"]` n'y est jamais lu)
