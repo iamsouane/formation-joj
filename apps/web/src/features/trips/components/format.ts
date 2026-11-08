@@ -31,3 +31,16 @@ export function formatPrice(pricePerSeat: number): string {
 export function formatRemainingSeats(remainingSeats: number): string {
   return remainingSeats === 1 ? '1 place restante' : `${remainingSeats} places restantes`;
 }
+
+/** Un téléphone sénégalais à 9 chiffres, tel que l'API le renvoie : « 771234567 ». */
+const SENEGAL_PHONE = /^(\d{2})(\d{3})(\d{2})(\d{2})$/;
+
+/** « 77 123 45 67 » ; un numéro d'une autre forme reste tel quel. */
+export function formatPhone(phone: string): string {
+  return phone.replace(SENEGAL_PHONE, '$1 $2 $3 $4');
+}
+
+/** Le lien d'appel : « tel:+221771234567 » pour un numéro sénégalais à 9 chiffres. */
+export function phoneHref(phone: string): string {
+  return SENEGAL_PHONE.test(phone) ? `tel:+221${phone}` : `tel:${phone}`;
+}

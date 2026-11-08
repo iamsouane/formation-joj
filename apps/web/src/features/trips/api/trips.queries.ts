@@ -1,5 +1,5 @@
-import type { TripSite } from '@joj/shared';
-import { queryOptions, useQuery } from '@tanstack/react-query';
+import type { BookSeatInput, TripSite } from '@joj/shared';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tripsApi } from './trips.api';
 
 /** Clés du cache TanStack Query pour cette fonctionnalité. */
@@ -15,3 +15,13 @@ export const upcomingTripsQueryOptions = (site: TripSite) =>
   });
 
 export const useUpcomingTrips = (site: TripSite) => useQuery(upcomingTripsQueryOptions(site));
+
+export function useBookSeat() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tripId, input }: { tripId: string; input: BookSeatInput }) =>
+      tripsApi.bookSeat(tripId, input),
+    // Même en échec (trajet complet entre-temps), la liste est relue : ses places ont changé.
+    onSettled: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+  });
+}

@@ -1,4 +1,5 @@
 import type { TripResponse, TripSite } from '@joj/shared';
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { formatDeparture, formatPrice, formatRemainingSeats, SITE_LABELS } from './format';
 
@@ -7,10 +8,12 @@ interface DepartureListProps {
   trips: TripResponse[];
   /** Le supporter choisit ce trajet pour y réserver une place. */
   onBook?: (trip: TripResponse) => void;
+  /** Ce qui s'ouvre sous le trajet choisi : le formulaire de réservation. */
+  renderBooking?: (trip: TripResponse) => ReactNode;
 }
 
 /** Les départs à venir d'un site, dans l'ordre où l'API les renvoie : par heure. */
-export function DepartureList({ site, trips, onBook }: DepartureListProps) {
+export function DepartureList({ site, trips, onBook, renderBooking }: DepartureListProps) {
   const siteLabel = SITE_LABELS[site];
   if (trips.length === 0) {
     return <p className="text-muted-foreground">Aucun départ à venir vers {siteLabel}.</p>;
@@ -41,6 +44,7 @@ export function DepartureList({ site, trips, onBook }: DepartureListProps) {
               Réserver
             </Button>
           )}
+          {renderBooking?.(trip)}
         </li>
       ))}
     </ul>

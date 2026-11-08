@@ -1,4 +1,11 @@
-import { type TripResponse, type TripSite, tripListSchema } from '@joj/shared';
+import {
+  type BookingConfirmationResponse,
+  bookingConfirmationSchema,
+  type BookSeatInput,
+  type TripResponse,
+  type TripSite,
+  tripListSchema,
+} from '@joj/shared';
 import { api } from '@/lib/api';
 
 /**
@@ -10,5 +17,12 @@ export const tripsApi = {
     api.request<TripResponse[]>(`/trips?site=${encodeURIComponent(site)}`, {
       schema: tripListSchema,
       signal,
+    }),
+
+  bookSeat: (tripId: string, input: BookSeatInput) =>
+    api.request<BookingConfirmationResponse>(`/trips/${tripId}/bookings`, {
+      method: 'POST',
+      body: input,
+      schema: bookingConfirmationSchema,
     }),
 };
