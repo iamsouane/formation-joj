@@ -1,4 +1,5 @@
 import type { BookingConfirmationResponse, TripResponse, TripSite } from '@joj/shared';
+import type { SiteChoiceGesture } from './site-picker';
 import { useState } from 'react';
 import { useUpcomingTrips } from '../api/trips.queries';
 import { BookingConfirmation } from './booking-confirmation';
@@ -8,7 +9,7 @@ import { Hero } from './hero';
 
 interface HomePageProps {
   site: TripSite | undefined;
-  onSiteChange: (site: TripSite) => void;
+  onSiteChange: (site: TripSite, gesture: SiteChoiceGesture) => void;
 }
 
 /** L'accueil : choisir son site, voir ses départs à venir, puis réserver une place. */

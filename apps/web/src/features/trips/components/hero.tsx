@@ -1,4 +1,5 @@
 import type { TripSite } from '@joj/shared';
+import type { SiteChoiceGesture } from './site-picker';
 import { useId } from 'react';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
@@ -6,7 +7,7 @@ import { SitePicker } from './site-picker';
 
 interface HeroProps {
   site: TripSite | undefined;
-  onSiteChange: (site: TripSite) => void;
+  onSiteChange: (site: TripSite, gesture: SiteChoiceGesture) => void;
 }
 
 /**

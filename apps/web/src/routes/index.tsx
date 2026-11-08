@@ -12,7 +12,10 @@ function Home() {
   return (
     <HomePage
       site={site}
-      onSiteChange={(next) => navigate({ search: { site: next }, viewTransition: true })}
+      onSiteChange={(next, gesture) =>
+        // Le repli du hero s'anime au toucher ; au clavier, il est immédiat.
+        navigate({ search: { site: next }, viewTransition: gesture === 'pointer' })
+      }
     />
   );
 }

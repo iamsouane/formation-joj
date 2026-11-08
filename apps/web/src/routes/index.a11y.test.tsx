@@ -8,7 +8,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { problem } from '@/mocks/handlers';
 import { server } from '@/mocks/node';
 import { axeFindings, runAxe } from '@/test/axe';
@@ -49,9 +49,69 @@ describe('home page on a phone screen', () => {
   });
 });
 
-describe('home page accessibility', () => {
-  it('005-AS6: the home page without a chosen site is clean', async () => {
+describe('folding the hero', () => {
+  /**
+   * jsdom n'a pas `document.startViewTransition` : ce faux enregistre chaque transition de vue
+   * demandée et applique tout de suite le changement, comme un navigateur sans animation.
+   */
+  function recordViewTransitions() {
+    const startViewTransition = vi.fn<(update: unknown) => Partial<ViewTransition>>((update) => {
+      const done = Promise.resolve().then(() => {
+        if (typeof update === 'function') update();
+      });
+      return { finished: done, ready: done, updateCallbackDone: done, skipTransition: () => {} };
+    });
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: startViewTransition,
+    });
+    return startViewTransition;
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(document, 'startViewTransition');
+  });
+
+  it('005-AS7: folds the hero smoothly when a site is tapped', async () => {
+    const transitions = recordViewTransitions();
+    const user = userEvent.setup();
     await renderRoute({ initialEntries: ['/'] });
+
+    await user.click(within(heroOf()).getByRole('radio', { name: 'Diamniadio' }));
+
+    await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    expect(transitions).toHaveBeenCalledTimes(1);
+  });
+
+  it('005-AS7: folds the hero at once when the site is chosen from the keyboard', async () => {
+    const transitions = recordViewTransitions();
+    const user = userEvent.setup();
+    await renderRoute({ initialEntries: ['/'] });
+
+    await user.tab();
+    await user.keyboard(' ');
+    await screen.findByRole('list', { name: 'Départs vers Dakar' });
+    await user.keyboard('{ArrowRight}');
+
+    await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    expect(heroOf()).toHaveAttribute('data-state', 'band');
+    expect(transitions).not.toHaveBeenCalled();
+  });
+});
+
+describe('home page accessibility', () => {
+  it('005-AS6: the opened hero is clean', async () => {
+    await renderRoute({ initialEntries: ['/'] });
+    expect(heroOf()).toHaveAttribute('data-state', 'open');
+    expect(axeFindings(await runAxe())).toEqual([]);
+  });
+
+  it('005-AS7: the folded hero is clean', async () => {
+    const user = userEvent.setup();
+    await renderRoute({ initialEntries: ['/'] });
+    await user.click(within(heroOf()).getByRole('radio', { name: 'Saly' }));
+    await screen.findByRole('list', { name: 'Départs vers Saly' });
+    expect(heroOf()).toHaveAttribute('data-state', 'band');
     expect(axeFindings(await runAxe())).toEqual([]);
   });
 
