@@ -6,9 +6,11 @@ import {
   bookingConfirmationSchema,
   bookingDetailsSchema,
   publishedTripSchema,
+  type TripDraft,
   tripListSchema,
 } from '@joj/shared';
 import { describe, expect, it } from 'vitest';
+import { mockControl } from './control';
 import {
   departedToDiamniadio,
   fixture,
@@ -292,5 +294,128 @@ describe('mock cancellations API', () => {
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ code: 'TRIP_CANCELLED' });
     expect(fixture.bookings.filter((b) => b.tripId === pikineToDiamniadio.id)).toEqual([]);
+  });
+});
+
+describe('mock publication from a message', () => {
+  const message = 'je pars de Pikine pour Diamniadio demain 8h, 3 places, 1000 F';
+  const driverPhone = '+221771234567';
+
+  /** « AAAA-MM-JJT08:00 » à Dakar (UTC+0), `days` jours après aujourd'hui. */
+  const dakarAt8 = (days: number) =>
+    `${new Date(Date.now() + days * 24 * HOUR).toISOString().slice(0, 10)}T08:00`;
+
+  const understood = (draft: Partial<TripDraft> = {}): TripDraft => ({
+    departurePlace: 'Pikine',
+    site: 'Diamniadio',
+    departureAt: dakarAt8(1),
+    seats: 3,
+    pricePerSeat: 1000,
+    ...draft,
+  });
+
+  const publishFromMessage = (body: unknown) =>
+    call('/api/trips/from-message', { method: 'POST', body: JSON.stringify(body) });
+
+  it('004-AS1: publishes the understood trip (201) with a management code', async () => {
+    mockControl.setTripDraft(understood());
+
+    const response = await publishFromMessage({ message, driverPhone });
+    expect(response.status).toBe(201);
+
+    const body: unknown = await response.json();
+    expect(body).not.toHaveProperty('driverPhone');
+    const published = publishedTripSchema.parse(body);
+    expect(published).toMatchObject({
+      departurePlace: 'Pikine',
+      site: 'diamniadio',
+      departureAt: `${dakarAt8(1)}:00.000Z`,
+      seats: 3,
+      remainingSeats: 3,
+      pricePerSeat: 1000,
+    });
+    expect(published.managementCode).not.toBe('');
+    expect(await listIds('diamniadio')).toContain(published.id);
+  });
+
+  it('004-AS2: rejects an unknown site (400 SITE_UNKNOWN) and creates no trip', async () => {
+    mockControl.setTripDraft(understood({ site: 'Thiès' }));
+    const before = fixture.trips.length;
+
+    const response = await publishFromMessage({ message, driverPhone });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'SITE_UNKNOWN' });
+    expect(fixture.trips).toHaveLength(before);
+  });
+
+  it('004-AS3: rejects a departure in the past (400 DEPARTURE_IN_PAST) and creates no trip', async () => {
+    mockControl.setTripDraft(understood({ departureAt: dakarAt8(-1) }));
+    const before = fixture.trips.length;
+
+    const response = await publishFromMessage({ message, driverPhone });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'DEPARTURE_IN_PAST' });
+    expect(fixture.trips).toHaveLength(before);
+  });
+
+  it('004-AS4: rejects an empty message (400 MESSAGE_EMPTY) without calling the assistant', async () => {
+    // Un assistant en panne répondrait 503 : le 400 prouve qu'il n'a pas été appelé.
+    mockControl.failAssistant();
+    const before = fixture.trips.length;
+
+    const response = await publishFromMessage({ message: '   ', driverPhone });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'MESSAGE_EMPTY' });
+    expect(fixture.trips).toHaveLength(before);
+  });
+
+  it('004-AS5: rejects a message lacking information (422 MESSAGE_UNREADABLE) with the missing fields', async () => {
+    mockControl.setTripDraft({
+      departurePlace: null,
+      site: 'Diamniadio',
+      departureAt: null,
+      seats: null,
+      pricePerSeat: null,
+    });
+    const before = fixture.trips.length;
+
+    const response = await publishFromMessage({
+      message: 'je vais à Diamniadio, qui vient ?',
+      driverPhone,
+    });
+
+    expect(response.status).toBe(422);
+    expect(await response.json()).toMatchObject({
+      title: 'Unprocessable Entity',
+      code: 'MESSAGE_UNREADABLE',
+      details: { missingFields: ['departurePlace', 'departureAt', 'seats', 'pricePerSeat'] },
+    });
+    expect(fixture.trips).toHaveLength(before);
+  });
+
+  it('answers 503 ASSISTANT_UNAVAILABLE and publishes nothing when the assistant is down', async () => {
+    mockControl.failAssistant();
+    const before = fixture.trips.length;
+
+    const response = await publishFromMessage({ message, driverPhone });
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      title: 'Service Unavailable',
+      code: 'ASSISTANT_UNAVAILABLE',
+    });
+    expect(fixture.trips).toHaveLength(before);
+  });
+
+  it('rejects a trip with no seat as an invalid input (400 VALIDATION_FAILED)', async () => {
+    mockControl.setTripDraft(understood({ seats: 0 }));
+
+    const response = await publishFromMessage({ message, driverPhone });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'VALIDATION_FAILED' });
   });
 });

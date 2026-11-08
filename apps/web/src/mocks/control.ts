@@ -1,3 +1,4 @@
+import type { TripDraft } from '@joj/shared';
 import { resetFixture } from './fixture';
 
 /**
@@ -5,8 +6,26 @@ import { resetFixture } from './fixture';
  * exister, un état d'erreur a besoin d'une panne : une fausse API qui répond toujours tout de
  * suite et sans erreur rend ces deux états impossibles à tester.
  */
-const state = {
+/** Ce que lit le faux assistant par défaut : rien. */
+const NOTHING_UNDERSTOOD: TripDraft = {
+  departurePlace: null,
+  site: null,
+  departureAt: null,
+  seats: null,
+  pricePerSeat: null,
+};
+
+interface MockState {
+  latency: number;
+  failures: Map<string, number>;
+  persistentFailures: Map<string, number>;
+  assistant: TripDraft | 'unavailable';
+}
+
+const state: MockState = {
   latency: 0,
+  /** Le brouillon que le faux assistant renvoie, ou sa panne. */
+  assistant: NOTHING_UNDERSTOOD,
   /** Une panne, consommée par la première requête qui la lit. */
   failures: new Map<string, number>(),
   /** Une panne qui dure jusqu'au `reset()` : le serveur est tombé. */
@@ -43,11 +62,27 @@ export const mockControl = {
     return once;
   },
 
+  /** Le brouillon que le faux assistant tirera du prochain message publié. */
+  setTripDraft(draft: TripDraft): void {
+    state.assistant = draft;
+  },
+
+  /** Le faux assistant tombe en panne, jusqu'au `reset()`. */
+  failAssistant(): void {
+    state.assistant = 'unavailable';
+  },
+
+  /** Lu par le handler : le brouillon du faux assistant, ou `'unavailable'`. */
+  get assistant(): TripDraft | 'unavailable' {
+    return state.assistant;
+  },
+
   /** Appelé après chaque test (`test/setup.ts`) : latence, pannes et données d'origine. */
   reset(): void {
     state.latency = 0;
     state.failures.clear();
     state.persistentFailures.clear();
+    state.assistant = NOTHING_UNDERSTOOD;
     resetFixture();
   },
 };

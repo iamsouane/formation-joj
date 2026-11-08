@@ -7,7 +7,10 @@ import {
   cancelTripSchema,
   type ProblemDetails,
   type PublishedTripResponse,
+  publishTripFromMessageSchema,
+  type PublishTripInput,
   publishTripSchema,
+  TRIP_DRAFT_FIELDS,
   TRIP_SITES,
   type TripResponse,
   tripIdParamSchema,
@@ -30,7 +33,9 @@ const TITLES: Record<number, string> = {
   403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
+  422: 'Unprocessable Entity',
   500: 'Internal Server Error',
+  503: 'Service Unavailable',
 };
 
 export function problem(
@@ -123,6 +128,33 @@ function toPublic({
   return { ...trip, remainingSeats: trip.seats - passengerPhonesOf(trip.id).length };
 }
 
+/** Comme `PublishTrip` dans l'API : les contrôles de TR1, puis l'enregistrement du trajet. */
+function publishChecked(input: PublishTripInput): Response {
+  const site = parseSite(input.site);
+  if (site === null) return siteUnknown(input.site);
+  const departureAt = new Date(input.departureAt);
+  if (departureAt.getTime() <= Date.now()) {
+    return problem(400, 'DEPARTURE_IN_PAST', 'A trip cannot depart in the past', {
+      details: { departureAt: departureAt.toISOString() },
+    });
+  }
+
+  const trip: StoredTrip = {
+    ...input,
+    id: crypto.randomUUID(),
+    site,
+    driverPhone: normalisePhone(input.driverPhone),
+    departureAt: departureAt.toISOString(),
+    managementCode: crypto.randomUUID().replaceAll('-', '').slice(0, 12),
+  };
+  fixture.trips.push(trip);
+  const published: PublishedTripResponse = {
+    ...toPublic(trip),
+    managementCode: trip.managementCode,
+  };
+  return HttpResponse.json(published, { status: 201 });
+}
+
 const byDeparture = (a: StoredTrip, b: StoredTrip) =>
   Date.parse(a.departureAt) - Date.parse(b.departureAt);
 
@@ -151,29 +183,45 @@ export const handlers: RequestHandler[] = [
     if (failure) return failure;
     const input = publishTripSchema.safeParse(await request.json());
     if (!input.success) return validationFailed(input.error);
-    const site = parseSite(input.data.site);
-    if (site === null) return siteUnknown(input.data.site);
-    const departureAt = new Date(input.data.departureAt);
-    if (departureAt.getTime() <= Date.now()) {
-      return problem(400, 'DEPARTURE_IN_PAST', 'A trip cannot depart in the past', {
-        details: { departureAt: departureAt.toISOString() },
-      });
+    return publishChecked(input.data);
+  }),
+
+  http.post('*/api/trips/from-message', async ({ request }) => {
+    const failure = await gate('POST', '/api/trips/from-message');
+    if (failure) return failure;
+    const body = publishTripFromMessageSchema.safeParse(await request.json());
+    if (!body.success) return validationFailed(body.error);
+    if (body.data.message.trim() === '') {
+      return problem(400, 'MESSAGE_EMPTY', 'The message is empty');
     }
 
-    const trip: StoredTrip = {
-      ...input.data,
-      id: crypto.randomUUID(),
-      site,
-      driverPhone: normalisePhone(input.data.driverPhone),
-      departureAt: departureAt.toISOString(),
-      managementCode: crypto.randomUUID().replaceAll('-', '').slice(0, 12),
-    };
-    fixture.trips.push(trip);
-    const published: PublishedTripResponse = {
-      ...toPublic(trip),
-      managementCode: trip.managementCode,
-    };
-    return HttpResponse.json(published, { status: 201 });
+    // Comme l'API : le brouillon du faux assistant, puis les champs manquants, puis TR1.
+    const draft = mockControl.assistant;
+    if (draft === 'unavailable') {
+      return problem(503, 'ASSISTANT_UNAVAILABLE', 'The assistant could not read the message');
+    }
+    const missingFields = TRIP_DRAFT_FIELDS.filter((field) => draft[field] === null);
+    if (missingFields.length > 0) {
+      return problem(422, 'MESSAGE_UNREADABLE', 'The message lacks trip information', {
+        details: { missingFields },
+      });
+    }
+    const input = publishTripSchema.safeParse({
+      ...draft,
+      departureAt: draft.departureAt && `${draft.departureAt}:00.000Z`,
+      driverPhone: body.data.driverPhone,
+    });
+    if (!input.success) {
+      return problem(400, 'VALIDATION_FAILED', 'The request is invalid.', {
+        details: {
+          errors: input.error.issues.map((issue) => ({
+            path: issue.path.join('.'),
+            message: issue.message,
+          })),
+        },
+      });
+    }
+    return publishChecked(input.data);
   }),
 
   http.post('*/api/trips/:tripId/bookings', async ({ request, params }) => {
