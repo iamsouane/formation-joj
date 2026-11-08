@@ -20,6 +20,12 @@ const TRIP_ERROR_KINDS = {
   MANAGEMENT_CODE_INVALID: 'FORBIDDEN',
   /** Aucune réservation n'a ce code. */
   BOOKING_NOT_FOUND: 'NOT_FOUND',
+  /** Le message à publier est vide ou ne contient que des espaces. */
+  MESSAGE_EMPTY: 'VALIDATION',
+  /** L'assistant n'a pas trouvé dans le message toutes les informations d'un trajet. */
+  MESSAGE_UNREADABLE: 'BUSINESS_RULE',
+  /** L'assistant ne répond pas, décline, ou renvoie une réponse inexploitable. */
+  ASSISTANT_UNAVAILABLE: 'UNAVAILABLE',
 } as const satisfies Record<string, ErrorKind>;
 
 export type TripErrorCode = keyof typeof TRIP_ERROR_KINDS;

@@ -3,6 +3,7 @@ import { createZodDto, ZodValidationException } from 'nestjs-zod';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { AppError } from './app-error';
+import { InvalidInputError } from './invalid-input.error';
 import { toProblem } from './problem-details.filter';
 
 class SampleError extends AppError<'SAMPLE_TAKEN'> {
@@ -17,7 +18,36 @@ class SampleForbiddenError extends AppError<'SAMPLE_SECRET_INVALID'> {
   }
 }
 
+class SampleUnavailableError extends AppError<'SAMPLE_SERVICE_DOWN'> {
+  constructor() {
+    super('SAMPLE_SERVICE_DOWN', 'UNAVAILABLE', 'Sample service is down');
+  }
+}
+
 describe('toProblem', () => {
+  it('maps an UNAVAILABLE error to 503, keeping its code and detail', () => {
+    expect(toProblem(new SampleUnavailableError())).toEqual({
+      type: 'urn:problem-type:sample-service-down',
+      title: 'Service Unavailable',
+      status: 503,
+      code: 'SAMPLE_SERVICE_DOWN',
+      detail: 'Sample service is down',
+    });
+  });
+
+  it('maps an InvalidInputError to 400 VALIDATION_FAILED, with the invalid fields', () => {
+    const result = z.object({ seats: z.int().min(1) }).safeParse({ seats: 0 });
+    if (result.success) throw new Error('expected an invalid input');
+    expect(toProblem(new InvalidInputError(result.error))).toEqual({
+      type: 'urn:problem-type:validation-failed',
+      title: 'Bad Request',
+      status: 400,
+      code: 'VALIDATION_FAILED',
+      detail: 'The request is invalid.',
+      details: { errors: [{ path: 'seats', message: expect.any(String) }] },
+    });
+  });
+
   it('003-AS6: maps a FORBIDDEN error to 403', () => {
     expect(toProblem(new SampleForbiddenError())).toEqual({
       type: 'urn:problem-type:sample-secret-invalid',

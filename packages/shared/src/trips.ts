@@ -38,6 +38,44 @@ export const publishTripSchema = z.object({
 });
 export type PublishTripInput = z.infer<typeof publishTripSchema>;
 
+export const TRIP_MESSAGE_MAX_LENGTH = 1000;
+
+/**
+ * Corps de `POST /api/trips/from-message`. Le message peut être vide : le domaine le refuse
+ * avec MESSAGE_EMPTY, avant d'appeler l'assistant.
+ */
+export const publishTripFromMessageSchema = z.object({
+  message: z.string().max(TRIP_MESSAGE_MAX_LENGTH),
+  driverPhone: phoneInputSchema(TRIP_DRIVER_PHONE_MAX_LENGTH),
+});
+export type PublishTripFromMessageInput = z.infer<typeof publishTripFromMessageSchema>;
+
+/** Une date et une heure à Dakar, sans fuseau : « 2026-11-09T08:00 ». */
+const DAKAR_LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+
+/**
+ * Le brouillon de trajet que l'assistant tire d'un message : une information absente du message
+ * vaut `null`, elle n'est jamais devinée. Ni le site ni les nombres ne sont vérifiés ici : le
+ * trajet complété passe ensuite par les contrôles de la publication.
+ */
+export const tripDraftSchema = z.object({
+  departurePlace: z.string().nullable(),
+  site: z.string().nullable(),
+  departureAt: z.string().regex(DAKAR_LOCAL_DATE_TIME).nullable(),
+  seats: z.int().nullable(),
+  pricePerSeat: z.int().nullable(),
+});
+
+/** Les champs du brouillon, dans l'ordre où un refus MESSAGE_UNREADABLE les liste. */
+export const TRIP_DRAFT_FIELDS = [
+  'departurePlace',
+  'site',
+  'departureAt',
+  'seats',
+  'pricePerSeat',
+] as const satisfies readonly (keyof TripDraft)[];
+export type TripDraft = z.infer<typeof tripDraftSchema>;
+
 /** Requête de `GET /api/trips?site=<site>`. */
 export const upcomingTripsQuerySchema = z.object({ site: siteInputSchema });
 export type UpcomingTripsQuery = z.infer<typeof upcomingTripsQuerySchema>;

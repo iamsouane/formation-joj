@@ -20,6 +20,8 @@ const STATUS_BY_KIND: Record<ErrorKind, HttpStatus> = {
   BUSINESS_RULE: HttpStatus.UNPROCESSABLE_ENTITY,
   // Un secret (code de gestion…) qui ne correspond pas à la ressource visée.
   FORBIDDEN: HttpStatus.FORBIDDEN,
+  // Un service extérieur dont l'application dépend ne répond pas : l'erreur est attendue.
+  UNAVAILABLE: HttpStatus.SERVICE_UNAVAILABLE,
 };
 
 const INTERNAL_DETAIL = 'An unexpected error occurred.';

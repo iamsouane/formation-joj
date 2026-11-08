@@ -5,7 +5,10 @@ import {
   bookingDetailsSchema,
   cancelTripSchema,
   bookSeatSchema,
+  publishTripFromMessageSchema,
   publishTripSchema,
+  TRIP_MESSAGE_MAX_LENGTH,
+  tripDraftSchema,
   publishedTripSchema,
   tripIdParamSchema,
   tripSchema,
@@ -184,5 +187,59 @@ describe('bookingDetailsSchema', () => {
 
   it('003-AS5: rejects an unknown status', () => {
     expect(bookingDetailsSchema.safeParse({ ...details, status: 'departed' }).success).toBe(false);
+  });
+});
+
+describe('publishTripFromMessageSchema', () => {
+  const body = {
+    message: 'je pars de Pikine pour Diamniadio demain 8h, 3 places, 1000 F',
+    driverPhone: '+221771234567',
+  };
+
+  it('004-AS1: accepts a message and the driver phone', () => {
+    expect(publishTripFromMessageSchema.parse(body)).toEqual(body);
+  });
+
+  it('004-AS4: lets an empty message through, for the domain to reject it', () => {
+    expect(publishTripFromMessageSchema.safeParse({ ...body, message: '   ' }).success).toBe(true);
+  });
+
+  it('rejects a message that is too long, or an invalid phone', () => {
+    const tooLong = 'a'.repeat(TRIP_MESSAGE_MAX_LENGTH + 1);
+    expect(publishTripFromMessageSchema.safeParse({ ...body, message: tooLong }).success).toBe(
+      false,
+    );
+    expect(publishTripFromMessageSchema.safeParse({ ...body, driverPhone: 'abc' }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe('tripDraftSchema', () => {
+  const draft = {
+    departurePlace: 'Pikine',
+    site: 'Diamniadio',
+    departureAt: '2026-11-09T08:00',
+    seats: 3,
+    pricePerSeat: 1000,
+  };
+
+  it('004-AS1: accepts a complete draft in Dakar local time', () => {
+    expect(tripDraftSchema.parse(draft)).toEqual(draft);
+  });
+
+  it('004-AS5: accepts missing fields as null', () => {
+    const onlySite = {
+      departurePlace: null,
+      site: 'Diamniadio',
+      departureAt: null,
+      seats: null,
+      pricePerSeat: null,
+    };
+    expect(tripDraftSchema.parse(onlySite)).toEqual(onlySite);
+  });
+
+  it('rejects a departure that is not a local date and time', () => {
+    expect(tripDraftSchema.safeParse({ ...draft, departureAt: 'demain 8h' }).success).toBe(false);
   });
 });
