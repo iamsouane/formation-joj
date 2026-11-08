@@ -11,6 +11,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import {
   departedToDiamniadio,
+  fixture,
   fullToDakar,
   guediawayeToDiamniadio,
   pikineToDiamniadio,
@@ -290,5 +291,6 @@ describe('mock cancellations API', () => {
 
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ code: 'TRIP_CANCELLED' });
+    expect(fixture.bookings.filter((b) => b.tripId === pikineToDiamniadio.id)).toEqual([]);
   });
 });

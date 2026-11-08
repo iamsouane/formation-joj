@@ -92,7 +92,6 @@ export class Trip {
     return this.props.seats - this.props.passengerPhones.length;
   }
 
-  /** `phone` est déjà normalisé. */
   get cancelledAt(): Date | undefined {
     return this.props.cancelledAt;
   }
@@ -115,6 +114,7 @@ export class Trip {
     return new Trip({ ...this.props, cancelledAt: now });
   }
 
+  /** `phone` est déjà normalisé. */
   hasPassenger(phone: string): boolean {
     return this.props.passengerPhones.includes(phone);
   }
