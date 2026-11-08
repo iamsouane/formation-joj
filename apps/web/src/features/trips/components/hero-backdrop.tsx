@@ -15,10 +15,10 @@ const CONFETTI = [
 
 /** Les voitures, deux voies : elles roulent vers l'horizon, l'une après l'autre. */
 const CARS = [
-  { left: '12%', delay: '0s' },
-  { left: '74%', delay: '-2.6s' },
-  { left: '16%', delay: '-5.2s' },
-];
+  { lane: 'left', delay: '0s' },
+  { lane: 'right', delay: '-2.6s' },
+  { lane: 'left', delay: '-5.2s' },
+] as const;
 
 const SIGNS = [
   { label: 'Dakar', direction: 'left' },
@@ -69,19 +69,22 @@ export function HeroBackdrop() {
         ))}
       <div className="hero-ground" />
       <div className="hero-road" data-part="road">
-        <div className="hero-road-plane">
-          {!reduced &&
-            CARS.map((car) => (
-              <span
-                key={car.delay}
-                className="hero-car"
-                data-part="car"
-                style={{ left: car.left, animationDelay: car.delay }}
-              >
+        <div className="hero-road-edge" data-part="road-edge" />
+        <div className="hero-road-surface" data-part="road-surface" />
+        <div className="hero-road-line" data-part="road-line" />
+        {!reduced &&
+          CARS.map((car) => (
+            <div
+              key={car.delay}
+              className="hero-car-track"
+              data-part="car-track"
+              style={{ animationDelay: car.delay }}
+            >
+              <span className="hero-car" data-part="car" data-lane={car.lane}>
                 <CarSilhouette />
               </span>
-            ))}
-        </div>
+            </div>
+          ))}
       </div>
       <div className="hero-signpost" data-part="signpost">
         {SIGNS.map((sign) => (

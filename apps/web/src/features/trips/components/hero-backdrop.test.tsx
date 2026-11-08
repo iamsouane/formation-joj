@@ -51,4 +51,18 @@ describe('HeroBackdrop', () => {
     expect(parts('road')).toBe(1);
     expect(parts('signpost')).toBe(1);
   });
+
+  it('005-AS6: draws the road and its cars in 2D, the same in every browser', () => {
+    prefersReducedMotion(false);
+    const { backdrop, parts } = renderBackdrop();
+
+    const road = backdrop.querySelector('[data-part="road"]');
+    for (const part of ['road-edge', 'road-surface', 'road-line']) {
+      expect(road?.querySelectorAll(`[data-part="${part}"]`)).toHaveLength(1);
+    }
+    // Chaque voiture file sur sa piste, qui rapetisse vers le point de fuite.
+    const tracks = [...backdrop.querySelectorAll('[data-part="car-track"]')];
+    expect(tracks).toHaveLength(parts('car'));
+    for (const track of tracks) expect(track.querySelector('[data-part="car"]')).not.toBeNull();
+  });
 });

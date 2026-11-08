@@ -309,56 +309,75 @@ body {
 }
 
 /*
- * La route : un plan couché en perspective, dont le bout se perd à l'horizon. Les voitures y
- * roulent vers le fond, redressées face à nous.
+ * La route, dessinée à plat : un trapèze dont la pointe touche l'horizon, bordé de jaune, avec sa
+ * ligne centrale. Aucune perspective 3D : le rendu est le même dans tous les navigateurs.
  */
 .hero-road {
   position: absolute;
   inset: var(--horizon) 0 0;
   overflow: hidden;
-  perspective: 240px;
-  perspective-origin: 50% 0;
   translate: calc(var(--tilt-x) * -16px) 0;
-  mask-image: linear-gradient(180deg, transparent 0, #000 1.5rem);
 }
 
-.hero-road-plane {
+.hero-road > :is(.hero-road-edge, .hero-road-surface, .hero-road-line) {
   position: absolute;
-  bottom: 0;
-  left: 50%;
-  width: 130%;
-  height: 1000%;
-  translate: -50% 0;
-  transform-origin: 50% 100%;
-  transform: rotateX(80deg);
-  transform-style: preserve-3d;
-  background:
-    linear-gradient(0deg, #fff 0 45%, transparent 45%) 50% 0 / 2% 7.5rem repeat-y,
-    linear-gradient(90deg, var(--joj-yellow) 0 2%, transparent 2% 98%, var(--joj-yellow) 98%),
-    #262626;
+  inset: 0;
+}
+
+.hero-road-edge {
+  background: var(--joj-yellow);
+  clip-path: polygon(47.4% 0, 52.6% 0, 122% 100%, -22% 100%);
+}
+
+.hero-road-surface {
+  background: linear-gradient(180deg, #5a4a3a 0, #262626 22%);
+  clip-path: polygon(48% 0, 52% 0, 116% 100%, -16% 100%);
+}
+
+.hero-road-line {
+  background: repeating-linear-gradient(180deg, transparent 0 7%, #fff 7% 12%);
+  clip-path: polygon(49.85% 0, 50.15% 0, 51.4% 100%, 48.6% 100%);
+}
+
+/*
+ * Une voiture file sur sa piste : la piste couvre toute la route et rapetisse vers le point de
+ * fuite (le haut, au centre). La voiture, posée en bas sur sa voie, suit donc la ligne de fuite
+ * en rétrécissant, vite au premier plan, lentement au loin.
+ */
+.hero-car-track {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 0;
+  animation: hero-car-drive 7.8s cubic-bezier(0.2, 0.7, 0.4, 1) infinite;
 }
 
 .hero-car {
   position: absolute;
-  bottom: 1%;
-  width: 4.5rem;
-  transform-style: preserve-3d;
-  animation: hero-car-drive 7.8s linear infinite;
+  bottom: 3%;
+  width: 4.75rem;
+  animation: hero-car-fade 7.8s linear infinite;
+  animation-delay: inherit;
+}
+
+.hero-car[data-lane='left'] {
+  left: 18%;
+}
+
+.hero-car[data-lane='right'] {
+  left: 62%;
 }
 
 .hero-car-body {
   display: block;
   width: 100%;
-  transform-origin: 50% 100%;
-  transform: rotateX(-80deg);
-  animation: hero-car-fade 7.8s linear infinite;
-  animation-delay: inherit;
 }
 
-/* Le trajet seul, sans opacité : une opacité aplatirait la voiture contre la route. */
 @keyframes hero-car-drive {
+  from {
+    transform: none;
+  }
   to {
-    transform: translateY(-900px);
+    transform: scale(0.05);
   }
 }
 
@@ -367,8 +386,8 @@ body {
   to {
     opacity: 0;
   }
-  8%,
-  80% {
+  6%,
+  85% {
     opacity: 1;
   }
 }
