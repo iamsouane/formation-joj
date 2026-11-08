@@ -36,9 +36,8 @@ describe('HeroBackdrop', () => {
     for (const part of ['sun-rays', 'sun', 'road', 'frieze']) expect(parts(part)).toBe(1);
     expect(parts('car')).toBeGreaterThanOrEqual(2);
     expect(parts('confetto')).toBeGreaterThanOrEqual(8);
-    expect(backdrop.querySelector('[data-part="signpost"]')).toHaveTextContent(
-      /Dakar.*Diamniadio.*Saly/,
-    );
+    // Les panneaux de direction ne sont plus un décor : ce sont les boutons de site (site-picker.tsx).
+    expect(parts('signpost')).toBe(0);
   });
 
   it('005-AS6: drops the confetti and the moving cars on reduced motion', () => {
@@ -49,7 +48,6 @@ describe('HeroBackdrop', () => {
     expect(parts('confetto')).toBe(0);
     expect(parts('car')).toBe(0);
     expect(parts('road')).toBe(1);
-    expect(parts('signpost')).toBe(1);
   });
 
   it('005-AS6: draws the road and its cars in 2D, the same in every browser', () => {

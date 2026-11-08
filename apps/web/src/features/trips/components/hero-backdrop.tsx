@@ -20,12 +20,6 @@ const CARS = [
   { lane: 'left', delay: '-5.2s' },
 ] as const;
 
-const SIGNS = [
-  { label: 'Dakar', direction: 'left' },
-  { label: 'Diamniadio', direction: 'right' },
-  { label: 'Saly', direction: 'right' },
-] as const;
-
 /** Une voiture vue de dos, en silhouette : carrosserie noire, feux rouges. */
 function CarSilhouette() {
   return (
@@ -42,8 +36,7 @@ function CarSilhouette() {
 
 /**
  * Le décor du hero, purement visuel (hors de l'arbre d'accessibilité) : un soleil levant dont les
- * rayons tournent, une route en perspective où des voitures roulent vers le poteau Dakar,
- * Diamniadio, Saly, des confettis qui flottent et la frise du maillot qui défile. Dans le bandeau,
+ * rayons tournent, une route où des voitures filent vers l'horizon, des confettis qui flottent et la frise du maillot qui défile. Dans le bandeau,
  * la même scène en réduit, sans confettis ni voitures. Sous moins d'animations, ni confettis ni
  * voitures ; le reste est figé par `styles.css`.
  */
@@ -93,13 +86,6 @@ export function HeroBackdrop({ compact = false }: { compact?: boolean }) {
               </span>
             </div>
           ))}
-      </div>
-      <div className="hero-signpost" data-part="signpost">
-        {SIGNS.map((sign) => (
-          <span key={sign.label} className="hero-sign" data-direction={sign.direction}>
-            {sign.label}
-          </span>
-        ))}
       </div>
       <div className="hero-frieze" data-part="frieze" />
     </div>

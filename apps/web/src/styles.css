@@ -167,8 +167,10 @@ body {
   width: 100%;
   max-width: 28rem;
   flex: 1;
-  grid-template-areas: 'copy' 'scene' 'actions';
-  grid-template-rows: auto 1fr auto;
+  grid-template-areas: 'copy copy' 'scene actions';
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto 1fr;
+  column-gap: 0.25rem;
   margin-inline: auto;
   padding: 0.75rem 1rem 1.75rem;
 }
@@ -183,8 +185,20 @@ body {
   grid-area: scene;
 }
 
+/*
+ * Sur téléphone, la mascotte partage sa rangée avec les panneaux : sa hauteur est bornée pour que
+ * la pose la plus large (la flamme, 504 × 800) tienne dans sa colonne sans être coupée.
+ */
+@media (max-width: 1023.98px) {
+  .hero[data-state='open'] .hero-scene {
+    height: min(44svh, 16.5rem);
+    align-self: end;
+  }
+}
+
 .hero-actions {
   grid-area: actions;
+  align-self: end;
 }
 
 .hero-brand {
@@ -274,8 +288,8 @@ body {
  */
 .hero-backdrop {
   --horizon: 62%;
-  /* L'axe de la scène : le soleil et la route s'alignent sur la mascotte. */
-  --scene-x: 50%;
+  /* L'axe de la scène : le soleil et la route s'alignent sur la mascotte, à gauche des panneaux. */
+  --scene-x: 31%;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -296,7 +310,6 @@ body {
 .hero-sun,
 .hero-sun-rays,
 .hero-road,
-.hero-signpost,
 .hero-frieze {
   transition: translate 600ms var(--ease-out-soft);
 }
@@ -388,7 +401,7 @@ body {
 .hero-car {
   position: absolute;
   bottom: 3%;
-  width: 4.75rem;
+  width: 6rem;
   animation: hero-car-fade 7.8s linear infinite;
   animation-delay: inherit;
 }
@@ -426,49 +439,11 @@ body {
   }
 }
 
-/* Le poteau indicateur, au bord de la route : trois flèches vertes, comme sur les routes du pays. */
-.hero-signpost {
-  position: absolute;
-  top: var(--horizon);
-  left: 70%;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-bottom: 1.4rem;
-  translate: calc(var(--tilt-x) * -10px) -100%;
-  background: linear-gradient(
-      90deg,
-      transparent 0.6rem,
-      var(--joj-black) 0.6rem 0.8rem,
-      transparent 0.8rem
-    )
-    no-repeat;
-}
-
-.hero-sign {
-  width: max-content;
-  padding: 0.12rem 0.9rem 0.12rem 0.45rem;
-  border: 1.5px solid var(--joj-white);
-  background: var(--joj-green);
-  color: var(--joj-white);
-  font-family: var(--font-display);
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1.1;
-  text-transform: uppercase;
-  clip-path: polygon(0 0, calc(100% - 0.55rem) 0, 100% 50%, calc(100% - 0.55rem) 100%, 0 100%);
-}
-
-.hero-sign[data-direction='left'] {
-  padding: 0.12rem 0.45rem 0.12rem 0.9rem;
-  clip-path: polygon(0.55rem 0, 100% 0, 100% 100%, 0.55rem 100%, 0 50%);
-}
-
 /* Les confettis flottent sur place, chacun à son rythme. */
 .hero-confetto {
   position: absolute;
-  width: 0.45rem;
-  height: 0.8rem;
+  width: 0.7rem;
+  height: 1.2rem;
   border-radius: 1px;
   background: var(--joj-green);
   animation: hero-confetto 8s var(--ease-breath) infinite;
@@ -532,10 +507,6 @@ body {
 
 .hero[data-state='band'] .hero-sun-rays {
   width: 22rem;
-}
-
-.hero[data-state='band'] .hero-signpost {
-  display: none;
 }
 
 /*
@@ -884,13 +855,22 @@ body {
   display: none;
 }
 
-/* Les boutons de site, posés en bas du hero, à portée du pouce ; la légende reste pour les lecteurs d'écran. */
-.hero .site-picker {
-  margin-top: 0.75rem;
-  view-transition-name: site-picker;
+/*
+ * Les trois sites sont les panneaux de direction de la scène (site-picker.tsx) : des flèches
+ * vertes cerclées de blanc sur leur poteau, comme au bord des routes du pays. Le panneau choisi
+ * passe au jaune. Le cadre de focus est posé sur l'étiquette, que la découpe en flèche ne coupe pas.
+ */
+.signpost {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding-bottom: 2.6rem;
+  view-transition-name: signpost;
 }
 
-.hero .site-picker legend {
+.signpost legend {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -899,13 +879,100 @@ body {
   white-space: nowrap;
 }
 
-.hero .site-picker label {
-  background: var(--joj-white);
+.signpost-pole {
+  position: absolute;
+  top: 0.6rem;
+  bottom: 0;
+  left: 1.6rem;
+  width: 0.5rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #4a4a4a, #161616);
 }
 
-.hero .site-picker label:has(:checked) {
-  background: var(--joj-black);
+.sign {
+  position: relative;
+  z-index: 1;
+  display: block;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out-soft);
+}
+
+.sign:has(:focus-visible) {
+  outline: 3px solid var(--joj-black);
+  outline-offset: 3px;
+}
+
+.sign-panel {
+  display: flex;
+  min-width: 9.25rem;
+  min-height: 3rem;
+  align-items: center;
+  padding: 0.2rem 1.8rem 0.2rem 0.9rem;
+  background: var(--joj-green);
+  box-shadow: inset 0 0 0 3px var(--joj-white);
   color: var(--joj-white);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, calc(100% - 1.1rem) 0, 100% 50%, calc(100% - 1.1rem) 100%, 0 100%);
+}
+
+.sign[data-direction='left'] .sign-panel {
+  padding: 0.2rem 0.9rem 0.2rem 1.8rem;
+  clip-path: polygon(1.1rem 0, 100% 0, 100% 100%, 1.1rem 100%, 0 50%);
+}
+
+.sign:has(:checked) .sign-panel {
+  background: var(--joj-yellow);
+  color: var(--joj-black);
+}
+
+/* Le panneau répond au geste : il glisse vers sa flèche au survol, s'enfonce à l'appui. */
+@media (hover: hover) {
+  .sign[data-direction='right']:hover {
+    transform: translateX(3px);
+  }
+
+  .sign[data-direction='left']:hover {
+    transform: translateX(-3px);
+  }
+}
+
+.sign:active {
+  transform: scale(0.97);
+}
+
+/* Dans le bandeau, les panneaux s'alignent sur une rangée, sans poteau. */
+.hero[data-state='band'] .signpost {
+  flex-direction: row;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  padding-bottom: 0;
+}
+
+.hero[data-state='band'] .signpost-pole {
+  display: none;
+}
+
+.hero[data-state='band'] .sign {
+  flex: 1;
+}
+
+.hero[data-state='band'] .sign-panel {
+  min-width: 0;
+  min-height: 2.75rem;
+  justify-content: center;
+  padding: 0.2rem 1.1rem 0.2rem 0.5rem;
+  font-size: 0.95rem;
+  clip-path: polygon(0 0, calc(100% - 0.8rem) 0, 100% 50%, calc(100% - 0.8rem) 100%, 0 100%);
+}
+
+.hero[data-state='band'] .sign[data-direction='left'] .sign-panel {
+  padding: 0.2rem 0.5rem 0.2rem 1.1rem;
+  clip-path: polygon(0.8rem 0, 100% 0, 100% 100%, 0.8rem 100%, 0 50%);
 }
 
 /* Les départs entrent une fois le bandeau replié : un léger glissé vers le haut. */
@@ -929,10 +996,10 @@ body {
 @media (min-width: 1024px) {
   .hero-inner {
     max-width: 76rem;
-    grid-template-areas: 'copy scene' 'actions scene';
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: 1fr auto;
-    column-gap: 3rem;
+    grid-template-areas: 'copy scene actions';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) auto;
+    grid-template-rows: 1fr;
+    column-gap: 2rem;
     padding: 1.5rem 2.5rem 3rem;
   }
 
@@ -952,7 +1019,13 @@ body {
   }
 
   .hero-actions {
-    max-width: 34rem;
+    padding-bottom: 1rem;
+  }
+
+  .sign-panel {
+    min-width: 11rem;
+    min-height: 3.5rem;
+    font-size: 1.55rem;
   }
 
   .hero-scene {
@@ -963,16 +1036,12 @@ body {
 
   .hero-backdrop {
     --horizon: 68%;
-    --scene-x: 74%;
+    --scene-x: 58%;
   }
 
   .hero[data-state='band'] .hero-backdrop {
     --horizon: 82%;
     --scene-x: 83%;
-  }
-
-  .hero-signpost {
-    left: calc(var(--scene-x) + 13%);
   }
 
   .hero[data-state='band'] .hero-inner {

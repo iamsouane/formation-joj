@@ -63,6 +63,22 @@ describe('hero layout', () => {
   });
 });
 
+describe('direction signs', () => {
+  it('005-AS7: turns the site buttons into the direction signs of the scene', async () => {
+    await renderRoute({ initialEntries: ['/'] });
+    const hero = heroOf();
+
+    // Les trois boutons de site sont les panneaux du poteau, dans la scène ; le décor n'en a pas d'autre.
+    const signpost = within(hero).getByRole('group', { name: 'Votre site d’épreuve' });
+    expect(signpost).toHaveAttribute('data-part', 'signpost');
+    const signs = within(signpost).getAllByRole('radio');
+    expect(
+      signs.map((sign) => sign.closest('[data-direction]')?.getAttribute('data-direction')),
+    ).toEqual(['left', 'right', 'right']);
+    expect(hero.querySelectorAll('.hero-backdrop [data-part="signpost"]')).toHaveLength(0);
+  });
+});
+
 describe('back to the hero', () => {
   it('005-AS7: the brand in the band leads back to the opened hero, at the address without a site', async () => {
     const user = userEvent.setup();
