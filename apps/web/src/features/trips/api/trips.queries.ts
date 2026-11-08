@@ -1,4 +1,4 @@
-import type { BookSeatInput, TripSite } from '@joj/shared';
+import type { BookSeatInput, PublishTripFromMessageInput, TripSite } from '@joj/shared';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tripsApi } from './trips.api';
 
@@ -23,5 +23,14 @@ export function useBookSeat() {
       tripsApi.bookSeat(tripId, input),
     // Même en échec (trajet complet entre-temps), la liste est relue : ses places ont changé.
     onSettled: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+  });
+}
+
+/** Publier depuis l'annonce : le nouveau trajet entre dans les listes de départs, relues. */
+export function usePublishTripFromMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PublishTripFromMessageInput) => tripsApi.publishFromMessage(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
   });
 }

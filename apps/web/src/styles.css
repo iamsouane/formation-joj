@@ -1682,3 +1682,107 @@ body {
     animation: none;
   }
 }
+
+/*
+ * Publier un trajet (publish-page.tsx). Le bandeau est celui de l'accueil ; dessous, l'annonce
+ * se colle dans une bulle comme celles du logo : un trait noir et le coin haut droit replié.
+ */
+.hero-drive-link {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}
+
+.publish-content {
+  display: flex;
+  max-width: 40rem;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-top: 1.5rem;
+}
+
+.publish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.publish-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.announcement-bubble {
+  width: 100%;
+  min-height: 8.5rem;
+  resize: vertical;
+  padding: 0.85rem 2.25rem 0.85rem 0.9rem;
+  border: 2px solid var(--joj-black);
+  background:
+    linear-gradient(
+      225deg,
+      var(--joj-white) 0.95rem,
+      var(--joj-black) 0.95rem 1.1rem,
+      transparent 1.1rem
+    ),
+    var(--joj-white);
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.announcement-bubble:focus-visible {
+  outline: 3px solid var(--joj-orange);
+  outline-offset: 2px;
+}
+
+.publish-status:empty {
+  display: none;
+}
+
+.publish-status {
+  font-weight: 600;
+}
+
+/* La mascotte attend : un lent balancement de la tête, autour de ses pieds, tant que l'on publie. */
+.publish-mascot {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+}
+
+.publish-mascot[data-pose='waiting'] {
+  animation: mascot-wait 1.4s var(--ease-breath) infinite alternate;
+}
+
+@keyframes mascot-wait {
+  from {
+    transform: rotate(-4deg);
+  }
+  to {
+    transform: rotate(4deg);
+  }
+}
+
+.published-trip-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
+
+.published-trip-link {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publish-mascot[data-pose='waiting'] {
+    animation: none;
+  }
+}

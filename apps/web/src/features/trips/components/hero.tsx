@@ -62,6 +62,12 @@ export function Hero({ site, fold, runTarget, onRunEnd, onSiteChange }: HeroProp
         </div>
         <div className="hero-actions" data-slot="hero-actions">
           <SitePicker value={site} onChange={onSiteChange} />
+          {/* Le conducteur, lui, ne cherche pas de place : il en propose. */}
+          {!folded && (
+            <Link to="/publier" className="hero-drive-link">
+              Vous conduisez ? Proposez un trajet
+            </Link>
+          )}
         </div>
       </div>
     </section>
