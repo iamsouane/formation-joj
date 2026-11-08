@@ -12,10 +12,8 @@ function Home() {
   return (
     <HomePage
       site={site}
-      onSiteChange={(next, gesture) =>
-        // Le repli du hero s'anime au toucher ; au clavier, il est immédiat.
-        navigate({ search: { site: next }, viewTransition: gesture === 'pointer' })
-      }
+      // Le repli du hero est chorégraphié par la page (use-fold-choreography.ts), pas par le router.
+      onSiteChange={(next) => navigate({ search: { site: next } })}
     />
   );
 }

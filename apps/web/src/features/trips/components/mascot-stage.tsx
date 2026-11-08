@@ -1,3 +1,4 @@
+import type { TripSite } from '@joj/shared';
 import { usePointerTilt } from '@/lib/use-pointer-tilt';
 
 /**
@@ -10,7 +11,16 @@ import { usePointerTilt } from '@/lib/use-pointer-tilt';
  * `prefers-reduced-motion`. En mode compact, une fois le site choisi, la mascotte se range en petit
  * dans le bandeau du hero.
  */
-export function MascotStage({ compact = false }: { compact?: boolean }) {
+interface MascotStageProps {
+  compact?: boolean;
+  /** Le panneau vers lequel la mascotte court avant le repli, s'il y en a un (voir T27). */
+  runTarget?: TripSite | undefined;
+  onRunEnd?: () => void;
+}
+
+export function MascotStage({ compact = false, runTarget, onRunEnd }: MascotStageProps) {
+  void runTarget;
+  void onRunEnd;
   const { reduced, tiltHandlers } = usePointerTilt();
   // Un seul grand moment : la danse est pour le hero ; le bandeau respire, debout.
   const dancing = !reduced && !compact;

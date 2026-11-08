@@ -8,6 +8,7 @@ import { BookingForm } from './booking-form';
 import { DepartureList } from './departure-list';
 import { Hero } from './hero';
 import { NoDepartures } from './no-departures';
+import { useFoldChoreography } from './use-fold-choreography';
 
 interface HomePageProps {
   site: TripSite | undefined;
@@ -16,10 +17,27 @@ interface HomePageProps {
 
 /** L'accueil : choisir son site, voir ses départs à venir, puis réserver une place. */
 export function HomePage({ site, onSiteChange }: HomePageProps) {
-  const { shownSite, phase } = useSiteSwap(site);
+  const reduced = useReducedMotion();
+  // Le geste du dernier choix, posé avant la navigation : il décide si le repli se joue ou non.
+  const [gesture, setGesture] = useState<SiteChoiceGesture>();
+  const { fold, runTarget, endRun } = useFoldChoreography(site, gesture, reduced);
+  // Les départs attendent la fin de la course : ils entrent une fois le bandeau en place.
+  const { shownSite, phase } = useSiteSwap(fold === 'running' ? undefined : site);
+
+  function chooseSite(next: TripSite, how: SiteChoiceGesture) {
+    setGesture(how);
+    onSiteChange(next, how);
+  }
+
   return (
     <>
-      <Hero site={site} onSiteChange={onSiteChange} />
+      <Hero
+        site={site}
+        fold={fold}
+        runTarget={runTarget}
+        onRunEnd={endRun}
+        onSiteChange={chooseSite}
+      />
       <div
         data-slot="departures"
         data-column="content"
@@ -28,7 +46,7 @@ export function HomePage({ site, onSiteChange }: HomePageProps) {
       >
         {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
         {shownSite && (
-          <UpcomingDepartures key={shownSite} site={shownSite} onSiteChange={onSiteChange} />
+          <UpcomingDepartures key={shownSite} site={shownSite} onSiteChange={chooseSite} />
         )}
       </div>
     </>

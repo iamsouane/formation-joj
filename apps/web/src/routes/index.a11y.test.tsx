@@ -5,7 +5,7 @@
  * la rend possible.
  * Puis un audit axe-core de chaque état de l'accueil.
  */
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -136,15 +136,34 @@ describe('folding the hero', () => {
     Reflect.deleteProperty(document, 'startViewTransition');
   });
 
-  it('005-AS7: folds the hero smoothly when a site is tapped', async () => {
+  it('005-AS7: renders one hero state at a time, never a snapshot of the previous one', async () => {
     const transitions = recordViewTransitions();
     const user = userEvent.setup();
     await renderRoute({ initialEntries: ['/'] });
+    // Le plus grand nombre de hero présents en même temps, à chaque changement du DOM.
+    let mostHeroesAtOnce = 0;
+    const observer = new MutationObserver(() => {
+      mostHeroesAtOnce = Math.max(
+        mostHeroesAtOnce,
+        document.querySelectorAll('section.hero').length,
+      );
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    expect(heroOf()).toHaveAttribute('data-fold', 'open');
 
     await user.click(within(heroOf()).getByRole('radio', { name: 'Diamniadio' }));
 
+    // Au toucher, le repli est une chorégraphie à phases, tenue par l'application elle-même…
+    expect(heroOf()).toHaveAttribute('data-fold', 'running');
+    expect(heroOf()).toHaveAttribute('data-state', 'open');
+    expect(screen.queryByRole('list', { name: /Départs vers/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(heroOf()).toHaveAttribute('data-fold', 'band'));
+    expect(heroOf()).toHaveAttribute('data-state', 'band');
     await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
-    expect(transitions).toHaveBeenCalledTimes(1);
+    // …jamais une transition de vue du navigateur, dont l'instantané traverserait le bandeau.
+    expect(transitions).not.toHaveBeenCalled();
+    observer.disconnect();
+    expect(mostHeroesAtOnce).toBe(1);
   });
 
   it('005-AS7: folds the hero at once when the site is chosen from the keyboard', async () => {
@@ -159,6 +178,7 @@ describe('folding the hero', () => {
 
     await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
     expect(heroOf()).toHaveAttribute('data-state', 'band');
+    expect(heroOf()).toHaveAttribute('data-fold', 'band');
     expect(transitions).not.toHaveBeenCalled();
   });
 

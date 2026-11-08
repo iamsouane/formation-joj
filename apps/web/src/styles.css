@@ -158,7 +158,6 @@ body {
   overflow: hidden;
   isolation: isolate;
   background: linear-gradient(180deg, #ee7300 0%, var(--joj-orange) 30%, var(--joj-yellow) 62%);
-  view-transition-name: hero;
 }
 
 .hero-inner {
@@ -235,7 +234,6 @@ body {
   line-height: 0.82;
   letter-spacing: -0.01em;
   text-transform: uppercase;
-  view-transition-name: hero-title;
 }
 
 .hero-title span {
@@ -521,7 +519,6 @@ body {
   flex: 1;
   perspective: 900px;
   touch-action: pan-y;
-  view-transition-name: mascot;
 }
 
 .mascot-shadow,
@@ -857,7 +854,6 @@ body {
   align-items: flex-start;
   gap: 0.45rem;
   padding-bottom: 2.6rem;
-  view-transition-name: signpost;
 }
 
 .signpost legend {
@@ -1064,19 +1060,6 @@ body {
   .hero[data-state='band'] .hero-title {
     font-size: 3.25rem;
   }
-}
-
-/* Le repli du hero : le navigateur fond l'ancien état dans le nouveau, la mascotte glisse. */
-::view-transition-group(*) {
-  animation-duration: 520ms;
-  animation-timing-function: var(--ease-out-soft);
-}
-
-::view-transition-old(hero),
-::view-transition-new(hero) {
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
 }
 
 /* Le saut de joie de la mascotte à la flamme (flame-celebration.tsx), une seule fois. */
@@ -1373,12 +1356,6 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
-
   .departures[data-phase] {
     animation: none;
   }

@@ -1,5 +1,6 @@
 import type { TripSite } from '@joj/shared';
 import type { SiteChoiceGesture } from './site-picker';
+import type { FoldPhase } from './use-fold-choreography';
 import { Link } from '@tanstack/react-router';
 import { useId } from 'react';
 import { usePointerTilt } from '@/lib/use-pointer-tilt';
@@ -9,26 +10,32 @@ import { SitePicker } from './site-picker';
 
 interface HeroProps {
   site: TripSite | undefined;
+  /** La phase du repli : ouvert, course de la mascotte, bandeau (`use-fold-choreography.ts`). */
+  fold: FoldPhase;
+  /** Le panneau vers lequel la mascotte court, pendant la phase `running`. */
+  runTarget: TripSite | undefined;
+  onRunEnd: () => void;
   onSiteChange: (site: TripSite, gesture: SiteChoiceGesture) => void;
 }
 
 /**
  * Le hero de l'accueil, bord à bord : plein écran à l'arrivée, avec le titre, la mascotte et les
  * trois boutons de site ; replié en bandeau (`data-state="band"`) une fois le site choisi, pour
- * laisser la place aux départs. Trois zones : le texte, la scène de la mascotte et les boutons ;
+ * laisser la place aux départs ; entre les deux, la mascotte court vers le panneau choisi. Trois zones : le texte, la scène de la mascotte et les boutons ;
  * sur ordinateur, texte et boutons à gauche, mascotte à droite.
  */
-export function Hero({ site, onSiteChange }: HeroProps) {
+export function Hero({ site, fold, runTarget, onRunEnd, onSiteChange }: HeroProps) {
   const titleId = useId();
   // Le hero entier suit le pointeur : les plans du décor s'en servent pour se décaler en profondeur.
   const { tiltHandlers } = usePointerTilt();
-  const folded = site !== undefined;
+  const folded = fold === 'band';
 
   return (
     <section
       aria-labelledby={titleId}
       className="hero"
       data-state={folded ? 'band' : 'open'}
+      data-fold={fold}
       {...tiltHandlers}
     >
       <HeroBackdrop compact={folded} />
@@ -51,7 +58,7 @@ export function Hero({ site, onSiteChange }: HeroProps) {
           )}
         </div>
         <div className="hero-scene" data-slot="hero-scene">
-          <MascotStage compact={folded} />
+          <MascotStage compact={folded} runTarget={runTarget} onRunEnd={onRunEnd} />
         </div>
         <div className="hero-actions" data-slot="hero-actions">
           <SitePicker value={site} onChange={onSiteChange} />
