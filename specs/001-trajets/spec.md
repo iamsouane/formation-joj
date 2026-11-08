@@ -1,6 +1,6 @@
 # 001 — Publier et lister les trajets
 
-**Statut** : Validée
+**Statut** : Implémentée
 **PRD** : specs/prd-covoiturage.md, TR1
 
 ## Contexte
