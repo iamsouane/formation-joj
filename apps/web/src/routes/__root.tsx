@@ -8,8 +8,9 @@ function RootLayout() {
       <main className="flex flex-1 flex-col">
         <Outlet />
       </main>
+      {/* Le trait du pied de page court sur toute la largeur ; son texte suit la colonne de contenu. */}
       <footer className="page-footer text-sm text-muted-foreground">
-        <p className="border-t-2 border-foreground pt-3">
+        <p data-column="content" className="content-column">
           Projet réalisé dans le cadre du bootcamp MTN × Artefact × Anthropic
         </p>
       </footer>

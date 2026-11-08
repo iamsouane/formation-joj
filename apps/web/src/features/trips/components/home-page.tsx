@@ -20,7 +20,12 @@ export function HomePage({ site, onSiteChange }: HomePageProps) {
   return (
     <>
       <Hero site={site} onSiteChange={onSiteChange} />
-      <div data-slot="departures" data-phase={phase} className="departures">
+      <div
+        data-slot="departures"
+        data-column="content"
+        data-phase={phase}
+        className="departures content-column"
+      >
         {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
         {shownSite && (
           <UpcomingDepartures key={shownSite} site={shownSite} onSiteChange={onSiteChange} />

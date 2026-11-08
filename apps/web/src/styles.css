@@ -1009,7 +1009,7 @@ body {
  */
 @media (min-width: 1024px) {
   .hero-inner {
-    max-width: 76rem;
+    max-width: 68.75rem;
     grid-template-areas: 'copy scene actions';
     grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) auto;
     grid-template-rows: 1fr;
@@ -1119,14 +1119,14 @@ body {
 }
 
 /*
- * Les départs et le pied de page partagent la même largeur : une colonne de lecture sur
- * téléphone, une largeur confortable sur ordinateur. La page occupe au moins tout l'écran : le pied
- * de page reste en bas même quand la liste est courte (main prend la place restante, __root.tsx).
+ * Sous le hero, une seule colonne de contenu, large (environ 1 100 px) : les départs et le texte
+ * du pied de page s'y alignent, comme le titre du hero. La page occupe au moins tout l'écran : le
+ * pied de page reste en bas même quand la liste est courte (main prend la place restante,
+ * __root.tsx). Son trait court sur toute la largeur.
  */
-.departures,
-.page-footer {
+.content-column {
   width: 100%;
-  max-width: 28rem;
+  max-width: 68.75rem;
   margin-inline: auto;
   padding-inline: 1rem;
 }
@@ -1139,8 +1139,9 @@ body {
 }
 
 .page-footer {
-  margin-top: 2rem;
-  padding-bottom: 1.5rem;
+  margin-top: 2.5rem;
+  padding-block: 0.9rem 1.5rem;
+  border-top: 2px solid var(--joj-black);
 }
 
 /* Une colonne sur téléphone, deux à partir de 640 px, trois à partir de 1024 px. */
@@ -1151,9 +1152,8 @@ body {
 }
 
 @media (min-width: 640px) {
-  .departures,
-  .page-footer {
-    max-width: 48rem;
+  .content-column {
+    padding-inline: 1.5rem;
   }
 
   .departure-grid {
@@ -1162,9 +1162,7 @@ body {
 }
 
 @media (min-width: 1024px) {
-  .departures,
-  .page-footer {
-    max-width: 76rem;
+  .content-column {
     padding-inline: 2.5rem;
   }
 

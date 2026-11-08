@@ -89,6 +89,21 @@ describe('HomePage', () => {
     expect(mostListsAtOnce).toBe(1);
   });
 
+  it('005-AS1: shares one wide content column under the hero, footer rule across the page', async () => {
+    await open('/?site=diamniadio');
+    await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+
+    // Les départs et le texte du pied de page partagent une même colonne (environ 1 100 px) ;
+    // le pied de page lui-même, qui porte le trait, occupe toute la largeur.
+    const departures = document.querySelector('[data-slot="departures"]');
+    const footer = screen.getByRole('contentinfo');
+    expect(departures).toHaveAttribute('data-column', 'content');
+    expect(footer).not.toHaveAttribute('data-column');
+    expect(footer.querySelector('[data-column="content"]')).toHaveTextContent(
+      'Projet réalisé dans le cadre du bootcamp MTN × Artefact × Anthropic',
+    );
+  });
+
   it('005-AS2: shows an empty road instead of a second mascot', async () => {
     fixture.trips = fixture.trips.filter((trip) => trip.site !== 'saly');
     const { user } = await open();
