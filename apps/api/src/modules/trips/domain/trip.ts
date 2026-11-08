@@ -1,4 +1,5 @@
 import { TRIP_SITES, type TripSite } from '@joj/shared';
+import { normalisePhone } from './phone';
 import { TripError } from './trips.errors';
 
 export interface TripProps {
@@ -11,9 +12,15 @@ export interface TripProps {
   driverPhone: string;
   managementCode: string;
   createdAt: Date;
+  /** Les téléphones normalisés des supporters qui ont réservé ce trajet. */
+  passengerPhones: readonly string[];
 }
 
-export interface NewTrip extends Omit<TripProps, 'site' | 'createdAt'> {
+/** Ce que la persistance relit ; un trajet sans réservation peut omettre `passengerPhones`. */
+export type StoredTrip = Omit<TripProps, 'passengerPhones'> &
+  Partial<Pick<TripProps, 'passengerPhones'>>;
+
+export interface NewTrip extends Omit<TripProps, 'site' | 'createdAt' | 'passengerPhones'> {
   /** Vérifié ici : le domaine ne fait pas confiance à la validation HTTP. */
   site: string;
   now: Date;
@@ -27,14 +34,16 @@ export class Trip {
     return new Trip({
       ...trip,
       site: parseTripSite(trip.site),
+      driverPhone: normalisePhone(trip.driverPhone),
       departureAt: upcomingDeparture(trip.departureAt, now),
       createdAt: now,
+      passengerPhones: [],
     });
   }
 
   /** Reconstruit un trajet depuis la persistance, sans rejouer les règles de création. */
-  static restore(props: TripProps): Trip {
-    return new Trip({ ...props });
+  static restore({ passengerPhones = [], ...props }: StoredTrip): Trip {
+    return new Trip({ ...props, passengerPhones: [...passengerPhones] });
   }
 
   get id(): string {
@@ -71,6 +80,19 @@ export class Trip {
 
   get createdAt(): Date {
     return this.props.createdAt;
+  }
+
+  get passengerPhones(): readonly string[] {
+    return this.props.passengerPhones;
+  }
+
+  get remainingSeats(): number {
+    return this.props.seats - this.props.passengerPhones.length;
+  }
+
+  /** `phone` est déjà normalisé. */
+  hasPassenger(phone: string): boolean {
+    return this.props.passengerPhones.includes(phone);
   }
 }
 

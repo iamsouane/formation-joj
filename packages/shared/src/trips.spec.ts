@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { publishTripSchema, publishedTripSchema, tripSchema } from './trips.ts';
+import {
+  bookingConfirmationSchema,
+  bookSeatSchema,
+  publishTripSchema,
+  publishedTripSchema,
+  tripIdParamSchema,
+  tripSchema,
+} from './trips.ts';
 
 const pikineToDiamniadio = {
   departurePlace: ' Pikine ',
@@ -57,5 +64,43 @@ describe('tripSchema', () => {
       ...publicTrip,
       managementCode: 'abc123',
     });
+  });
+});
+
+describe('bookSeatSchema', () => {
+  const awa = { passengerName: ' Awa ', passengerPhone: ' 77 123 45 67 ' };
+
+  it('002-AS1: accepts a name and a phone, trimmed', () => {
+    expect(bookSeatSchema.parse(awa)).toEqual({
+      passengerName: 'Awa',
+      passengerPhone: '77 123 45 67',
+    });
+  });
+
+  it.each([{ passengerName: '  ' }, { passengerPhone: '' }, { passengerPhone: '7'.repeat(21) }])(
+    '002-AS1: rejects an invalid input (%j)',
+    (change) => {
+      expect(bookSeatSchema.safeParse({ ...awa, ...change }).success).toBe(false);
+    },
+  );
+});
+
+describe('tripIdParamSchema', () => {
+  it('002-AS6: accepts a trip id that is a UUID and rejects anything else', () => {
+    const tripId = '0199f5c2-0000-7000-8000-000000000001';
+    expect(tripIdParamSchema.parse({ tripId })).toEqual({ tripId });
+    expect(tripIdParamSchema.safeParse({ tripId: 'not-a-uuid' }).success).toBe(false);
+  });
+});
+
+describe('bookingConfirmationSchema', () => {
+  it('002-AS1: returns only the booking code and the driver phone', () => {
+    expect(
+      bookingConfirmationSchema.parse({
+        bookingCode: 'booking-code-1',
+        driverPhone: '771234567',
+        passengerPhone: '771112233',
+      }),
+    ).toEqual({ bookingCode: 'booking-code-1', driverPhone: '771234567' });
   });
 });

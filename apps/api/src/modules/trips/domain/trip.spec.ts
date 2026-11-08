@@ -27,10 +27,27 @@ describe('Trip', () => {
       departureAt: TOMORROW_8AM,
       seats: 3,
       pricePerSeat: 1000,
-      driverPhone: '+221771234567',
+      driverPhone: '771234567',
       managementCode: 'abc123',
       createdAt: NOW,
     });
+  });
+
+  it('002-AS2: counts the remaining seats of a trip with one booked passenger', () => {
+    const trip = Trip.restore({
+      id: pikineToDiamniadio.id,
+      departurePlace: 'Pikine',
+      site: 'diamniadio',
+      departureAt: TOMORROW_8AM,
+      seats: 3,
+      pricePerSeat: 1000,
+      driverPhone: '771112233',
+      managementCode: 'abc123',
+      createdAt: NOW,
+      passengerPhones: ['771234567'],
+    });
+    expect(trip.remainingSeats).toBe(2);
+    expect(trip.hasPassenger('771234567')).toBe(true);
   });
 
   it.each([' DAKAR ', 'saly'])('001-AS1: accepts the site %j once normalised', (site) => {

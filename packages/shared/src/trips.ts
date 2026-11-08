@@ -44,3 +44,24 @@ export const publishedTripSchema = tripSchema.extend({ managementCode: z.string(
 export type PublishedTripResponse = z.infer<typeof publishedTripSchema>;
 
 export const tripListSchema = z.array(tripSchema);
+
+export const BOOKING_PASSENGER_NAME_MAX_LENGTH = 100;
+export const BOOKING_PASSENGER_PHONE_MAX_LENGTH = 20;
+
+/** Paramètre de chemin de `POST /api/trips/:tripId/bookings`. */
+export const tripIdParamSchema = z.object({ tripId: z.uuid() });
+export type TripIdParam = z.infer<typeof tripIdParamSchema>;
+
+/** Corps de `POST /api/trips/:tripId/bookings`. Le domaine normalise le téléphone. */
+export const bookSeatSchema = z.object({
+  passengerName: z.string().trim().min(1).max(BOOKING_PASSENGER_NAME_MAX_LENGTH),
+  passengerPhone: z.string().trim().min(1).max(BOOKING_PASSENGER_PHONE_MAX_LENGTH),
+});
+export type BookSeatInput = z.infer<typeof bookSeatSchema>;
+
+/** Ce que reçoit le supporter qui vient de réserver : son code, et le téléphone du conducteur. */
+export const bookingConfirmationSchema = z.object({
+  bookingCode: z.string(),
+  driverPhone: z.string(),
+});
+export type BookingConfirmationResponse = z.infer<typeof bookingConfirmationSchema>;
