@@ -778,6 +778,8 @@ body {
 
 .mascot-frame-flame {
   aspect-ratio: 504 / 800;
+  /* Les têtes font la même taille sur les deux images ; celle-ci est dessinée 3,6 % plus à droite : on la recale. */
+  translate: calc(-50% - 3.6%) 0;
   opacity: 0;
   animation: mascot-pose-b calc(var(--beat) * 8) linear 900ms infinite;
 }
@@ -809,19 +811,20 @@ body {
 }
 
 /*
- * L'échange des poses : un fondu enchaîné d'environ 150 ms au sommet du saut de chaque mesure
- * (36 % de la mesure, soit 18 % et 68 % du cycle de deux mesures).
+ * L'échange des poses : une coupe franche au sommet du saut de chaque mesure (36 % de la mesure,
+ * soit 18 % et 68 % du cycle de deux mesures). Les deux images de clé sont à 0,1 % l'une de
+ * l'autre, soit 5 ms : jamais les deux lions ensemble.
  */
 @keyframes mascot-pose-a {
   0%,
-  16.4% {
+  17.95% {
     opacity: 1;
   }
-  19.6%,
-  66.4% {
+  18.05%,
+  67.95% {
     opacity: 0;
   }
-  69.6%,
+  68.05%,
   100% {
     opacity: 1;
   }
@@ -829,14 +832,14 @@ body {
 
 @keyframes mascot-pose-b {
   0%,
-  16.4% {
+  17.95% {
     opacity: 0;
   }
-  19.6%,
-  66.4% {
+  18.05%,
+  67.95% {
     opacity: 1;
   }
-  69.6%,
+  68.05%,
   100% {
     opacity: 0;
   }
@@ -992,16 +995,16 @@ body {
   flex: 1 1 0;
   border-radius: 3px;
   cursor: pointer;
-  transition:
-    transform 160ms var(--ease-out-soft),
-    opacity 240ms var(--ease-out-soft),
-    filter 240ms var(--ease-out-soft);
+  transition: transform 160ms var(--ease-out-soft);
 }
 
-/* Une fois un site choisi, les autres panneaux s'effacent ; le choisi reste en pleine couleur. */
-.sign[data-dimmed='true'] {
-  opacity: 0.5;
-  filter: saturate(0.55);
+/*
+ * Une fois un site choisi, les autres panneaux s'effacent par leur fond (un vert grisé), jamais
+ * par l'opacité : le texte blanc garde un contraste de 5,9:1 sur ce fond.
+ */
+.sign[data-dimmed='true'] .sign-panel {
+  background: #4f6e59;
+  box-shadow: inset 0 0 0 3px rgb(255 255 255 / 0.55);
 }
 
 .sign:has(:focus-visible) {
@@ -1025,6 +1028,9 @@ body {
   letter-spacing: 0.02em;
   text-transform: uppercase;
   clip-path: polygon(0 0, calc(100% - 0.8rem) 0, 100% 50%, calc(100% - 0.8rem) 100%, 0 100%);
+  transition:
+    background-color 240ms var(--ease-out-soft),
+    box-shadow 240ms var(--ease-out-soft);
 }
 
 .sign[data-direction='left'] .sign-panel {
