@@ -1,5 +1,5 @@
 import type { PublishedTripResponse } from '@joj/shared';
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { buttonVariants } from '@/components/ui/button';
 import {
   formatDepartureDay,
@@ -20,11 +20,17 @@ import { publishedTripShareText, whatsappShareUrl } from './whatsapp-share';
 export function PublishedTrip({ trip }: { trip: PublishedTripResponse }) {
   const titleId = useId();
   const keepId = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const link = managementLinkOf(trip.id);
+
+  // Le bouton « Publier » a disparu avec le formulaire : le focus passe au billet.
+  useEffect(() => {
+    titleRef.current?.focus();
+  }, []);
   return (
     <section aria-labelledby={titleId} className="ticket published-trip">
       <header className="ticket-trip">
-        <h2 id={titleId} className="ticket-title">
+        <h2 id={titleId} ref={titleRef} tabIndex={-1} className="ticket-title">
           Trajet publié
         </h2>
         <p className="ticket-when" data-part="ticket-time">

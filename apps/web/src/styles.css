@@ -1696,12 +1696,17 @@ body {
   text-underline-offset: 0.25em;
 }
 
+/* La colonne de contenu de l'accueil, alignée sur le titre du bandeau ; le formulaire y reste étroit. */
 .publish-content {
   display: flex;
-  max-width: 40rem;
   flex-direction: column;
   gap: 1.25rem;
   padding-top: 1.5rem;
+}
+
+.publish-content > * {
+  width: 100%;
+  max-width: 40rem;
 }
 
 .publish-form {
@@ -1776,6 +1781,11 @@ body {
   font-weight: 600;
 }
 
+/* Le code et le lien l'un sous l'autre, à toutes les tailles : le code tient sur une ligne. */
+.ticket-body.published-trip-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .published-trip-link {
   font-weight: 600;
   overflow-wrap: anywhere;
@@ -1824,10 +1834,24 @@ body {
   outline-offset: 2px;
 }
 
+/* Côte à côte, les étiquettes, les champs et les messages s'alignent ligne à ligne (subgrid). */
 .publish-pair {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.75rem;
+  grid-template-rows: auto auto auto;
+  column-gap: 0.75rem;
+}
+
+.publish-pair > .publish-field {
+  display: grid;
+  grid-row: span 3;
+  grid-template-rows: subgrid;
+  align-content: start;
+  row-gap: 0.4rem;
+}
+
+.publish-pair > .publish-field > label {
+  align-self: end;
 }
 
 .publish-switch {

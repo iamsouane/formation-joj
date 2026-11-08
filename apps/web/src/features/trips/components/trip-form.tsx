@@ -1,5 +1,12 @@
 import { type PublishTripInput, TRIP_DEPARTURE_PLACE_MAX_LENGTH, TRIP_SITES } from '@joj/shared';
-import { type ComponentProps, type FormEvent, type ReactNode, useId } from 'react';
+import {
+  type ComponentProps,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+} from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,7 +38,9 @@ const wholeNumber = (value: FormDataEntryValue | null) => Number.parseInt(String
  * Le formulaire classique d'un trajet. Le site se choisit parmi les trois sites des JOJ ; le jour
  * et l'heure se saisissent à l'heure de Dakar, et le champ ne propose pas d'heure passée (une
  * aide de saisie : la règle reste celle de l'API). Le téléphone est partagé avec l'annonce.
- * Un champ signalé porte `aria-invalid` et son message, lu avec lui.
+ * Un champ signalé porte `aria-invalid` et son message, lu avec lui. À son arrivée, le
+ * formulaire prend le focus de ce qui vient de disparaître : le premier champ signalé, sinon le
+ * premier champ.
  */
 export function TripForm({
   phone,
@@ -43,6 +52,15 @@ export function TripForm({
 }: TripFormProps) {
   const siteErrorId = useId();
   const siteError = fieldErrors.site;
+  const formRef = useRef<HTMLFormElement>(null);
+
+  // Au montage seulement : ensuite, le focus reste où le conducteur le met.
+  useEffect(() => {
+    const form = formRef.current;
+    form
+      ?.querySelector<HTMLInputElement>('[aria-invalid="true"], [data-invalid] input, input')
+      ?.focus();
+  }, []);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -60,7 +78,12 @@ export function TripForm({
   }
 
   return (
-    <form aria-label="Publier avec le formulaire" onSubmit={submit} className="publish-form">
+    <form
+      ref={formRef}
+      aria-label="Publier avec le formulaire"
+      onSubmit={submit}
+      className="publish-form"
+    >
       <TripField
         label="Lieu de départ"
         error={fieldErrors.departurePlace}
