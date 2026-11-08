@@ -5,7 +5,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fixture, pikineToDiamniadio } from '@/mocks/fixture';
 import { problem } from '@/mocks/handlers';
 import { server } from '@/mocks/node';
@@ -96,5 +96,45 @@ describe('BookingForm', () => {
     expect(await within(form).findByRole('alert')).toHaveTextContent(
       'Vous avez déjà réservé ce trajet.',
     );
+  });
+
+  describe('celebration', () => {
+    function prefersReducedMotion(reduce: boolean) {
+      vi.stubGlobal('matchMedia', (query: string) => ({
+        matches: reduce && query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }));
+    }
+
+    async function bookAndConfirm() {
+      await bookAsAwa();
+      return screen.findByRole('region', { name: 'Place réservée' });
+    }
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('005-AS4: celebrates the booking with a rain of confetti, none on reduced motion', async () => {
+      prefersReducedMotion(false);
+      const confirmation = await bookAndConfirm();
+
+      const rain = confirmation.querySelector('[data-part="confetti-rain"]');
+      expect(rain).toHaveAttribute('aria-hidden', 'true');
+      expect(rain?.children.length).toBeGreaterThanOrEqual(12);
+      expect(
+        within(confirmation).getByRole('img', { name: 'La mascotte des JOJ saute de joie' }),
+      ).toHaveAttribute('data-motion', 'full');
+    });
+
+    it('005-AS4: shows the flame mascot still and no confetti on reduced motion', async () => {
+      prefersReducedMotion(true);
+      const confirmation = await bookAndConfirm();
+
+      expect(confirmation.querySelector('[data-part="confetti-rain"]')).toBeNull();
+      expect(
+        within(confirmation).getByRole('img', { name: 'La mascotte des JOJ saute de joie' }),
+      ).toHaveAttribute('data-motion', 'reduced');
+    });
   });
 });

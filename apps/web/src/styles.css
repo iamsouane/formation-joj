@@ -800,10 +800,56 @@ body {
   );
 }
 
+/* La pluie de confettis de la place réservée (confetti-rain.tsx) : elle tombe une fois, puis s'efface. */
+.confetti-rain {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti-rain span {
+  position: absolute;
+  top: 0;
+  width: 0.5rem;
+  height: 0.85rem;
+  border-radius: 1px;
+  background: var(--joj-green);
+  opacity: 0;
+  animation: confetti-fall 1.8s cubic-bezier(0.25, 0.1, 0.4, 1) both;
+}
+
+.confetti-rain span:nth-child(3n) {
+  background: var(--joj-red);
+}
+
+.confetti-rain span:nth-child(3n + 1) {
+  background: var(--joj-yellow);
+}
+
+@keyframes confetti-fall {
+  from {
+    opacity: 1;
+    transform: translate(0, -1rem) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(0.8rem, 9rem) rotate(260deg);
+  }
+  85% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-0.4rem, 19rem) rotate(520deg);
+  }
+}
+
 /* Moins d'animations : la mascotte est posée, immobile, et le reste aussi. */
 @media (prefers-reduced-motion: reduce) {
   .mascot-stage *,
   .hero-backdrop *,
+  .confetti-rain *,
   .flame-celebration {
     animation: none !important;
     transition: none !important;

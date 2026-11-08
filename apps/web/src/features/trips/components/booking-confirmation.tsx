@@ -1,6 +1,7 @@
 import type { BookingConfirmationResponse, TripResponse } from '@joj/shared';
 import { useId } from 'react';
 import { Button } from '@/components/ui/button';
+import { ConfettiRain } from './confetti-rain';
 import { FlameCelebration } from './flame-celebration';
 import { formatDeparture, formatPhone, phoneHref } from './format';
 
@@ -16,8 +17,9 @@ export function BookingConfirmation({ trip, confirmation, onDone }: BookingConfi
   return (
     <section
       aria-labelledby={titleId}
-      className="flex flex-col gap-4 border-2 border-foreground p-4"
+      className="relative flex flex-col gap-4 overflow-hidden border-2 border-foreground p-4"
     >
+      <ConfettiRain />
       <FlameCelebration />
       <h2 id={titleId} className="text-2xl font-bold">
         Place réservée
