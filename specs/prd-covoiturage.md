@@ -43,11 +43,11 @@ Un accueil qui donne envie : la mascotte prend du relief, s'incline sous le doig
 
 ### TR6 — Publier un trajet et gérer ses codes depuis son téléphone
 
-Le conducteur colle son annonce WhatsApp dans un champ dédié (TR4), ou passe à tout moment à un formulaire classique ; l'application l'y amène aussi d'elle-même si l'annonce est incomplète (les informations manquantes sont signalées) ou si l'assistant est indisponible. Il voit le trajet tel qu'il a été compris, puis son code de gestion, présenté comme à conserver. Avec leurs codes, le supporter consulte ou annule sa réservation et le conducteur annule son trajet (TR3). Chaque refus (code inconnu, déjà annulé…) s'affiche en français compréhensible. Aucune nouvelle règle métier.
+Le conducteur colle son annonce WhatsApp dans un champ dédié (TR4), ou passe à tout moment à un formulaire classique ; l'application l'y amène aussi d'elle-même si l'annonce est incomplète (les informations manquantes sont signalées) ou si l'assistant est indisponible. Il voit le trajet tel qu'il a été compris, puis son code de gestion, présenté comme à conserver. Avec leurs codes, le supporter consulte ou annule sa réservation et le conducteur annule son trajet (TR3). Depuis son billet, le supporter envoie sur WhatsApp le trajet, son code et le téléphone du conducteur, pour les garder sous la main et les partager. Chaque refus (code inconnu, déjà annulé…) s'affiche en français compréhensible. Aucune nouvelle règle métier.
 
 ## Hors périmètre
 
-- Paiement dans l'application (la participation se règle directement entre conducteur et supporter), notifications SMS ou push, suivi en temps réel, notation des conducteurs, messagerie.
+- Paiement dans l'application (la participation se règle directement entre conducteur et supporter), notifications SMS ou push, suivi en temps réel, notation des conducteurs, messagerie dans l'application (envoyer son billet sur WhatsApp n'en est pas une).
 
 ## Hypothèses et risques
 
