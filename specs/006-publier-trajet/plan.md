@@ -84,3 +84,12 @@ Six tâches, dans l'ordre du parcours du conducteur ; chacune tient dans un comm
 - [x] T04 [006-AS5, AS6] Écrire d'abord `features/trips/components/published-trip.test.tsx` (« 006-AS5: presents the code and the link to keep, the code never in the link », « 006-AS6: sends the trip, the code with its warning and the link on WhatsApp »), puis `management-link.ts`, `whatsapp-share.ts` et le billet du conducteur dans `published-trip.tsx`, avec la phrase « Vérifiez votre trajet. S'il y a une erreur, annulez-le avec votre code. », en suivant les skills frontend-design et design-motion-principles
 - [x] T05 [006-AS7] Écrire d'abord le cas « 006-AS7: explains each refusal in French » dans `publish-page.test.tsx`, puis `publish-error-message.ts`, son affichage sous l'annonce et sous le formulaire, et les champs de `errors[].path` marqués sur `VALIDATION_FAILED`, en suivant les skills frontend-design et design-motion-principles
 - [x] T06 [006-AS1, AS3] Écrire d'abord `routes/publier.a11y.test.tsx` (« 006-AS1: the announcement and the confirmation are clean », « 006-AS3: the form with missing fields is clean »), puis corriger ce qu'axe relève, en suivant les skills frontend-design et design-motion-principles ; vérifier ensuite dans un navigateur à 360 × 640 et 1440 × 900 le parcours de l'annonce à la confirmation
+
+## 7. Corrections
+
+### Passage 1
+
+La relecture indépendante relève qu'une participation ou un nombre de places mal saisi est tronqué en silence en un autre nombre valide, au lieu d'être refusé, et que le focus d'arrivée ne va pas toujours au premier champ signalé.
+
+- [ ] T07 [006-AS2] Écrire d'abord le cas « 006-AS2: sends the seats and the price as typed, never a truncated number » dans `publish-page.test.tsx` (« 1 000 » est lu 1000 ; « 3,5 » ou « 2 places » part tel quel et revient en VALIDATION_FAILED, champ signalé), puis lire places et participation sans `parseInt` : chiffres et espaces seulement, sinon la saisie illisible n'est pas convertie (preuve : relecteur, `trip-form.tsx:35`, `Number.parseInt('1 000', 10)` vaut 1, un trajet à 1 F par place est publié)
+- [ ] T08 [006-AS3] Écrire d'abord le cas « 006-AS3: focuses the site choice when only the site is missing » dans `routes/publier.a11y.test.tsx`, puis donner le focus au premier champ signalé, et seulement à défaut au premier champ (preuve : relecteur, `trip-form.tsx:58-63`, le sélecteur prend le premier `input` du document avant le site signalé)
