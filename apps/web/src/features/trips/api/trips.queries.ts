@@ -1,4 +1,9 @@
-import type { BookSeatInput, PublishTripFromMessageInput, TripSite } from '@joj/shared';
+import type {
+  BookSeatInput,
+  PublishTripFromMessageInput,
+  PublishTripInput,
+  TripSite,
+} from '@joj/shared';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tripsApi } from './trips.api';
 
@@ -31,6 +36,15 @@ export function usePublishTripFromMessage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: PublishTripFromMessageInput) => tripsApi.publishFromMessage(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+  });
+}
+
+/** Publier par le formulaire : comme depuis l'annonce, les listes de départs sont relues. */
+export function usePublishTrip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: PublishTripInput) => tripsApi.publish(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
   });
 }

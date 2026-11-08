@@ -11,14 +11,15 @@ interface AnnouncementFormProps {
   onPhoneChange: (phone: string) => void;
   pending: boolean;
   onPublish: () => void;
+  onSwitchToForm: () => void;
   /** Sous le bouton : l'attente, ou le refus traduit. */
   children?: ReactNode;
 }
 
 /**
  * L'annonce telle que le conducteur l'écrit sur WhatsApp, collée dans une bulle comme celles du
- * logo, et son téléphone. Le bouton reste désactivé pendant la publication : un second appui
- * ne publie pas deux fois.
+ * logo, et son téléphone. À tout moment, le conducteur peut passer au formulaire. Le bouton
+ * reste désactivé pendant la publication : un second appui ne publie pas deux fois.
  */
 export function AnnouncementForm({
   message,
@@ -27,6 +28,7 @@ export function AnnouncementForm({
   onPhoneChange,
   pending,
   onPublish,
+  onSwitchToForm,
   children,
 }: AnnouncementFormProps) {
   const messageId = useId();
@@ -69,6 +71,12 @@ export function AnnouncementForm({
         Publier
       </Button>
       {children}
+      <p className="publish-switch">
+        Vous préférez saisir le trajet vous-même ?{' '}
+        <button type="button" onClick={onSwitchToForm} className="publish-switch-button">
+          Remplir le formulaire
+        </button>
+      </p>
     </form>
   );
 }

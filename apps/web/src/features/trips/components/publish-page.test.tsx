@@ -5,7 +5,7 @@
  * les délais de la fausse API restent réels.
  */
 import type { TripDraft } from '@joj/shared';
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockControl } from '@/mocks/control';
@@ -80,6 +80,64 @@ describe('PublishPage', () => {
       `${window.location.origin}/trajets/${published.id}/gestion`,
     );
     expect(document.querySelector('[data-pose="waiting"]')).not.toBeInTheDocument();
+  });
+
+  it('006-AS2: switches to the form at any time, keeping the phone', async () => {
+    mockControl.setLatency(80);
+    const { user, seen } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Remplir le formulaire' }));
+
+    const form = screen.getByRole('form', { name: 'Publier avec le formulaire' });
+    const phone = within(form).getByLabelText('Votre téléphone');
+    expect(phone).toHaveValue('77 123 45 67');
+    expect(phone).toHaveAttribute('type', 'tel');
+    expect(phone).toHaveAttribute('inputmode', 'tel');
+    expect(phone).toHaveAttribute('autocomplete', 'tel');
+    const seats = within(form).getByLabelText('Places proposées');
+    const price = within(form).getByLabelText('Participation par place, en FCFA');
+    expect(seats).toHaveAttribute('inputmode', 'numeric');
+    expect(price).toHaveAttribute('inputmode', 'numeric');
+    // Une aide de saisie : la règle du départ passé reste celle de l'API.
+    const departure = within(form).getByLabelText('Jour et heure de départ');
+    expect(departure).toHaveAttribute('type', 'datetime-local');
+    expect(departure).toHaveAttribute('min', '2026-11-08T15:00');
+
+    await user.type(within(form).getByLabelText('Lieu de départ'), 'Pikine');
+    await user.click(within(form).getByRole('radio', { name: 'Diamniadio' }));
+    fireEvent.change(departure, { target: { value: '2026-11-09T08:00' } });
+    await user.type(seats, '3');
+    await user.type(price, '1000');
+    const publish = within(form).getByRole('button', { name: 'Publier' });
+    await user.click(publish);
+
+    expect(await screen.findByText('Publication en cours…')).toBeInTheDocument();
+    expect(document.querySelector('[data-pose="waiting"]')).toBeInTheDocument();
+    expect(publish).toBeDisabled();
+    await user.click(publish);
+
+    const confirmation = await screen.findByRole('region', { name: 'Trajet publié' });
+    expect(writes(seen)).toEqual([
+      {
+        method: 'POST',
+        path: '/api/trips',
+        body: {
+          departurePlace: 'Pikine',
+          site: 'diamniadio',
+          departureAt: '2026-11-09T08:00:00.000Z',
+          seats: 3,
+          pricePerSeat: 1000,
+          driverPhone: '77 123 45 67',
+        },
+      },
+    ]);
+    expect(confirmation.querySelector('[data-part="ticket-route"]')).toHaveTextContent(
+      'Pikine → Diamniadio',
+    );
+    expect(confirmation.querySelector('[data-part="management-code"]')).toHaveTextContent(
+      fixture.trips.at(-1)!.managementCode,
+    );
   });
 
   it('006-AS1: leads the driver from the home page to the publication page', async () => {

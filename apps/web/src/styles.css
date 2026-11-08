@@ -1786,3 +1786,58 @@ body {
     animation: none;
   }
 }
+
+/* Le formulaire classique : les trois sites en choix au pouce, places et participation côte à côte. */
+.site-choice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.site-choice-option {
+  position: relative;
+  display: flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--joj-black);
+  background: var(--joj-white);
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.site-choice-option input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.site-choice-option:has(:checked) {
+  background: var(--joj-yellow);
+}
+
+.site-choice-option:has(:focus-visible) {
+  outline: 3px solid var(--joj-orange);
+  outline-offset: 2px;
+}
+
+.publish-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.publish-switch {
+  color: var(--muted-foreground);
+}
+
+.publish-switch-button {
+  font-weight: 700;
+  color: var(--joj-black);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.25em;
+}

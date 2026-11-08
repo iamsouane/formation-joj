@@ -1,26 +1,34 @@
-import type { PublishedTripResponse } from '@joj/shared';
+import type { PublishedTripResponse, PublishTripInput } from '@joj/shared';
 import { Link } from '@tanstack/react-router';
 import { useId, useState } from 'react';
-import { usePublishTripFromMessage } from '../api/trips.queries';
+import { usePublishTrip, usePublishTripFromMessage } from '../api/trips.queries';
 import { AnnouncementForm } from './announcement-form';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
 import { PublishedTrip } from './published-trip';
+import { TripForm } from './trip-form';
 
 /**
  * Publier un trajet depuis son téléphone. Sous le bandeau de l'accueil (le ciel, la frise, la
- * mascotte au repos), le conducteur colle son annonce WhatsApp avec son téléphone ; le trajet
- * publié s'affiche ensuite en billet, avec son code et son lien de gestion.
+ * mascotte au repos), le conducteur colle son annonce WhatsApp avec son téléphone, ou passe à
+ * tout moment au formulaire classique, sans perdre son téléphone ; le trajet publié s'affiche
+ * ensuite en billet, avec son code et son lien de gestion.
  */
 export function PublishPage() {
+  const [mode, setMode] = useState<'announcement' | 'form'>('announcement');
   const [message, setMessage] = useState('');
   const [phone, setPhone] = useState('');
   const [published, setPublished] = useState<PublishedTripResponse>();
   const fromMessage = usePublishTripFromMessage();
-  const waiting = fromMessage.isPending;
+  const fromForm = usePublishTrip();
+  const waiting = fromMessage.isPending || fromForm.isPending;
 
   function publishFromMessage() {
     fromMessage.mutate({ message, driverPhone: phone }, { onSuccess: setPublished });
+  }
+
+  function publishFromForm(input: PublishTripInput) {
+    fromForm.mutate(input, { onSuccess: setPublished });
   }
 
   return (
@@ -29,6 +37,17 @@ export function PublishPage() {
       <div data-column="content" className="content-column publish-content">
         {published ? (
           <PublishedTrip trip={published} />
+        ) : mode === 'form' ? (
+          <TripForm
+            phone={phone}
+            onPhoneChange={setPhone}
+            pending={waiting}
+            onPublish={publishFromForm}
+          >
+            <p role="status" className="publish-status">
+              {waiting && 'Publication en cours…'}
+            </p>
+          </TripForm>
         ) : (
           <AnnouncementForm
             message={message}
@@ -37,6 +56,7 @@ export function PublishPage() {
             onPhoneChange={setPhone}
             pending={waiting}
             onPublish={publishFromMessage}
+            onSwitchToForm={() => setMode('form')}
           >
             <p role="status" className="publish-status">
               {waiting && 'L’assistant lit votre annonce…'}
