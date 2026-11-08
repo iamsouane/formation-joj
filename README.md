@@ -6,7 +6,7 @@
 
 **Ce qui manque** : la réservation d'une place, l'annulation (d'une réservation ou d'un trajet), la publication d'un trajet depuis un message libre, et les écrans ; seule l'API de publication et de liste des trajets existe.
 
-Un monorepo pnpm : une API NestJS, un front React et des schémas partagés. Le socle technique est prêt (configuration, base, erreurs, client HTTP, fausse API des tests) ; aucun module métier n'est écrit. Le module de référence, qui montre toute la chaîne du schéma partagé à l'écran, se lit sur la branche `main` (voir `CLAUDE.md`).
+Un monorepo pnpm : une API NestJS, un front React et des schémas partagés. Le socle technique est prêt (configuration, base, erreurs, client HTTP, fausse API des tests), et un premier module métier est livré : `trips` (`apps/api/src/modules/trips/`), qui publie un trajet et liste les départs à venir vers un site (spec `specs/001-trajets`). C'est lui qui sert désormais de modèle aux modules suivants. Le module de référence, qui montre toute la chaîne du schéma partagé à l'écran, se lit sur la branche `main` (voir `CLAUDE.md`).
 
 L'énoncé de l'atelier C est dans [`task/ATELIER-C.md`](task/ATELIER-C.md).
 
