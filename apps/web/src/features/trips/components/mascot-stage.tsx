@@ -26,20 +26,23 @@ export function MascotStage({ compact = false }: { compact?: boolean }) {
           <span />
         </div>
       )}
-      <div className="mascot-shadow" aria-hidden="true" />
+      <div className="mascot-shadow" data-part="shadow" data-beat="dance" aria-hidden="true" />
       <div className="mascot-tilt">
         <div className="mascot-enter">
           <div className="mascot-dance" data-part="dance">
-            <img
-              src="/brand/mascotte-debout-800.png"
-              alt="La mascotte des JOJ Dakar 2026"
-              width={388}
-              height={800}
-              data-pose="standing"
-              className="mascot-pose mascot-pose-standing"
-            />
+            {/* Chaque pose dans son cadre : recadrée sous les pieds, posée sur la même ligne. */}
+            <div className="mascot-frame mascot-frame-standing" data-part="pose-frame">
+              <img
+                src="/brand/mascotte-debout-800.png"
+                alt="La mascotte des JOJ Dakar 2026"
+                width={388}
+                height={800}
+                data-pose="standing"
+                className="mascot-pose"
+              />
+            </div>
             {!reduced && (
-              <div className="mascot-flame">
+              <div className="mascot-frame mascot-frame-flame" data-part="pose-frame">
                 <img
                   src="/brand/mascotte-flamme-800.png"
                   alt=""

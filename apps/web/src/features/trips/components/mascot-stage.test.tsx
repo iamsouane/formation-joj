@@ -95,4 +95,19 @@ describe('MascotStage', () => {
     expect(poses.map((pose) => pose.getAttribute('data-pose'))).toEqual(['standing']);
     expect(stage.querySelectorAll('[data-part="waves"], [data-part="halo"]')).toHaveLength(0);
   });
+
+  it('005-AS6: crops both poses to the same feet line, with a soft shadow in step with the jumps', () => {
+    prefersReducedMotion(false);
+    const stage = renderStage();
+
+    // Chaque pose est recadrée (sans rocher ni ellipse grise) et posée sur la même ligne de pieds.
+    const frames = [...stage.querySelectorAll('[data-part="pose-frame"]')];
+    expect(frames.map((frame) => frame.querySelector('img')?.getAttribute('data-pose'))).toEqual([
+      'standing',
+      'flame',
+    ]);
+    // L'ombre douce suit la danse : elle est réglée sur la même mesure.
+    const shadow = stage.querySelector('[data-part="shadow"]');
+    expect(shadow).toHaveAttribute('data-beat', 'dance');
+  });
 });

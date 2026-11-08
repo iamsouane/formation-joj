@@ -394,11 +394,11 @@ body {
 }
 
 .hero-car[data-lane='left'] {
-  left: 32%;
+  left: 27%;
 }
 
 .hero-car[data-lane='right'] {
-  left: 58%;
+  left: 64%;
 }
 
 .hero-car-body {
@@ -561,19 +561,59 @@ body {
   transition: transform 600ms var(--ease-out-soft);
 }
 
-/* L'ombre s'éloigne du côté où la mascotte se penche. */
+/*
+ * L'ombre douce, sous les pieds : elle s'éloigne du côté où la mascotte se penche (translate) et
+ * rétrécit pendant les sauts, réglée sur la même mesure que la danse (transform).
+ */
 .mascot-shadow {
-  bottom: 0.25rem;
-  width: 42%;
-  height: 0.9rem;
+  bottom: 0.1rem;
+  width: 46%;
+  height: 1.1rem;
   border-radius: 50%;
-  background: rgb(0 0 0 / 0.22);
-  filter: blur(3px);
-  transform: translateX(calc(var(--tilt-x) * -16px)) scaleX(calc(1 - var(--tilt-y) * 0.12));
+  background: radial-gradient(
+    closest-side,
+    rgb(60 30 0 / 0.38),
+    rgb(60 30 0 / 0.16) 60%,
+    transparent
+  );
+  translate: calc(-50% + var(--tilt-x) * -16px) 0;
+  transition: translate 600ms var(--ease-out-soft);
+  animation: mascot-shadow calc(var(--beat, 0.6s) * 4) cubic-bezier(0.33, 0, 0.2, 1) 900ms infinite;
+}
+
+@keyframes mascot-shadow {
+  0%,
+  25%,
+  50%,
+  75%,
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+  28% {
+    transform: scaleX(1.06);
+  }
+  36% {
+    opacity: 0.45;
+    transform: scale(0.62);
+  }
+  44% {
+    transform: scaleX(1.08);
+  }
+  78% {
+    transform: scaleX(1.03);
+  }
+  85% {
+    opacity: 0.65;
+    transform: scale(0.8);
+  }
+  92% {
+    transform: scaleX(1.05);
+  }
 }
 
 .mascot-tilt {
-  bottom: 0.6rem;
+  bottom: 0.55rem;
   height: calc(100% - 0.75rem);
   aspect-ratio: 388 / 800;
   transform-origin: 50% 100%;
@@ -650,36 +690,86 @@ body {
   }
 }
 
-/* Les deux poses alternent sur le temps fort : une mesure debout, une mesure la flamme levée. */
-.mascot-pose {
-  height: 100%;
-  width: auto;
-}
-
-.mascot-pose-standing {
-  animation: mascot-pose-a calc(var(--beat) * 8) linear 900ms infinite;
-}
-
-.mascot-flame {
+/*
+ * Les deux poses, chacune dans son cadre, sur la même ligne de pieds et à la même échelle. Les
+ * images officielles portent une ellipse grise sous les pieds, et la pose à la flamme un rocher :
+ * on les découpe (clip-path) sans toucher aux fichiers, puis on descend chaque image pour que ses
+ * semelles touchent le bas du cadre (pieds à 96,5 % de l'image debout, 94,5 % de l'autre).
+ */
+.mascot-frame {
   position: absolute;
   bottom: 0;
   left: 50%;
   height: 100%;
-  aspect-ratio: 504 / 800;
   translate: -50% 0;
+}
+
+.mascot-frame-standing {
+  aspect-ratio: 388 / 800;
+  animation: mascot-pose-a calc(var(--beat) * 8) linear 900ms infinite;
+}
+
+.mascot-frame-flame {
+  aspect-ratio: 504 / 800;
   opacity: 0;
   animation: mascot-pose-b calc(var(--beat) * 8) linear 900ms infinite;
 }
 
+.mascot-pose {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+.mascot-frame-standing .mascot-pose {
+  clip-path: inset(0 0 3.5% 0);
+  translate: 0 3.5%;
+}
+
+/*
+ * Le pied gauche était posé sur le rocher : on coupe sous lui (86 %), et sous le droit à 94,5 %.
+ * L'image a aussi un coin blanc opaque entre les jambes : le découpage le perce (règle evenodd,
+ * le contour du trou est rejoint par une fente de largeur nulle).
+ */
+.mascot-frame-flame .mascot-pose {
+  clip-path: polygon(
+    evenodd,
+    0 0,
+    100% 0,
+    100% 86%,
+    83% 86%,
+    83% 94.5%,
+    56% 94.5%,
+    56% 86%,
+    0 86%,
+    0 75%,
+    30.5% 75%,
+    30.5% 70%,
+    42.5% 66.3%,
+    46.5% 68.5%,
+    57.5% 81%,
+    57.2% 83%,
+    31.5% 83%,
+    30.5% 75%,
+    0 75%
+  );
+  translate: 0 5.5%;
+}
+
+/*
+ * L'échange des poses : un fondu enchaîné d'environ 150 ms au sommet du saut de chaque mesure
+ * (36 % de la mesure, soit 18 % et 68 % du cycle de deux mesures).
+ */
 @keyframes mascot-pose-a {
   0%,
-  48% {
+  16.4% {
     opacity: 1;
   }
-  50%,
-  98% {
+  19.6%,
+  66.4% {
     opacity: 0;
   }
+  69.6%,
   100% {
     opacity: 1;
   }
@@ -687,13 +777,14 @@ body {
 
 @keyframes mascot-pose-b {
   0%,
-  48% {
+  16.4% {
     opacity: 0;
   }
-  50%,
-  98% {
+  19.6%,
+  66.4% {
     opacity: 1;
   }
+  69.6%,
   100% {
     opacity: 0;
   }
