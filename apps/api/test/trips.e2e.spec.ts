@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import {
   bookingConfirmationSchema,
+  bookingDetailsSchema,
   publishedTripSchema,
   TRIP_SITES,
   tripListSchema,
@@ -227,6 +228,117 @@ describe('/api/trips (e2e)', () => {
     it('002-AS6: rejects an unknown trip (404 TRIP_NOT_FOUND)', async () => {
       const response = await book('0199f5c2-0000-7000-8000-0000000000ff').expect(404);
       expect(response.body).toMatchObject({ code: 'TRIP_NOT_FOUND' });
+    });
+  });
+
+  describe('cancellations', () => {
+    const awa = { passengerName: 'Awa', passengerPhone: '77 123 45 67' };
+    const publish = async () =>
+      publishedTripSchema.parse(
+        (await api().post('/api/trips').send(pikineToDiamniadio()).expect(201)).body,
+      );
+    const bookAwa = async (tripId: string) =>
+      bookingConfirmationSchema.parse(
+        (await api().post(`/api/trips/${tripId}/bookings`).send(awa).expect(201)).body,
+      ).bookingCode;
+    const getBooking = (bookingCode: string) => api().get(`/api/bookings/${bookingCode}`);
+    const cancelBooking = (bookingCode: string) =>
+      api().post(`/api/bookings/${bookingCode}/cancellation`);
+    const cancelTrip = (tripId: string, managementCode: string) =>
+      api().post(`/api/trips/${tripId}/cancellation`).send({ managementCode });
+    const statusOf = async (bookingCode: string) =>
+      bookingDetailsSchema.parse((await getBooking(bookingCode).expect(200)).body).status;
+
+    it('003-AS1: shows a booking with its trip and the active status', async () => {
+      const trip = await publish();
+      const bookingCode = await bookAwa(trip.id);
+
+      const response = await getBooking(bookingCode).expect(200);
+
+      expect(response.body).toEqual({
+        bookingCode,
+        passengerName: 'Awa',
+        status: 'active',
+        trip: {
+          id: trip.id,
+          departurePlace: 'Pikine',
+          site: 'diamniadio',
+          departureAt: trip.departureAt,
+          pricePerSeat: 1000,
+          driverPhone: '771234567',
+        },
+      });
+    });
+
+    it('003-AS2: rejects an unknown booking code, to show or to cancel it (404 BOOKING_NOT_FOUND)', async () => {
+      const shown = await getBooking('unknown-code').expect(404);
+      const cancelled = await cancelBooking('unknown-code').expect(404);
+
+      expect(shown.headers['content-type']).toContain('application/problem+json');
+      expect(shown.body).toMatchObject({ code: 'BOOKING_NOT_FOUND' });
+      expect(cancelled.body).toMatchObject({ code: 'BOOKING_NOT_FOUND' });
+    });
+
+    it('003-AS3: cancelling a booking (204) frees its seat and marks it cancelled', async () => {
+      const trip = await publish();
+      const bookingCode = await bookAwa(trip.id);
+      expect((await listDiamniadio()).map((listed) => listed.remainingSeats)).toEqual([2]);
+
+      const response = await cancelBooking(bookingCode).expect(204);
+
+      expect(response.body).toEqual({});
+      expect((await listDiamniadio()).map((listed) => listed.remainingSeats)).toEqual([3]);
+      expect(await statusOf(bookingCode)).toBe('cancelled');
+    });
+
+    it('003-AS4: cancelling a trip (204) removes it from the list of departures', async () => {
+      const trip = await publish();
+
+      await cancelTrip(trip.id, trip.managementCode).expect(204);
+
+      expect(await listDiamniadio()).toEqual([]);
+    });
+
+    it('003-AS5: a passenger of a cancelled trip sees trip_cancelled with the trip', async () => {
+      const trip = await publish();
+      const bookingCode = await bookAwa(trip.id);
+
+      await cancelTrip(trip.id, trip.managementCode).expect(204);
+
+      const details = bookingDetailsSchema.parse((await getBooking(bookingCode).expect(200)).body);
+      expect(details.status).toBe('trip_cancelled');
+      expect(details.trip).toMatchObject({ id: trip.id, departurePlace: 'Pikine' });
+    });
+
+    it('003-AS6: rejects another management code (403 MANAGEMENT_CODE_INVALID) and keeps the trip listed', async () => {
+      const trip = await publish();
+
+      const response = await cancelTrip(trip.id, 'other-code').expect(403);
+
+      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.body).toMatchObject({ code: 'MANAGEMENT_CODE_INVALID', status: 403 });
+      expect((await listDiamniadio()).map((listed) => listed.id)).toEqual([trip.id]);
+    });
+
+    it('003-AS6: rejects the cancellation of an unknown trip (404 TRIP_NOT_FOUND)', async () => {
+      const response = await cancelTrip('0199f5c2-0000-7000-8000-0000000000ff', 'abc').expect(404);
+      expect(response.body).toMatchObject({ code: 'TRIP_NOT_FOUND' });
+    });
+
+    it('003-AS7: rejects a booking on a cancelled trip (409 TRIP_CANCELLED) and books nothing', async () => {
+      const trip = await publish();
+      const bookingCode = await bookAwa(trip.id);
+      await cancelTrip(trip.id, trip.managementCode).expect(204);
+
+      const response = await api()
+        .post(`/api/trips/${trip.id}/bookings`)
+        .send({ passengerName: 'Moussa', passengerPhone: '78 000 00 00' })
+        .expect(409);
+
+      expect(response.body).toMatchObject({ code: 'TRIP_CANCELLED' });
+      expect(await statusOf(bookingCode)).toBe('trip_cancelled');
+      const trips = app.get(TripRepository);
+      expect((await trips.findTrip(trip.id))?.remainingSeats).toBe(2);
     });
   });
 });

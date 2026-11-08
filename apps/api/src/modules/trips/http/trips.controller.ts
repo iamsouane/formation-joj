@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
   type BookingConfirmationResponse,
   bookingConfirmationSchema,
   bookSeatSchema,
+  cancelTripSchema,
   type PublishedTripResponse,
   publishedTripSchema,
   publishTripSchema,
@@ -14,6 +15,7 @@ import {
 } from '@joj/shared';
 import { createZodDto, ZodSerializerDto } from 'nestjs-zod';
 import { BookSeat } from '../application/use-cases/book-seat';
+import { CancelTrip } from '../application/use-cases/cancel-trip';
 import { ListUpcomingTrips } from '../application/use-cases/list-upcoming-trips';
 import { PublishTrip } from '../application/use-cases/publish-trip';
 import type { Trip } from '../domain/trip';
@@ -25,6 +27,7 @@ class PublishedTripDto extends createZodDto(publishedTripSchema) {}
 class TripIdParamDto extends createZodDto(tripIdParamSchema) {}
 class BookSeatDto extends createZodDto(bookSeatSchema) {}
 class BookingConfirmationDto extends createZodDto(bookingConfirmationSchema) {}
+class CancelTripDto extends createZodDto(cancelTripSchema) {}
 
 /** Couche fine : valider (DTO zod), appeler un cas d'usage, sérialiser. Aucune règle métier ici. */
 @ApiTags('trips')
@@ -34,6 +37,7 @@ export class TripsController {
     private readonly publishTrip: PublishTrip,
     private readonly listUpcomingTrips: ListUpcomingTrips,
     private readonly bookSeat: BookSeat,
+    private readonly cancelTrip: CancelTrip,
   ) {}
 
   /** Les trajets à venir vers un site, sans le téléphone du conducteur ni le code de gestion. */
@@ -60,6 +64,13 @@ export class TripsController {
   ): Promise<BookingConfirmationResponse> {
     const { booking, driverPhone } = await this.bookSeat.execute(tripId, body);
     return { bookingCode: booking.bookingCode, driverPhone };
+  }
+
+  /** Annule le trajet avec son code de gestion, passé dans le corps pour rester hors des journaux. */
+  @Post(':tripId/cancellation')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async cancel(@Param() { tripId }: TripIdParamDto, @Body() body: CancelTripDto): Promise<void> {
+    await this.cancelTrip.execute(tripId, body);
   }
 }
 
