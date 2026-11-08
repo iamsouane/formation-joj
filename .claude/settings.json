@@ -9,6 +9,13 @@
       "Bash(pnpm check)",
       "Bash(pnpm spec:*)",
       "Bash(pnpm tdd:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)"
     ]
   },
   "hooks": {

@@ -2,5 +2,11 @@
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
   "singleQuote": true,
   "printWidth": 100,
-  "ignorePatterns": ["pnpm-lock.yaml", "apps/web/src/routeTree.gen.ts", "apps/api/migrations/**"]
+  "ignorePatterns": [
+    "pnpm-lock.yaml",
+    "apps/web/src/routeTree.gen.ts",
+    "apps/api/migrations/**",
+    ".claude/skills/frontend-design/**",
+    ".claude/skills/design-motion-principles/**"
+  ]
 }

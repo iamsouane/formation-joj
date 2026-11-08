@@ -25,6 +25,7 @@ Cette branche ne contient aucun module métier. Le module de référence est sur
 - Le socle commun est dans `apps/api/src/core/` (configuration, base, erreurs, santé) : on l'utilise, on ne le duplique pas.
 - Les schémas d'entrée et de sortie sont dans `packages/shared/src/<domaine>.ts`, exportés par `index.ts`, et servent à l'API comme au front.
 - Le front range une fonctionnalité dans `apps/web/src/features/<domaine>/` (`api/` puis `components/`), et ses pages dans `apps/web/src/routes/`.
+- Pour tout écran ou composant du front React, utiliser les skills frontend-design et design-motion-principles.
 
 ## Concepts appréciés
 
