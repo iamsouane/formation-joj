@@ -38,7 +38,7 @@ Si la demande couvre déjà chaque section, ne pose pas de question : écris, et
 - **Aucune technique** : ni route, ni table, ni code HTTP, ni nom de bibliothèque. On écrit pour un utilisateur, pas pour un développeur.
 - **Les tranches** couvrent toute la vision : `### TR1 — titre`, `### TR2 — …`. Elles seront réalisées une à une, une spec par tranche, dans l'ordre. La première est la plus petite qui ait de la valeur seule, et tient dans le temps de l'atelier (2 heures de code à l'atelier C) ; les suivantes disent où va le produit.
 - Ce que l'utilisateur n'a pas dit et que tu as dû supposer va dans « Hypothèses et risques », marqué comme tel.
-- 56 lignes au plus : une page.
+- 59 lignes au plus : une page.
 
 ## 4. Vérifier
 

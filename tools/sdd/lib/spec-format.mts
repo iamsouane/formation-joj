@@ -52,7 +52,7 @@ const PLAN_SECTIONS = [
   'Tests par scénario',
   'Tâches',
 ];
-const MAX_PRD_LINES = 56;
+const MAX_PRD_LINES = 59;
 const MAX_SPEC_LINES = 70;
 const MAX_TASKS = 6;
 
