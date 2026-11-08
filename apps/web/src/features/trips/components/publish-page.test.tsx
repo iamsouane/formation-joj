@@ -365,6 +365,34 @@ describe('PublishPage', () => {
     expect(fixture.trips).toHaveLength(before);
   });
 
+  it('006-AS7: clears a refused mark as soon as the driver edits the field', async () => {
+    mockControl.setTripDraft(understood({ seats: 0 }));
+    const { user } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre annonce WhatsApp'), ANNOUNCEMENT);
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+    const form = await screen.findByRole('form', { name: 'Publier avec le formulaire' });
+    const seats = within(form).getByLabelText('Places proposées');
+    expect(seats).toHaveAccessibleDescription('À vérifier');
+
+    // Le conducteur touche au champ : la marque disparaît aussitôt.
+    await user.type(seats, '2 places');
+    expect(seats).not.toHaveAttribute('aria-invalid');
+    expect(seats).not.toHaveAccessibleDescription('À vérifier');
+
+    // Un nouveau refus remet la marque, puis une nouvelle modification l'efface.
+    await user.type(within(form).getByLabelText('Lieu de départ'), 'Pikine');
+    await user.click(within(form).getByRole('radio', { name: 'Diamniadio' }));
+    fireEvent.change(within(form).getByLabelText('Jour et heure de départ'), {
+      target: { value: '2026-11-09T08:00' },
+    });
+    await user.type(within(form).getByLabelText('Participation par place, en FCFA'), '1000');
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+    await waitFor(() => expect(seats).toHaveAccessibleDescription('À vérifier'));
+    await user.clear(seats);
+    expect(seats).not.toHaveAttribute('aria-invalid');
+  });
+
   it('006-AS7: marks the refused fields of the form', async () => {
     const { user } = await openPublishPage();
     await user.click(screen.getByRole('button', { name: 'Remplir le formulaire' }));

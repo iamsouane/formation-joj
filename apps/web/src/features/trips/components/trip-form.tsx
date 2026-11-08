@@ -51,7 +51,8 @@ function wholeNumber(value: FormDataEntryValue | null): number {
  * et l'heure se saisissent à l'heure de Dakar, et le champ ne propose pas d'heure passée (une
  * aide de saisie : la règle reste celle de l'API). Le téléphone est partagé avec l'annonce.
  * Un champ signalé porte `aria-invalid` et son message, lu avec lui. Un champ absent de l'annonce
- * le reste tant qu'il n'est pas rempli, quel que soit le refus suivant. À son arrivée, le
+ * le reste tant qu'il n'est pas rempli, quel que soit le refus suivant ; un champ refusé perd sa
+ * marque dès que le conducteur le modifie. À son arrivée, le
  * formulaire prend le focus de ce qui vient de disparaître : le premier champ signalé, sinon le
  * premier champ.
  */
@@ -65,10 +66,14 @@ export function TripForm({
   children,
 }: TripFormProps) {
   const [filled, setFilled] = useState<ReadonlySet<string>>(new Set());
+  // Les champs modifiés depuis le dernier refus : leur marque « À vérifier » est retirée.
+  const [edited, setEdited] = useState<ReadonlySet<string>>(new Set());
   const errorOf = (field: TripFormField) =>
     missingFields.includes(field) && !filled.has(field)
       ? MISSING_IN_ANNOUNCEMENT
-      : fieldErrors[field];
+      : edited.has(field)
+        ? undefined
+        : fieldErrors[field];
   const siteErrorId = useId();
   const siteError = errorOf('site');
   const formRef = useRef<HTMLFormElement>(null);
@@ -84,10 +89,14 @@ export function TripForm({
     (flagged ?? form?.querySelector<HTMLInputElement>('input'))?.focus();
   }, []);
 
-  /** Un champ qui reçoit une valeur est rempli ; vidé, il ne l'est plus. */
+  /**
+   * Un champ qui reçoit une valeur est rempli ; vidé, il ne l'est plus. Toute modification efface
+   * sa marque de refus.
+   */
   function trackFilled(event: FormEvent<HTMLFormElement>) {
     const input = event.target;
     if (!(input instanceof HTMLInputElement)) return;
+    setEdited((current) => new Set(current).add(input.name));
     setFilled((current) => {
       const next = new Set(current);
       if (input.value.trim() === '') next.delete(input.name);
@@ -99,6 +108,8 @@ export function TripForm({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
+    // Une nouvelle publication : les marques de son éventuel refus s'affichent de nouveau.
+    setEdited(new Set());
     const data = new FormData(event.currentTarget);
     const departure = String(data.get('departureAt') ?? '');
     onPublish({
