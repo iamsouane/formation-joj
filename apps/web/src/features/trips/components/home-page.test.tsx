@@ -64,7 +64,7 @@ describe('HomePage', () => {
     expect(list.closest('[data-slot="departures"]')).not.toBeNull();
   });
 
-  it('005-AS2: says when no departure is planned', async () => {
+  it('005-AS2: shows an empty road instead of a second mascot', async () => {
     fixture.trips = fixture.trips.filter((trip) => trip.site !== 'saly');
     const { user } = await open();
 
@@ -73,11 +73,13 @@ describe('HomePage', () => {
     const empty = await screen.findByRole('region', {
       name: 'Aucun départ pour l’instant vers Saly',
     });
-    expect(empty.querySelector('img[src="/brand/mascotte-debout-800.png"]')).not.toBeNull();
+    // Pas de seconde mascotte : la scène appartient au hero. Une route vide, dessinée.
+    expect(empty.querySelector('img')).toBeNull();
+    expect(empty.querySelector('[data-part="empty-road"]')).toHaveAttribute('aria-hidden', 'true');
     expect(screen.queryByRole('list', { name: 'Départs vers Saly' })).not.toBeInTheDocument();
   });
 
-  it('005-AS2: offers the other sites that have departures, next to the mascot', async () => {
+  it('005-AS2: offers the other sites that have departures', async () => {
     fixture.trips = fixture.trips.filter((trip) => trip.site === 'dakar');
     const { user, router } = await open('/?site=saly');
 

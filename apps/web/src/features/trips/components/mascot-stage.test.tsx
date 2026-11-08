@@ -18,8 +18,8 @@ function prefersReducedMotion(reduce: boolean) {
 }
 
 /** La scène rendue, avec une taille : 200 × 300 px à l'origine de la page. */
-function renderStage() {
-  render(<MascotStage />);
+function renderStage(compact = false) {
+  render(<MascotStage compact={compact} />);
   const stage = screen
     .getByRole('img', { name: 'La mascotte des JOJ Dakar 2026' })
     .closest('[data-motion]');
@@ -109,5 +109,16 @@ describe('MascotStage', () => {
     // L'ombre douce suit la danse : elle est réglée sur la même mesure.
     const shadow = stage.querySelector('[data-part="shadow"]');
     expect(shadow).toHaveAttribute('data-beat', 'dance');
+  });
+
+  it('005-AS6: only breathes in the band, standing', () => {
+    prefersReducedMotion(false);
+    const stage = renderStage(true);
+
+    // Un seul grand moment : la danse est pour le hero, le bandeau ne fait que respirer.
+    expect(stage).toHaveAttribute('data-dance', 'breathe');
+    const poses = [...stage.querySelectorAll('img[data-pose]')];
+    expect(poses.map((pose) => pose.getAttribute('data-pose'))).toEqual(['standing']);
+    expect(stage.querySelectorAll('[data-part="waves"], [data-part="halo"]')).toHaveLength(0);
   });
 });

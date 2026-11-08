@@ -12,21 +12,25 @@ import { usePointerTilt } from '@/lib/use-pointer-tilt';
  */
 export function MascotStage({ compact = false }: { compact?: boolean }) {
   const { reduced, tiltHandlers } = usePointerTilt();
+  // Un seul grand moment : la danse est pour le hero ; le bandeau respire, debout.
+  const dancing = !reduced && !compact;
+  const dance = dancing ? 'dance' : reduced ? 'still' : 'breathe';
 
   return (
     <div
       className="mascot-stage"
       data-motion={reduced ? 'reduced' : 'full'}
       data-compact={compact}
+      data-dance={dance}
       {...tiltHandlers}
     >
-      {!reduced && (
+      {dancing && (
         <div className="mascot-waves" data-part="waves" aria-hidden="true">
           <span />
           <span />
         </div>
       )}
-      <div className="mascot-shadow" data-part="shadow" data-beat="dance" aria-hidden="true" />
+      <div className="mascot-shadow" data-part="shadow" data-beat={dance} aria-hidden="true" />
       <div className="mascot-tilt">
         <div className="mascot-enter">
           <div className="mascot-dance" data-part="dance">
@@ -41,7 +45,7 @@ export function MascotStage({ compact = false }: { compact?: boolean }) {
                 className="mascot-pose"
               />
             </div>
-            {!reduced && (
+            {dancing && (
               <div className="mascot-frame mascot-frame-flame" data-part="pose-frame">
                 <img
                   src="/brand/mascotte-flamme-800.png"

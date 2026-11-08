@@ -790,6 +790,28 @@ body {
   }
 }
 
+/*
+ * Hors du hero ouvert, la mascotte ne danse pas : dans le bandeau elle respire seulement, une
+ * seule pose, l'ombre immobile.
+ */
+.mascot-stage:not([data-dance='dance']) :is(.mascot-dance, .mascot-frame-standing, .mascot-shadow) {
+  animation: none;
+}
+
+.mascot-stage[data-dance='breathe'] .mascot-dance {
+  animation: mascot-breath 4.2s var(--ease-breath) 900ms infinite;
+}
+
+@keyframes mascot-breath {
+  0%,
+  100% {
+    transform: none;
+  }
+  50% {
+    transform: scale(1.015, 1.03);
+  }
+}
+
 /* Le halo de la flamme, posé sur la torche (en haut à gauche de l'image) : il vacille. */
 .mascot-halo {
   position: absolute;
@@ -1073,7 +1095,7 @@ body {
   }
 }
 
-/* Aucun départ : la mascotte, le message et les autres sites, dans une bulle comme les départs. */
+/* Aucun départ : une route vide, le message et les autres sites, dans une bulle comme les départs. */
 .no-departures {
   position: relative;
   display: grid;
@@ -1085,9 +1107,11 @@ body {
   background: #fff6dc;
 }
 
-.no-departures-mascot {
+.no-departures-road {
+  display: block;
   width: 100%;
   height: auto;
+  border: 2px solid var(--joj-black);
 }
 
 @media (min-width: 640px) {
