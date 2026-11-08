@@ -77,6 +77,7 @@ Le trajet déjà parti d'AS2 ne peut pas être publié, puisque la publication r
 | AS2      | `apps/api/test/trips.e2e.spec.ts`                   | e2e         | `GET /api/trips?site=diamniadio` renvoie 8 h puis 10 h, sans Saly ni départ passé, sans `driverPhone` ni `managementCode`.      |
 | AS3      | `apps/api/src/modules/trips/domain/trip.spec.ts`    | unitaire    | `Trip.create()` avec le site « Thiès » lève `SITE_UNKNOWN`.                                                                     |
 | AS3      | `apps/api/test/trips.e2e.spec.ts`                   | e2e         | `POST /api/trips` répond 400 `SITE_UNKNOWN`, et la liste reste vide.                                                            |
+| AS3      | `apps/api/test/trips.e2e.spec.ts`                   | e2e         | Après le refus de « Thiès », le `TripRepository` obtenu par `app.get(TripRepository)` ne contient aucun trajet, sur aucun site. |
 | AS4      | `apps/api/src/modules/trips/domain/trip.spec.ts`    | unitaire    | `Trip.create()` avec un départ hier à 8 h lève `DEPARTURE_IN_PAST`.                                                             |
 | AS4      | `apps/api/test/trips.e2e.spec.ts`                   | e2e         | `POST /api/trips` répond 400 `DEPARTURE_IN_PAST`, et la liste reste vide.                                                       |
 

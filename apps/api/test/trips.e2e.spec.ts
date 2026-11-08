@@ -1,5 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
-import { publishedTripSchema, tripListSchema } from '@joj/shared';
+import { publishedTripSchema, TRIP_SITES, tripListSchema } from '@joj/shared';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { TripRepository } from '../src/modules/trips/application/trip.repository';
@@ -98,7 +98,12 @@ describe('/api/trips (e2e)', () => {
 
     expect(response.headers['content-type']).toContain('application/problem+json');
     expect(response.body).toMatchObject({ code: 'SITE_UNKNOWN' });
-    expect(await listDiamniadio()).toEqual([]);
+    // Preuve directe : le dépôt ne contient aucun trajet, quel que soit le site ou l'heure.
+    const trips = app.get(TripRepository);
+    const stored = await Promise.all(
+      TRIP_SITES.map((site) => trips.listUpcomingBySite(site, new Date(0))),
+    );
+    expect(stored.flat()).toEqual([]);
   });
 
   it('001-AS3: rejects the list of an unknown site (400 SITE_UNKNOWN)', async () => {
