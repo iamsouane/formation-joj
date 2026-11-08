@@ -3,7 +3,13 @@ import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { ConfettiRain } from './confetti-rain';
 import { FlameCelebration } from './flame-celebration';
-import { formatDeparture, formatPhone, phoneHref } from './format';
+import {
+  formatDepartureDay,
+  formatDepartureTime,
+  formatPhone,
+  phoneHref,
+  SITE_LABELS,
+} from './format';
 
 interface BookingConfirmationProps {
   trip: TripResponse;
@@ -11,34 +17,53 @@ interface BookingConfirmationProps {
   onDone: () => void;
 }
 
-/** La place est réservée : le code à garder, et le conducteur à appeler pour le rendez-vous. */
+/**
+ * La place est réservée : un billet façon carte d'embarquement. L'heure et le trajet en haut, une
+ * ligne de déchirure, puis le code en gros (à garder) et le conducteur à appeler pour le
+ * rendez-vous. La mascotte à la flamme saute de joie sous une pluie de confettis.
+ */
 export function BookingConfirmation({ trip, confirmation, onDone }: BookingConfirmationProps) {
   const titleId = useId();
   return (
-    <section
-      aria-labelledby={titleId}
-      className="relative flex flex-col gap-4 overflow-hidden border-2 border-foreground p-4"
-    >
+    <section aria-labelledby={titleId} className="ticket">
       <ConfettiRain />
-      <FlameCelebration />
-      <h2 id={titleId} className="text-2xl font-bold">
-        Place réservée
-      </h2>
-      <p>
-        {trip.departurePlace}, {formatDeparture(trip.departureAt)}
-      </p>
-      <div className="flex flex-col gap-1">
-        <span className="text-sm">Votre code de réservation</span>
-        <strong className="text-3xl tracking-wider select-all">{confirmation.bookingCode}</strong>
-        <span className="text-sm">Gardez ce code : il identifie votre réservation.</span>
-      </div>
-      <p>
-        Appelez le conducteur pour fixer le point de rendez-vous :{' '}
-        <a href={phoneHref(confirmation.driverPhone)} className="font-bold underline">
-          {formatPhone(confirmation.driverPhone)}
-        </a>
-      </p>
-      <Button variant="outline" onClick={onDone} className="thumb-action self-start">
+      <header className="ticket-head">
+        <div className="ticket-trip">
+          <h2 id={titleId} className="ticket-title">
+            Place réservée
+          </h2>
+          <p className="ticket-when" data-part="ticket-time">
+            <time dateTime={trip.departureAt}>
+              <span className="ticket-time">{formatDepartureTime(trip.departureAt)}</span>{' '}
+              <span className="ticket-day">{formatDepartureDay(trip.departureAt)}</span>
+            </time>
+          </p>
+          <p className="ticket-route" data-part="ticket-route">
+            {trip.departurePlace} → {SITE_LABELS[trip.site]}
+          </p>
+        </div>
+        <FlameCelebration />
+      </header>
+      <div className="ticket-tear" aria-hidden="true" />
+      <dl className="ticket-body">
+        <div className="ticket-field">
+          <dt>Code de réservation</dt>
+          <dd className="ticket-code select-all" data-part="ticket-code">
+            {confirmation.bookingCode}
+          </dd>
+          <dd className="ticket-note">Gardez ce code : il identifie votre réservation.</dd>
+        </div>
+        <div className="ticket-field">
+          <dt>Conducteur</dt>
+          <dd>
+            <a href={phoneHref(confirmation.driverPhone)} className="ticket-phone">
+              {formatPhone(confirmation.driverPhone)}
+            </a>
+          </dd>
+          <dd className="ticket-note">Appelez-le pour fixer le point de rendez-vous.</dd>
+        </div>
+      </dl>
+      <Button variant="outline" size="lg" onClick={onDone} className="thumb-action ticket-done">
         Voir les autres départs
       </Button>
     </section>

@@ -10,7 +10,7 @@ export function FlameCelebration() {
       width={504}
       height={800}
       data-motion={reduced ? 'reduced' : 'full'}
-      className="flame-celebration mx-auto h-48 w-auto"
+      className="flame-celebration"
     />
   );
 }

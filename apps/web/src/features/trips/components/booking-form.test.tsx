@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fixture, pikineToDiamniadio } from '@/mocks/fixture';
+import { formatDepartureTime } from './format';
 import { problem } from '@/mocks/handlers';
 import { server } from '@/mocks/node';
 import { renderRoute, trackRequests, writes } from '@/test/utils';
@@ -48,6 +49,30 @@ describe('BookingForm', () => {
     expect(
       within(confirmation).getByRole('img', { name: 'La mascotte des JOJ saute de joie' }),
     ).toBeInTheDocument();
+  });
+
+  it('005-AS4: shows the confirmation as a boarding-pass ticket: time, route, code in large type', async () => {
+    const { user, form } = await openBookingForm('Pikine');
+    await user.type(within(form).getByLabelText('Votre nom'), 'Awa');
+    await user.type(within(form).getByLabelText('Votre téléphone'), '77 123 45 67');
+    await user.click(within(form).getByRole('button', { name: 'Confirmer la réservation' }));
+
+    const ticket = await screen.findByRole('region', { name: 'Place réservée' });
+    // Le billet se lit comme une carte d'embarquement : l'heure, le trajet, le code en gros.
+    const when = ticket.querySelector('[data-part="ticket-time"] time');
+    expect(when).toHaveAttribute('dateTime', pikineToDiamniadio.departureAt);
+    expect(when).toHaveTextContent(formatDepartureTime(pikineToDiamniadio.departureAt));
+    expect(ticket.querySelector('[data-part="ticket-route"]')).toHaveTextContent(
+      'Pikine → Diamniadio',
+    );
+    const { bookingCode } = fixture.bookings.at(-1)!;
+    expect(ticket.querySelector('[data-part="ticket-code"]')).toHaveTextContent(bookingCode);
+    // Le conducteur s'appelle d'un geste ; aucun envoi WhatsApp : ce serait une nouveauté de produit.
+    expect(within(ticket).getByRole('link', { name: /77 123 45 67/ })).toHaveAttribute(
+      'href',
+      'tel:+221771234567',
+    );
+    expect(within(ticket).queryByRole('link', { name: /WhatsApp/i })).not.toBeInTheDocument();
   });
 
   it('005-AS4: fits the thumb: full-width actions and phone-friendly fields', async () => {
