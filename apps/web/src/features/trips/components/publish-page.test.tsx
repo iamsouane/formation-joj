@@ -192,6 +192,65 @@ describe('PublishPage', () => {
     expect(fixture.trips).toHaveLength(before);
   });
 
+  it.each([
+    {
+      code: 'SITE_UNKNOWN',
+      announcement: ANNOUNCEMENT,
+      arrange: () => mockControl.setTripDraft(understood({ site: 'Thiès' })),
+      says: 'Choisissez Dakar, Diamniadio ou Saly.',
+    },
+    {
+      code: 'DEPARTURE_IN_PAST',
+      announcement: ANNOUNCEMENT,
+      arrange: () => mockControl.setTripDraft(understood({ departureAt: '2026-11-07T08:00' })),
+      says: 'Cette heure est déjà passée. Indiquez un départ à venir.',
+    },
+    {
+      code: 'MESSAGE_EMPTY',
+      announcement: '   ',
+      arrange: () => {},
+      says: 'Collez votre annonce avant de publier.',
+    },
+    {
+      code: 'VALIDATION_FAILED',
+      announcement: ANNOUNCEMENT,
+      arrange: () => mockControl.setTripDraft(understood({ seats: 0 })),
+      says: 'Vérifiez les champs signalés.',
+    },
+    {
+      code: 'INTERNAL_ERROR',
+      announcement: ANNOUNCEMENT,
+      arrange: () => mockControl.failNext('POST /api/trips/from-message'),
+      says: 'Une erreur est survenue, réessayez.',
+    },
+  ])('006-AS7: explains $code in French', async ({ announcement, arrange, says }) => {
+    arrange();
+    const { user } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre annonce WhatsApp'), announcement);
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(says);
+    expect(screen.getByRole('form', { name: 'Publier depuis votre annonce' })).toBeInTheDocument();
+  });
+
+  it('006-AS7: marks the refused fields of the form', async () => {
+    const { user } = await openPublishPage();
+    await user.click(screen.getByRole('button', { name: 'Remplir le formulaire' }));
+    const form = screen.getByRole('form', { name: 'Publier avec le formulaire' });
+    await user.type(within(form).getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+
+    expect(await within(form).findByRole('alert')).toHaveTextContent(
+      'Vérifiez les champs signalés.',
+    );
+    expect(within(form).getByLabelText('Lieu de départ')).toHaveAttribute('aria-invalid', 'true');
+    expect(within(form).getByLabelText('Places proposées')).toHaveAttribute('aria-invalid', 'true');
+    expect(within(form).getByLabelText('Votre téléphone')).not.toHaveAttribute('aria-invalid');
+  });
+
   it('006-AS1: leads the driver from the home page to the publication page', async () => {
     const user = userEvent.setup();
     const { router } = await renderRoute({ initialEntries: ['/'] });

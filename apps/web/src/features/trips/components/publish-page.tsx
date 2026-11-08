@@ -7,8 +7,11 @@ import { AnnouncementForm } from './announcement-form';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
 import { missingFieldsOf } from './missing-fields';
+import { publishErrorMessage, refusedFieldsOf } from './publish-error-message';
 import { PublishedTrip } from './published-trip';
 import { TripForm, type TripFormFieldErrors } from './trip-form';
+
+const REFUSED_FIELD = 'À vérifier';
 
 /**
  * Pourquoi l'application a amené le conducteur au formulaire : une annonce incomplète (avec ce
@@ -69,9 +72,14 @@ export function PublishPage() {
     fromForm.mutate(input, { onSuccess: setPublished });
   }
 
-  // Les champs absents de l'annonce restent signalés jusqu'à la publication par le formulaire.
-  const missing =
-    fallback?.reason === 'unreadable' && !fromForm.isError && !fromForm.isPending
+  // Un refus de l'annonce qui ne mène pas au formulaire s'affiche sous l'annonce.
+  const announcementError =
+    fromMessage.isError && !fallbackFor(fromMessage.error) ? fromMessage.error : null;
+  // Les champs absents de l'annonce restent signalés jusqu'à la publication par le formulaire ;
+  // ensuite, ce sont ceux que l'API refuse.
+  const formFieldErrors: TripFormFieldErrors | undefined = fromForm.isError
+    ? Object.fromEntries(refusedFieldsOf(fromForm.error).map((field) => [field, REFUSED_FIELD]))
+    : fallback?.reason === 'unreadable' && !fromForm.isPending
       ? fallback.missing
       : undefined;
 
@@ -89,11 +97,12 @@ export function PublishPage() {
               onPhoneChange={setPhone}
               pending={waiting}
               onPublish={publishFromForm}
-              fieldErrors={missing}
+              fieldErrors={formFieldErrors}
             >
               <p role="status" className="publish-status">
                 {waiting && 'Publication en cours…'}
               </p>
+              {fromForm.isError && <PublishError error={fromForm.error} />}
             </TripForm>
           </>
         ) : (
@@ -105,14 +114,25 @@ export function PublishPage() {
             pending={waiting}
             onPublish={publishFromMessage}
             onSwitchToForm={() => setMode('form')}
+            refusedFields={refusedFieldsOf(announcementError)}
           >
             <p role="status" className="publish-status">
               {waiting && 'L’assistant lit votre annonce…'}
             </p>
+            {announcementError && <PublishError error={announcementError} />}
           </AnnouncementForm>
         )}
       </div>
     </>
+  );
+}
+
+/** Un refus de la publication, dit en français. */
+function PublishError({ error }: { error: unknown }) {
+  return (
+    <p role="alert" className="font-semibold text-destructive">
+      {publishErrorMessage(error)}
+    </p>
   );
 }
 
