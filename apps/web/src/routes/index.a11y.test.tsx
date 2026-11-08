@@ -117,6 +117,21 @@ describe('folding the hero', () => {
     expect(heroOf()).toHaveAttribute('data-state', 'band');
     expect(transitions).not.toHaveBeenCalled();
   });
+
+  it('005-AS7: still folds at once from the keyboard after tapping the site already chosen', async () => {
+    const transitions = recordViewTransitions();
+    const user = userEvent.setup();
+    await renderRoute({ initialEntries: ['/?site=dakar'] });
+    await screen.findByRole('list', { name: 'Départs vers Dakar' });
+
+    // Toucher le site déjà choisi ne change rien…
+    await user.click(within(heroOf()).getByRole('radio', { name: 'Dakar' }));
+    // …et le choix suivant, au clavier, ne doit pas être pris pour un toucher.
+    await user.keyboard('{ArrowRight}');
+
+    await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    expect(transitions).not.toHaveBeenCalled();
+  });
 });
 
 describe('home page accessibility', () => {

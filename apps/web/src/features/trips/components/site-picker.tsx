@@ -22,7 +22,13 @@ export function SitePicker({ value, onChange }: SitePickerProps) {
   }
 
   return (
-    <fieldset className="site-picker flex flex-col">
+    <fieldset
+      className="site-picker flex flex-col"
+      // Une touche pressée annonce un choix au clavier, même après un toucher resté sans effet.
+      onKeyDown={() => {
+        pointerPressed.current = false;
+      }}
+    >
       <legend className="mb-2 text-sm font-semibold">Votre site d’épreuve</legend>
       <div className="grid grid-cols-3 border-2 border-foreground">
         {TRIP_SITES.map((site) => (
