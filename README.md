@@ -1,5 +1,11 @@
 # JOJ Dakar 2026 : point de départ de l'atelier C
 
+**Le problème et pour qui** : un covoiturage vers les sites des JOJ (Dakar, Diamniadio, Saly), pour les supporters sans véhicule et les conducteurs qui s'y rendent avec des places vides ; le conducteur publie son trajet, le supporter trouve les départs à venir vers son site.
+
+**Lancer l'application** : `pnpm db:reset` si la base locale est ancienne ou incohérente, puis `pnpm dev` ; l'API se découvre dans Swagger sur http://localhost:3000/api/docs.
+
+**Ce qui manque** : la réservation d'une place, l'annulation (d'une réservation ou d'un trajet), la publication d'un trajet depuis un message libre, et les écrans ; seule l'API de publication et de liste des trajets existe.
+
 Un monorepo pnpm : une API NestJS, un front React et des schémas partagés. Le socle technique est prêt (configuration, base, erreurs, client HTTP, fausse API des tests) ; aucun module métier n'est écrit. Le module de référence, qui montre toute la chaîne du schéma partagé à l'écran, se lit sur la branche `main` (voir `CLAUDE.md`).
 
 L'énoncé de l'atelier C est dans [`task/ATELIER-C.md`](task/ATELIER-C.md).
