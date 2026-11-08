@@ -1,9 +1,12 @@
 import {
+  type BookingConfirmationResponse,
+  bookSeatSchema,
   type ProblemDetails,
   type PublishedTripResponse,
   publishTripSchema,
   TRIP_SITES,
   type TripResponse,
+  tripIdParamSchema,
   type TripSite,
   upcomingTripsQuerySchema,
 } from '@joj/shared';
@@ -68,13 +71,21 @@ const siteUnknown = (site: string) =>
     details: { site, allowed: TRIP_SITES },
   });
 
+/** Comme le domaine de l'API : sans espaces ni tirets, sans préfixe +221 ou 00221. */
+function normalisePhone(phone: string): string {
+  return phone.replace(/[\s-]/g, '').replace(/^(\+221|00221)/, '');
+}
+
+const passengerPhonesOf = (tripId: string) =>
+  fixture.bookings.filter((booking) => booking.tripId === tripId).map((b) => b.passengerPhone);
+
 /** Ce que la liste montre d'un trajet : ni le téléphone du conducteur, ni le code de gestion. */
 function toPublic({
   driverPhone: _phone,
   managementCode: _code,
   ...trip
 }: StoredTrip): TripResponse {
-  return { ...trip, remainingSeats: trip.seats };
+  return { ...trip, remainingSeats: trip.seats - passengerPhonesOf(trip.id).length };
 }
 
 const byDeparture = (a: StoredTrip, b: StoredTrip) =>
@@ -117,6 +128,7 @@ export const handlers: RequestHandler[] = [
       ...input.data,
       id: crypto.randomUUID(),
       site,
+      driverPhone: normalisePhone(input.data.driverPhone),
       departureAt: departureAt.toISOString(),
       managementCode: crypto.randomUUID().replaceAll('-', '').slice(0, 12),
     };
@@ -126,5 +138,51 @@ export const handlers: RequestHandler[] = [
       managementCode: trip.managementCode,
     };
     return HttpResponse.json(published, { status: 201 });
+  }),
+
+  http.post('*/api/trips/:tripId/bookings', async ({ request, params }) => {
+    const failure = await gate('POST', '/api/trips/:tripId/bookings');
+    if (failure) return failure;
+    const param = tripIdParamSchema.safeParse(params);
+    if (!param.success) return validationFailed(param.error);
+    const input = bookSeatSchema.safeParse(await request.json());
+    if (!input.success) return validationFailed(input.error);
+    const { tripId } = param.data;
+
+    const trip = fixture.trips.find((candidate) => candidate.id === tripId);
+    if (trip === undefined) {
+      return problem(404, 'TRIP_NOT_FOUND', `No trip ${tripId}`, { details: { tripId } });
+    }
+    if (Date.parse(trip.departureAt) <= Date.now()) {
+      return problem(409, 'TRIP_DEPARTED', 'This trip has already departed', {
+        details: { tripId, departureAt: trip.departureAt },
+      });
+    }
+    const passengerPhone = normalisePhone(input.data.passengerPhone);
+    const passengerPhones = passengerPhonesOf(tripId);
+    if (passengerPhones.includes(passengerPhone)) {
+      return problem(409, 'PASSENGER_ALREADY_BOOKED', 'This phone has already booked this trip', {
+        details: { tripId },
+      });
+    }
+    if (passengerPhones.length >= trip.seats) {
+      return problem(409, 'TRIP_FULL', 'This trip has no seat left', {
+        details: { tripId, seats: trip.seats },
+      });
+    }
+
+    const bookingCode = crypto.randomUUID().replaceAll('-', '').slice(0, 12);
+    fixture.bookings.push({
+      id: crypto.randomUUID(),
+      tripId,
+      passengerName: input.data.passengerName,
+      passengerPhone,
+      bookingCode,
+    });
+    const confirmation: BookingConfirmationResponse = {
+      bookingCode,
+      driverPhone: trip.driverPhone,
+    };
+    return HttpResponse.json(confirmation, { status: 201 });
   }),
 ];

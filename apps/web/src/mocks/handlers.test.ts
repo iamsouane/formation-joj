@@ -2,9 +2,14 @@
  * La fausse API tient le même contrat que apps/api : si elle s'en écarte, les tests du front
  * passent contre une API qui n'existe pas. Ces tests l'appellent avec `fetch`, sans React.
  */
-import { publishedTripSchema, tripListSchema } from '@joj/shared';
+import { bookingConfirmationSchema, publishedTripSchema, tripListSchema } from '@joj/shared';
 import { describe, expect, it } from 'vitest';
-import { departedToDiamniadio, guediawayeToDiamniadio, pikineToDiamniadio } from './fixture';
+import {
+  departedToDiamniadio,
+  fullToDakar,
+  guediawayeToDiamniadio,
+  pikineToDiamniadio,
+} from './fixture';
 
 const HOUR = 60 * 60 * 1000;
 const inHours = (hours: number) => new Date(Date.now() + hours * HOUR).toISOString();
@@ -94,5 +99,68 @@ describe('mock trips API', () => {
       code: 'VALIDATION_FAILED',
       errors: [expect.objectContaining({ path: 'seats' })],
     });
+  });
+});
+
+describe('mock bookings API', () => {
+  const awa = { passengerName: 'Awa', passengerPhone: '77 123 45 67' };
+  const book = (tripId: string, passenger: unknown = awa) =>
+    call(`/api/trips/${tripId}/bookings`, { method: 'POST', body: JSON.stringify(passenger) });
+  const remainingSeatsOf = async (tripId: string) => {
+    const trips = tripListSchema.parse(await (await call('/api/trips?site=diamniadio')).json());
+    return trips.find((trip) => trip.id === tripId)?.remainingSeats;
+  };
+
+  it('002-AS1: books a seat (201) and returns a booking code and the normalised driver phone', async () => {
+    const response = await book(pikineToDiamniadio.id);
+    expect(response.status).toBe(201);
+    expect(bookingConfirmationSchema.parse(await response.json())).toEqual({
+      bookingCode: expect.stringMatching(/^\S{8,}$/),
+      driverPhone: '771234567',
+    });
+
+    const published = publishedTripSchema.parse(await (await publish(newTrip())).json());
+    const second = bookingConfirmationSchema.parse(await (await book(published.id)).json());
+    expect(second.driverPhone).toBe('776543210');
+  });
+
+  it('002-AS2: lists the trip with 2 remaining seats after one booking', async () => {
+    expect(await remainingSeatsOf(pikineToDiamniadio.id)).toBe(3);
+    await book(pikineToDiamniadio.id);
+    expect(await remainingSeatsOf(pikineToDiamniadio.id)).toBe(2);
+  });
+
+  it('002-AS3: rejects a full trip with a 409 TRIP_FULL problem', async () => {
+    const response = await book(fullToDakar.id);
+    expect(response.status).toBe(409);
+    expect(response.headers.get('content-type')).toContain('application/problem+json');
+    expect(await response.json()).toMatchObject({ code: 'TRIP_FULL' });
+  });
+
+  it('002-AS4: rejects a second booking from the same phone with a 409 PASSENGER_ALREADY_BOOKED problem', async () => {
+    await book(pikineToDiamniadio.id, { passengerName: 'Awa', passengerPhone: '77 123 45 67' });
+    const response = await book(pikineToDiamniadio.id, {
+      passengerName: 'Awa Ndiaye',
+      passengerPhone: '+221771234567',
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'PASSENGER_ALREADY_BOOKED' });
+    expect(await remainingSeatsOf(pikineToDiamniadio.id)).toBe(2);
+  });
+
+  it('002-AS5: rejects a departed trip with a 409 TRIP_DEPARTED problem', async () => {
+    const response = await book(departedToDiamniadio.id);
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'TRIP_DEPARTED' });
+  });
+
+  it('002-AS6: rejects an unknown trip with a 404 TRIP_NOT_FOUND problem', async () => {
+    const response = await book('0199f5c2-0000-7000-8000-0000000000ff');
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'TRIP_NOT_FOUND' });
+
+    const malformed = await book('not-a-uuid');
+    expect(malformed.status).toBe(400);
+    expect(await malformed.json()).toMatchObject({ code: 'VALIDATION_FAILED' });
   });
 });

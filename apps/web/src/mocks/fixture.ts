@@ -7,7 +7,10 @@ import type { TripResponse } from '@joj/shared';
  * Chaque ressource de l'API y ajoute sa liste, avec ses valeurs de départ.
  */
 
-/** Un trajet tel que la base le garde : avec le téléphone du conducteur et le code de gestion. */
+/**
+ * Un trajet tel que la base le garde : avec le téléphone du conducteur, normalisé
+ * (« 771234567 »), et le code de gestion ; les places restantes se calculent depuis `bookings`.
+ */
 export interface StoredTrip extends Omit<TripResponse, 'remainingSeats'> {
   driverPhone: string;
   managementCode: string;
@@ -24,7 +27,7 @@ export const pikineToDiamniadio: StoredTrip = {
   departureAt: inHours(24),
   seats: 3,
   pricePerSeat: 1000,
-  driverPhone: '+221771234567',
+  driverPhone: '771234567',
   managementCode: 'pikine-code-1',
 };
 
@@ -35,7 +38,7 @@ export const guediawayeToDiamniadio: StoredTrip = {
   departureAt: inHours(26),
   seats: 4,
   pricePerSeat: 1500,
-  driverPhone: '+221772345678',
+  driverPhone: '772345678',
   managementCode: 'guediawaye-code',
 };
 
@@ -46,7 +49,7 @@ export const plateauToSaly: StoredTrip = {
   departureAt: inHours(24),
   seats: 2,
   pricePerSeat: 3000,
-  driverPhone: '+221773456789',
+  driverPhone: '773456789',
   managementCode: 'plateau-code-1',
 };
 
@@ -58,12 +61,43 @@ export const departedToDiamniadio: StoredTrip = {
   departureAt: inHours(-2),
   seats: 2,
   pricePerSeat: 500,
-  driverPhone: '+221770000000',
+  driverPhone: '770000000',
   managementCode: 'departed-code',
 };
 
-const initial = (): { trips: StoredTrip[] } => ({
+/** Un trajet vers Dakar d'une seule place, déjà réservée dans `bookings`. */
+export const fullToDakar: StoredTrip = {
+  id: '0199f5c2-0000-7000-8000-000000000105',
+  departurePlace: 'Yoff',
+  site: 'dakar',
+  departureAt: inHours(20),
+  seats: 1,
+  pricePerSeat: 500,
+  driverPhone: '774445566',
+  managementCode: 'full-code-1',
+};
+
+/** Une réservation telle que la base la garde, téléphone du supporter normalisé. */
+export interface StoredBooking {
+  id: string;
+  tripId: string;
+  passengerName: string;
+  passengerPhone: string;
+  bookingCode: string;
+}
+
+const initial = (): { trips: StoredTrip[]; bookings: StoredBooking[] } => ({
+  bookings: [
+    {
+      id: '0199f5c2-0000-7000-8000-000000000201',
+      tripId: fullToDakar.id,
+      passengerName: 'Fatou',
+      passengerPhone: '779998877',
+      bookingCode: 'fatou-booking',
+    },
+  ],
   trips: [
+    { ...fullToDakar },
     { ...guediawayeToDiamniadio },
     { ...plateauToSaly },
     { ...departedToDiamniadio },
