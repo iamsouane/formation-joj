@@ -15,15 +15,26 @@ const REFUSED_FIELD = 'À vérifier';
 
 /**
  * Pourquoi l'application a amené le conducteur au formulaire : une annonce incomplète (avec ce
- * qui y manque), ou un assistant qui ne répond pas.
+ * qui y manque), une annonce dont l'API refuse des champs (avec ces champs), ou un assistant qui
+ * ne répond pas.
  */
-type Fallback = { reason: 'unreadable'; missing: TripDraftField[] } | { reason: 'unavailable' };
+type Fallback =
+  | { reason: 'unreadable'; missing: TripDraftField[] }
+  | { reason: 'refused'; error: ApiError; refused: TripFormFieldErrors }
+  | { reason: 'unavailable' };
+
+/** Les champs qu'un refus VALIDATION_FAILED désigne, marqués « À vérifier ». */
+const refusedMarks = (error: unknown): TripFormFieldErrors =>
+  Object.fromEntries(refusedFieldsOf(error).map((field) => [field, REFUSED_FIELD]));
 
 /** L'annonce n'a pas pu être lue jusqu'au bout : le conducteur la complète dans le formulaire. */
 function fallbackFor(error: unknown): Fallback | null {
   const missing = missingFieldsOf(error);
   if (missing) {
     return { reason: 'unreadable', missing };
+  }
+  if (error instanceof ApiError && error.code === 'VALIDATION_FAILED') {
+    return { reason: 'refused', error, refused: refusedMarks(error) };
   }
   return error instanceof ApiError && error.code === 'ASSISTANT_UNAVAILABLE'
     ? { reason: 'unavailable' }
@@ -34,8 +45,9 @@ function fallbackFor(error: unknown): Fallback | null {
  * Publier un trajet depuis son téléphone. Sous le bandeau de l'accueil (le ciel, la frise, la
  * mascotte au repos), le conducteur colle son annonce WhatsApp avec son téléphone, ou passe à
  * tout moment au formulaire classique, sans perdre son téléphone. L'application l'y amène
- * d'elle-même quand l'annonce est incomplète (son annonce reste au-dessus, ce qui y manque est
- * signalé) ou quand l'assistant ne répond pas. Le trajet publié s'affiche ensuite en billet, avec
+ * d'elle-même quand l'annonce est incomplète ou que l'API en refuse des champs (son annonce
+ * reste au-dessus, ce qui y manque ou y est refusé est signalé), ou quand l'assistant ne répond
+ * pas. Le trajet publié s'affiche ensuite en billet, avec
  * son code et son lien de gestion.
  */
 export function PublishPage() {
@@ -70,11 +82,13 @@ export function PublishPage() {
   // Un refus de l'annonce qui ne mène pas au formulaire s'affiche sous l'annonce.
   const announcementError =
     fromMessage.isError && !fallbackFor(fromMessage.error) ? fromMessage.error : null;
-  // Les champs refusés par l'API ; ceux absents de l'annonce, le formulaire les signale lui-même
-  // tant qu'ils ne sont pas remplis.
+  // Les champs refusés par l'API, au formulaire ou à l'annonce ; ceux absents de l'annonce, le
+  // formulaire les signale lui-même tant qu'ils ne sont pas remplis.
   const refusedFields: TripFormFieldErrors | undefined = fromForm.isError
-    ? Object.fromEntries(refusedFieldsOf(fromForm.error).map((field) => [field, REFUSED_FIELD]))
-    : undefined;
+    ? refusedMarks(fromForm.error)
+    : fallback?.reason === 'refused'
+      ? fallback.refused
+      : undefined;
   const missingFields = fallback?.reason === 'unreadable' ? fallback.missing : undefined;
 
   return (
@@ -109,7 +123,6 @@ export function PublishPage() {
             pending={waiting}
             onPublish={publishFromMessage}
             onSwitchToForm={() => setMode('form')}
-            refusedFields={refusedFieldsOf(announcementError)}
           >
             <p role="status" className="publish-status">
               {waiting && 'L’assistant lit votre annonce…'}
@@ -142,6 +155,10 @@ function AnnouncementRecall({ message, fallback }: { message: string; fallback: 
       {fallback.reason === 'unavailable' ? (
         <p role="alert" className="publish-notice">
           L’assistant ne répond pas. Remplissez le formulaire, c’est rapide.
+        </p>
+      ) : fallback.reason === 'refused' ? (
+        <p role="alert" className="publish-notice">
+          {publishErrorMessage(fallback.error)}
         </p>
       ) : (
         <p className="publish-notice">

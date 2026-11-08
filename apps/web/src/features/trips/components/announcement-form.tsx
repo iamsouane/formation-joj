@@ -12,8 +12,6 @@ interface AnnouncementFormProps {
   pending: boolean;
   onPublish: () => void;
   onSwitchToForm: () => void;
-  /** Les champs qu'un refus VALIDATION_FAILED désigne : `message`, `driverPhone`. */
-  refusedFields?: readonly string[];
   /** Sous le bouton : l'attente, ou le refus traduit. */
   children?: ReactNode;
 }
@@ -31,10 +29,8 @@ export function AnnouncementForm({
   pending,
   onPublish,
   onSwitchToForm,
-  refusedFields = [],
   children,
 }: AnnouncementFormProps) {
-  const refused = (field: string) => (refusedFields.includes(field) ? true : undefined);
   const messageId = useId();
   const phoneId = useId();
 
@@ -54,7 +50,6 @@ export function AnnouncementForm({
           maxLength={TRIP_MESSAGE_MAX_LENGTH}
           value={message}
           onChange={(event) => onMessageChange(event.target.value)}
-          aria-invalid={refused('message')}
           placeholder="Je pars de Pikine pour Diamniadio demain 8h, 3 places, 1000 F"
           className="announcement-bubble"
         />
@@ -67,7 +62,6 @@ export function AnnouncementForm({
           type="tel"
           inputMode="tel"
           autoComplete="tel"
-          aria-invalid={refused('driverPhone')}
           value={phone}
           onChange={(event) => onPhoneChange(event.target.value)}
           className="h-11"

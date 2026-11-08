@@ -325,12 +325,6 @@ describe('PublishPage', () => {
       says: 'Collez votre annonce avant de publier.',
     },
     {
-      code: 'VALIDATION_FAILED',
-      announcement: ANNOUNCEMENT,
-      arrange: () => mockControl.setTripDraft(understood({ seats: 0 })),
-      says: 'Vérifiez les champs signalés.',
-    },
-    {
       code: 'INTERNAL_ERROR',
       announcement: ANNOUNCEMENT,
       arrange: () => mockControl.failNext('POST /api/trips/from-message'),
@@ -346,6 +340,29 @@ describe('PublishPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(says);
     expect(screen.getByRole('form', { name: 'Publier depuis votre annonce' })).toBeInTheDocument();
+  });
+
+  it('006-AS7: brings a refused announcement to the form with the refused fields marked', async () => {
+    mockControl.setTripDraft(understood({ seats: 0 }));
+    const before = fixture.trips.length;
+    const { user } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre annonce WhatsApp'), ANNOUNCEMENT);
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+
+    const form = await screen.findByRole('form', { name: 'Publier avec le formulaire' });
+    expect(screen.getByRole('alert')).toHaveTextContent('Vérifiez les champs signalés.');
+    // Comme en AS3 : l'annonce au-dessus du formulaire, pour la relire.
+    const recall = screen.getByRole('figure', { name: 'Votre annonce' });
+    expect(recall).toHaveTextContent(ANNOUNCEMENT);
+    expect(recall.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const seats = within(form).getByLabelText('Places proposées');
+    expect(seats).toHaveAttribute('aria-invalid', 'true');
+    expect(seats).toHaveAccessibleDescription('À vérifier');
+    expect(within(form).getByLabelText('Lieu de départ')).not.toHaveAttribute('aria-invalid');
+    expect(within(form).getByLabelText('Votre téléphone')).toHaveValue('77 123 45 67');
+    expect(fixture.trips).toHaveLength(before);
   });
 
   it('006-AS7: marks the refused fields of the form', async () => {
