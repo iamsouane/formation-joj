@@ -76,9 +76,12 @@ const siteUnknown = (site: string) =>
     details: { site, allowed: TRIP_SITES },
   });
 
-/** Comme le domaine de l'API : sans espaces ni tirets, sans préfixe +221 ou 00221. */
+/** Comme le domaine de l'API : sans espaces ni tirets, sans +221, 00221, ni 221 devant 12 chiffres. */
 function normalisePhone(phone: string): string {
-  return phone.replace(/[\s-]/g, '').replace(/^(\+221|00221)/, '');
+  return phone
+    .replace(/[\s-]/g, '')
+    .replace(/^(\+221|00221)/, '')
+    .replace(/^221(?=\d{9}$)/, '');
 }
 
 /** Comme l'API : une réservation annulée ne tient plus de place. */
