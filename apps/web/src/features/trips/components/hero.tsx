@@ -1,6 +1,7 @@
 import type { TripSite } from '@joj/shared';
 import type { SiteChoiceGesture } from './site-picker';
 import { useId } from 'react';
+import { usePointerTilt } from '@/lib/use-pointer-tilt';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
 import { SitePicker } from './site-picker';
@@ -17,10 +18,17 @@ interface HeroProps {
  */
 export function Hero({ site, onSiteChange }: HeroProps) {
   const titleId = useId();
+  // Le hero entier suit le pointeur : les plans du décor s'en servent pour se décaler en profondeur.
+  const { tiltHandlers } = usePointerTilt();
   const folded = site !== undefined;
 
   return (
-    <section aria-labelledby={titleId} className="hero" data-state={folded ? 'band' : 'open'}>
+    <section
+      aria-labelledby={titleId}
+      className="hero"
+      data-state={folded ? 'band' : 'open'}
+      {...tiltHandlers}
+    >
       <HeroBackdrop />
       <div className="hero-inner">
         <div className="hero-brand">

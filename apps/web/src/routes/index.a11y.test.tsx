@@ -5,7 +5,7 @@
  * la rend possible.
  * Puis un audit axe-core de chaque état de l'accueil.
  */
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -46,6 +46,26 @@ describe('home page on a phone screen', () => {
     const list = await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
     expect(heroOf()).toHaveAttribute('data-state', 'band');
     expect(heroOf().nextElementSibling).toContainElement(list);
+  });
+});
+
+describe('hero depth', () => {
+  it('005-AS6: shifts the backdrop planes in depth with the pointer, over the whole hero', async () => {
+    await renderRoute({ initialEntries: ['/'] });
+    const hero = heroOf();
+    vi.spyOn(hero, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 360, 640));
+    const tilt = () => ({
+      x: hero.style.getPropertyValue('--tilt-x'),
+      y: hero.style.getPropertyValue('--tilt-y'),
+    });
+
+    // Le décor est dans le hero : il hérite de l'inclinaison que le hero porte.
+    expect(hero.querySelector('[data-part="sun"]')).not.toBeNull();
+    fireEvent.pointerMove(hero, { clientX: 360, clientY: 160 });
+    expect(tilt()).toEqual({ x: '1', y: '-0.5' });
+
+    fireEvent.pointerLeave(hero);
+    expect(tilt()).toEqual({ x: '0', y: '0' });
   });
 });
 

@@ -149,6 +149,8 @@ body {
 }
 
 .hero {
+  --tilt-x: 0;
+  --tilt-y: 0;
   position: relative;
   display: flex;
   min-height: 100svh;
@@ -255,6 +257,20 @@ body {
   z-index: 1;
 }
 
+/*
+ * La profondeur : le hero porte --tilt-x et --tilt-y (de -1 à 1) selon le doigt ou la souris.
+ * Chaque plan glisse à l'opposé du pointeur, d'autant plus qu'il est proche : le soleil à peine,
+ * le poteau un peu, la route et la frise davantage. La propriété `translate` reste libre des
+ * animations, qui n'utilisent que `transform`.
+ */
+.hero-sun,
+.hero-sun-rays,
+.hero-road,
+.hero-signpost,
+.hero-frieze {
+  transition: translate 600ms var(--ease-out-soft);
+}
+
 /* Le soleil levant, et ses rayons qui tournent très lentement autour de lui. */
 .hero-sun,
 .hero-sun-rays {
@@ -263,7 +279,7 @@ body {
   left: 50%;
   aspect-ratio: 1;
   border-radius: 50%;
-  translate: -50% -50%;
+  translate: calc(-50% + var(--tilt-x) * -6px) calc(-50% + var(--tilt-y) * -4px);
 }
 
 .hero-sun {
@@ -302,6 +318,7 @@ body {
   overflow: hidden;
   perspective: 240px;
   perspective-origin: 50% 0;
+  translate: calc(var(--tilt-x) * -16px) 0;
   mask-image: linear-gradient(180deg, transparent 0, #000 1.5rem);
 }
 
@@ -365,7 +382,7 @@ body {
   flex-direction: column;
   gap: 2px;
   padding-bottom: 1.4rem;
-  translate: 0 -100%;
+  translate: calc(var(--tilt-x) * -10px) -100%;
   background: linear-gradient(
       90deg,
       transparent 0.6rem,
@@ -426,9 +443,10 @@ body {
 .hero-frieze {
   position: absolute;
   bottom: 0;
-  left: 0;
-  width: calc(100% + 4.5rem);
+  left: -1.5rem;
+  width: calc(100% + 7.5rem);
   height: 0.9rem;
+  translate: calc(var(--tilt-x) * -22px) 0;
   border-top: 2px solid var(--joj-black);
   background:
     conic-gradient(from 135deg at 16.667% 0, var(--joj-green) 90deg, transparent 0) 0 0 / 4.5rem
