@@ -2,6 +2,7 @@ import type { TripSite } from '@joj/shared';
 import type { SiteChoiceGesture } from './site-picker';
 import type { FoldPhase } from './use-fold-choreography';
 import { Link } from '@tanstack/react-router';
+import { BrandLink } from './brand-link';
 import { useId } from 'react';
 import { usePointerTilt } from '@/lib/use-pointer-tilt';
 import { HeroBackdrop } from './hero-backdrop';
@@ -41,15 +42,7 @@ export function Hero({ site, fold, runTarget, onRunEnd, onSiteChange }: HeroProp
       <HeroBackdrop compact={folded} />
       <div className="hero-inner">
         <div className="hero-copy" data-slot="hero-copy">
-          {/* La marque ramène au hero ouvert : l'adresse sans site. */}
-          <Link to="/" className="hero-brand">
-            <span className="hero-logo">
-              <img src="/brand/logo.jpg" alt="" width={900} height={900} />
-            </span>
-            <span>
-              <span className="block">Covoiturage</span> <span className="block">des JOJ</span>
-            </span>
-          </Link>
+          <BrandLink />
           <h1 id={titleId} className="hero-title">
             <span>Cap sur</span> <span>les Jeux</span>
           </h1>

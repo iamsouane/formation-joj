@@ -1,9 +1,9 @@
 import type { PublishedTripResponse, PublishTripInput } from '@joj/shared';
-import { Link } from '@tanstack/react-router';
 import { useId, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { usePublishTrip, usePublishTripFromMessage } from '../api/trips.queries';
 import { AnnouncementForm } from './announcement-form';
+import { BrandLink } from './brand-link';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
 import { missingFieldsOf, type TripDraftField } from './missing-fields';
@@ -186,14 +186,7 @@ function PublishBand({ waiting }: { waiting: boolean }) {
       <HeroBackdrop compact />
       <div className="hero-inner">
         <div className="hero-copy">
-          <Link to="/" className="hero-brand">
-            <span className="hero-logo">
-              <img src="/brand/logo.jpg" alt="" width={900} height={900} />
-            </span>
-            <span>
-              <span className="block">Covoiturage</span> <span className="block">des JOJ</span>
-            </span>
-          </Link>
+          <BrandLink />
           <h1 id={titleId} className="hero-title">
             <span>Proposer</span> <span>un trajet</span>
           </h1>

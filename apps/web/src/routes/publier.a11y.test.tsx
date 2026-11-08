@@ -65,6 +65,20 @@ describe('publication page accessibility', () => {
     expect(axeFindings(await runAxe())).toEqual([]);
   });
 
+  it('006-AS1: draws the brand logo from a pre-cropped image, the same on every page', async () => {
+    // Recadré d'avance : aucun `transform` dans un cadre `overflow: hidden`, que Safari iOS ne
+    // peignait pas sous le hero animé de l'accueil.
+    for (const path of ['/', '/publier']) {
+      const { unmount } = await renderRoute({ initialEntries: [path] });
+      const brand = screen.getByRole('link', { name: 'Covoiturage des JOJ' });
+      const logo = brand.querySelector('img');
+      expect(logo).toHaveAttribute('src', '/brand/logo-mark.jpg');
+      expect(logo).toHaveAttribute('width', '176');
+      expect(logo).toHaveAttribute('height', '176');
+      unmount();
+    }
+  });
+
   it('006-AS3: focuses the site choice when only the site is missing', async () => {
     mockControl.setTripDraft(understood({ site: null }));
     await publishAnnouncement('je pars de Pikine demain 8h, 3 places, 1000 F');
