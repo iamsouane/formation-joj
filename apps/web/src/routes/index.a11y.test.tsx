@@ -49,6 +49,20 @@ describe('home page on a phone screen', () => {
   });
 });
 
+describe('back to the hero', () => {
+  it('005-AS7: the brand in the band leads back to the opened hero, at the address without a site', async () => {
+    const user = userEvent.setup();
+    const { router } = await renderRoute({ initialEntries: ['/?site=saly'] });
+    expect(heroOf()).toHaveAttribute('data-state', 'band');
+
+    await user.click(within(heroOf()).getByRole('link', { name: 'Covoiturage des JOJ' }));
+
+    expect(router.state.location.search).toEqual({});
+    expect(heroOf()).toHaveAttribute('data-state', 'open');
+    expect(screen.queryByRole('list', { name: /Départs vers/ })).not.toBeInTheDocument();
+  });
+});
+
 describe('hero depth', () => {
   it('005-AS6: shifts the backdrop planes in depth with the pointer, over the whole hero', async () => {
     await renderRoute({ initialEntries: ['/'] });
@@ -108,7 +122,7 @@ describe('folding the hero', () => {
     const user = userEvent.setup();
     await renderRoute({ initialEntries: ['/'] });
 
-    await user.tab();
+    within(heroOf()).getByRole('radio', { name: 'Dakar' }).focus();
     await user.keyboard(' ');
     await screen.findByRole('list', { name: 'Départs vers Dakar' });
     await user.keyboard('{ArrowRight}');

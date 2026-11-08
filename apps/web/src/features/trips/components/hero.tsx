@@ -1,5 +1,6 @@
 import type { TripSite } from '@joj/shared';
 import type { SiteChoiceGesture } from './site-picker';
+import { Link } from '@tanstack/react-router';
 import { useId } from 'react';
 import { usePointerTilt } from '@/lib/use-pointer-tilt';
 import { HeroBackdrop } from './hero-backdrop';
@@ -31,21 +32,15 @@ export function Hero({ site, onSiteChange }: HeroProps) {
     >
       <HeroBackdrop />
       <div className="hero-inner">
-        <div className="hero-brand">
+        {/* La marque ramène au hero ouvert : l'adresse sans site. */}
+        <Link to="/" className="hero-brand">
           <span className="hero-logo">
-            <img
-              src="/brand/logo.jpg"
-              alt="Dakar 2026, Jeux Olympiques de la Jeunesse"
-              width={900}
-              height={900}
-            />
+            <img src="/brand/logo.jpg" alt="" width={900} height={900} />
           </span>
           <span>
-            Covoiturage
-            <br />
-            des JOJ
+            <span className="block">Covoiturage</span> <span className="block">des JOJ</span>
           </span>
-        </div>
+        </Link>
         <h1 id={titleId} className="hero-title">
           <span>Cap sur</span> <span>les Jeux</span>
         </h1>
