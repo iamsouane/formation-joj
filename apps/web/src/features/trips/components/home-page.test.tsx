@@ -55,6 +55,15 @@ describe('HomePage', () => {
     );
   });
 
+  it('005-AS1: lays the departures out in a grid on wide screens', async () => {
+    await open('/?site=diamniadio');
+
+    const list = await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    // Une colonne sur téléphone, deux ou trois sur grand écran : `styles.css` décide selon la largeur.
+    expect(list).toHaveAttribute('data-layout', 'grid');
+    expect(list.closest('[data-slot="departures"]')).not.toBeNull();
+  });
+
   it('005-AS2: says when no departure is planned', async () => {
     fixture.trips = fixture.trips.filter((trip) => trip.site !== 'saly');
     const { user } = await open();

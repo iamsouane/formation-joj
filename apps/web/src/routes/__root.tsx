@@ -8,8 +8,10 @@ function RootLayout() {
       <main className="flex flex-1 flex-col">
         <Outlet />
       </main>
-      <footer className="mx-auto mt-8 w-full max-w-md border-t-2 border-foreground px-4 pt-3 pb-6 text-sm text-muted-foreground">
-        Projet réalisé dans le cadre du bootcamp MTN × Artefact × Anthropic
+      <footer className="page-footer text-sm text-muted-foreground">
+        <p className="border-t-2 border-foreground pt-3">
+          Projet réalisé dans le cadre du bootcamp MTN × Artefact × Anthropic
+        </p>
       </footer>
     </div>
   );

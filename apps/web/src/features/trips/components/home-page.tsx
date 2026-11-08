@@ -17,7 +17,7 @@ export function HomePage({ site, onSiteChange }: HomePageProps) {
   return (
     <>
       <Hero site={site} onSiteChange={onSiteChange} />
-      <div className="departures-enter mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-5">
+      <div data-slot="departures" className="departures departures-enter">
         {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
         {site && <UpcomingDepartures key={site} site={site} />}
       </div>

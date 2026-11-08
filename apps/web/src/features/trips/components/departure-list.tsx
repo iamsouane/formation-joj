@@ -20,7 +20,7 @@ export function DepartureList({ site, trips, onBook, renderBooking }: DepartureL
   }
 
   return (
-    <ul aria-label={`Départs vers ${siteLabel}`} className="flex flex-col gap-3">
+    <ul aria-label={`Départs vers ${siteLabel}`} data-layout="grid" className="departure-grid">
       {trips.map((trip) => (
         <li key={trip.id} className="departure-bubble flex flex-col gap-1 p-3">
           <div className="flex items-baseline justify-between gap-3">
