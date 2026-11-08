@@ -1,6 +1,6 @@
 # 006 — Publier un trajet depuis son téléphone
 
-**Statut** : Validée
+**Statut** : Implémentée
 **PRD** : specs/prd-covoiturage.md, TR6
 
 ## Contexte
