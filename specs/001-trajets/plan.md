@@ -84,7 +84,7 @@ Le trajet déjà parti d'AS2 ne peut pas être publié, puisque la publication r
 
 Cinq tâches, dans l'ordre des couches ; chacune tient dans un commit.
 
-- [ ] T01 [001-AS1, AS3, AS4] Écrire d'abord `apps/api/src/modules/trips/domain/trip.spec.ts` (« 001-AS1: creates a trip… », « 001-AS3: rejects an unknown site », « 001-AS4: rejects a departure in the past ») et `packages/shared/src/trips.spec.ts`, puis `packages/shared/src/trips.ts`, `domain/trip.ts` et `domain/trips.errors.ts`
+- [x] T01 [001-AS1, AS3, AS4] Écrire d'abord `apps/api/src/modules/trips/domain/trip.spec.ts` (« 001-AS1: creates a trip… », « 001-AS3: rejects an unknown site », « 001-AS4: rejects a departure in the past ») et `packages/shared/src/trips.spec.ts`, puis `packages/shared/src/trips.ts`, `domain/trip.ts` et `domain/trips.errors.ts`
 - [ ] T02 [001-AS1, AS2] Écrire d'abord `apps/api/src/modules/trips/application/trips.application.spec.ts` (« 001-AS1: publishes a trip with a management code », « 001-AS2: lists upcoming trips to a site sorted by departure »), puis le port, le dépôt en mémoire, `PublishTrip` et `ListUpcomingTrips`
 - [ ] T03 [001-AS2] Écrire d'abord `apps/api/src/modules/trips/infra/drizzle-trip.repository.int.spec.ts` (« 001-AS2: lists only upcoming trips to the site, sorted by departure »), puis `trips.schema.ts`, `trip.mapper.ts`, `drizzle-trip.repository.ts` et la migration générée
 - [ ] T04 [001-AS1, AS2, AS3, AS4] Écrire d'abord `apps/api/test/trips.e2e.spec.ts` (un test par scénario, « 001-AS1: … » à « 001-AS4: … »), puis `trips.controller.ts`, `trips.module.ts` et son ajout dans `app.module.ts`
