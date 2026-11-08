@@ -1,6 +1,6 @@
 # 002 — Réserver une place
 
-**Statut** : Validée
+**Statut** : Implémentée
 **PRD** : specs/prd-covoiturage.md, TR2
 
 ## Contexte
