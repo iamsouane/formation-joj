@@ -4,7 +4,7 @@ import { and, asc, eq, gt, inArray } from 'drizzle-orm';
 import type { Database } from '../../../core/database/database';
 import { DATABASE } from '../../../core/database/database.module';
 import { isUniqueViolation } from '../../../core/database/pg-errors';
-import { TripRepository } from '../application/trip.repository';
+import { type BookedTrip, TripRepository } from '../application/trip.repository';
 import type { Booking } from '../domain/booking';
 import type { Trip } from '../domain/trip';
 import { TripError } from '../domain/trips.errors';
@@ -45,6 +45,22 @@ export class DrizzleTripRepository extends TripRepository {
       await insertBooking(tx, booking);
       return booking;
     });
+  }
+
+  async findTrip(_tripId: string): Promise<Trip | undefined> {
+    throw new Error('non implémenté');
+  }
+
+  async findBookingByCode(_bookingCode: string): Promise<BookedTrip | undefined> {
+    throw new Error('non implémenté');
+  }
+
+  async saveTripCancellation(_trip: Trip): Promise<void> {
+    throw new Error('non implémenté');
+  }
+
+  async saveBookingCancellation(_booking: Booking): Promise<void> {
+    throw new Error('non implémenté');
   }
 
   /** Les téléphones des réservations, par trajet. */
