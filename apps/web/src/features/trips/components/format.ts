@@ -22,9 +22,42 @@ export function formatDeparture(departureAt: string): string {
   return departureFormat.format(new Date(departureAt));
 }
 
-/** « 1 000 FCFA » : la participation aux frais par place. */
+const timeFormat = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'Africa/Dakar',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+const dayFormat = new Intl.DateTimeFormat('fr-FR', {
+  timeZone: 'Africa/Dakar',
+  weekday: 'short',
+  day: 'numeric',
+  month: 'short',
+});
+
+/** « 08:00 » : l'heure de départ, à Dakar. */
+export function formatDepartureTime(departureAt: string): string {
+  return timeFormat.format(new Date(departureAt));
+}
+
+/** « lun. 9 nov. » : le jour du départ, à Dakar. */
+export function formatDepartureDay(departureAt: string): string {
+  return dayFormat.format(new Date(departureAt));
+}
+
+/**
+ * L'espace insécable des milliers (U+00A0). La typographie française préfère l'espace fine
+ * (U+202F), mais la police Barlow ne la dessine pas : « 1 000 » s'afficherait « 1000 ».
+ */
+const THOUSANDS_SPACE = '\u00a0';
+
+/**
+ * « 1 000 FCFA » : la participation aux frais par place. Les milliers sont groupés à la main :
+ * selon le navigateur, `toLocaleString('fr-FR')` écrit « 1000 » ou « 1 000 ».
+ */
 export function formatPrice(pricePerSeat: number): string {
-  return `${pricePerSeat.toLocaleString('fr-FR')} FCFA`;
+  const digits = String(Math.trunc(pricePerSeat));
+  return `${digits.replace(/\B(?=(\d{3})+(?!\d))/g, THOUSANDS_SPACE)} FCFA`;
 }
 
 /** « 1 place restante », « 3 places restantes ». */

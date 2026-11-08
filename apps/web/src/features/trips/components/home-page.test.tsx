@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { mockControl } from '@/mocks/control';
 import { fixture, guediawayeToDiamniadio, pikineToDiamniadio } from '@/mocks/fixture';
 import { renderRoute } from '@/test/utils';
-import { formatDeparture } from './format';
+import { formatDepartureDay, formatDepartureTime, formatPrice } from './format';
 
 async function open(path = '/') {
   const user = userEvent.setup();
@@ -25,16 +25,40 @@ describe('HomePage', () => {
     const list = await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
     const items = within(list).getAllByRole('listitem');
     expect(items.map((item) => within(item).getByRole('heading').textContent)).toEqual([
-      'Pikine',
-      'Guédiawaye',
+      'Pikine → Diamniadio',
+      'Guédiawaye → Diamniadio',
     ]);
-    expect(items[0]).toHaveTextContent(formatDeparture(pikineToDiamniadio.departureAt));
+    expect(items[0]).toHaveTextContent(formatDepartureTime(pikineToDiamniadio.departureAt));
     expect(items[0]).toHaveTextContent('3 places restantes');
     expect(items[0]).toHaveTextContent(/1\s000\sFCFA/);
-    expect(items[1]).toHaveTextContent(formatDeparture(guediawayeToDiamniadio.departureAt));
+    expect(items[1]).toHaveTextContent(formatDepartureTime(guediawayeToDiamniadio.departureAt));
     expect(items[1]).toHaveTextContent('4 places restantes');
     expect(items[1]).toHaveTextContent(/1\s500\sFCFA/);
     expect(router.state.location.search).toEqual({ site: 'diamniadio' });
+  });
+
+  it('005-AS1: shows the time first, then the route, seats as dots and the price', async () => {
+    await open('/?site=diamniadio');
+    const list = await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    const [pikine] = within(list).getAllByRole('listitem');
+    if (!pikine) throw new Error('no departure');
+
+    // L'heure d'abord, en très grand, avec le jour à côté.
+    const when = pikine.querySelector('time');
+    expect(pikine.firstElementChild).toContainElement(when);
+    expect(when).toHaveAttribute('dateTime', pikineToDiamniadio.departureAt);
+    expect(when).toHaveTextContent(formatDepartureTime(pikineToDiamniadio.departureAt));
+    expect(when).toHaveTextContent(formatDepartureDay(pikineToDiamniadio.departureAt));
+    expect(within(pikine).getByRole('heading', { name: 'Pikine → Diamniadio' })).toBeVisible();
+    // Une pastille par place publiée, pleine si elle est libre ; le nombre reste lu en clair.
+    const dots = pikine.querySelector('[data-part="seats"]');
+    expect(dots).toHaveAttribute('aria-hidden', 'true');
+    expect(dots?.querySelectorAll('[data-free="true"]')).toHaveLength(3);
+    expect(pikine).toHaveTextContent('3 places restantes');
+    // Le prix avec une espace insécable entre les milliers, quel que soit le navigateur.
+    expect(formatPrice(1000)).toBe('1\u00a0000 FCFA');
+    expect(formatPrice(15000)).toBe('15\u00a0000 FCFA');
+    expect(pikine).toHaveTextContent(/1\s000\sFCFA/);
   });
 
   it('005-AS1: opens on the site given in the address', async () => {
@@ -42,7 +66,7 @@ describe('HomePage', () => {
 
     expect(screen.getByRole('radio', { name: 'Saly' })).toBeChecked();
     const list = await screen.findByRole('list', { name: 'Départs vers Saly' });
-    expect(within(list).getByRole('heading', { name: 'Plateau' })).toBeInTheDocument();
+    expect(within(list).getByRole('heading', { name: 'Plateau → Saly' })).toBeInTheDocument();
     expect(within(list).getByRole('listitem')).toHaveTextContent('2 places restantes');
   });
 

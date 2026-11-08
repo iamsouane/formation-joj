@@ -106,7 +106,10 @@ function UpcomingDepartures({
     <DepartureList
       site={site}
       trips={trips.data}
-      onBook={(trip) => setChosenTripId(trip.id)}
+      openTripId={chosenTripId}
+      onToggleBooking={(trip) =>
+        setChosenTripId((current) => (current === trip.id ? undefined : trip.id))
+      }
       renderBooking={(trip) =>
         trip.id === chosenTripId && (
           <BookingForm

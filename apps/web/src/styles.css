@@ -958,7 +958,8 @@ body {
 }
 
 .hero[data-state='band'] .sign {
-  flex: 1;
+  flex: 1 1 0;
+  max-width: 13rem;
 }
 
 .hero[data-state='band'] .sign-panel {
@@ -1226,6 +1227,97 @@ body {
     var(--joj-black) calc(50% - 1px) calc(50% + 1px),
     transparent calc(50% + 1px)
   );
+}
+
+/*
+ * La carte d'un départ se lit de haut en bas : l'heure en très grand (on choisit d'abord son
+ * heure), le trajet, les places en pastilles et la participation, puis le bouton.
+ */
+.departure-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1rem 1.1rem;
+}
+
+.departure-when time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 0.6rem;
+}
+
+.departure-time {
+  font-family: var(--font-display);
+  font-size: 3.1rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.9;
+}
+
+.departure-day {
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.departure-route {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.departure-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.3rem;
+}
+
+.departure-seats {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.seat-dots {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.seat-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid var(--joj-black);
+  border-radius: 50%;
+}
+
+.seat-dot[data-free='true'] {
+  border-color: var(--joj-green);
+  background: var(--joj-green);
+}
+
+.departure-full {
+  padding: 0.1rem 0.5rem;
+  background: var(--destructive);
+  color: var(--joj-white);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.departure-price {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.departure-action {
+  align-self: flex-start;
+  margin-top: 0.5rem;
 }
 
 /* La pluie de confettis de la place réservée (confetti-rain.tsx) : elle tombe une fois, puis s'efface. */
