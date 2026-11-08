@@ -1882,3 +1882,37 @@ body {
 .publish-field[data-invalid] .site-choice-option {
   border-color: var(--destructive);
 }
+
+/*
+ * Le billet du conducteur : la vérification du trajet compris, puis ce qu'il faut garder. Le
+ * bouton WhatsApp prend le vert des Jeux, le seul aplat de couleur du billet.
+ */
+.published-trip-check {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.8rem;
+  border-left: 6px solid var(--joj-yellow);
+  background: var(--secondary);
+  font-weight: 600;
+}
+
+.published-trip-keep {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.published-trip-keep-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.whatsapp-action {
+  background: var(--joj-green);
+  color: var(--joj-white);
+}
+
+.whatsapp-action:hover {
+  background: #006b32;
+}

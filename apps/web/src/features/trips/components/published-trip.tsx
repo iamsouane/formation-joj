@@ -1,18 +1,25 @@
 import type { PublishedTripResponse } from '@joj/shared';
 import { useId } from 'react';
-import { formatDepartureDay, formatDepartureTime, formatPrice, SITE_LABELS } from './format';
+import { buttonVariants } from '@/components/ui/button';
+import {
+  formatDepartureDay,
+  formatDepartureTime,
+  formatPrice,
+  formatSeats,
+  SITE_LABELS,
+} from './format';
 import { managementLinkOf } from './management-link';
-
-/** « 1 place », « 3 places » : les places publiées. */
-const formatSeats = (seats: number) => (seats === 1 ? '1 place' : `${seats} places`);
+import { publishedTripShareText, whatsappShareUrl } from './whatsapp-share';
 
 /**
  * Le trajet est publié : un billet, comme celui du supporter. En haut, le trajet tel qu'il a été
  * compris (heure, trajet, places, participation), pour que le conducteur le vérifie ; sous la
- * déchirure, le code et le lien de gestion, à conserver.
+ * déchirure, le code et le lien de gestion, à conserver, et leur envoi sur WhatsApp. Le lien
+ * désigne le trajet ; le code n'y figure jamais, il se saisit à part.
  */
 export function PublishedTrip({ trip }: { trip: PublishedTripResponse }) {
   const titleId = useId();
+  const keepId = useId();
   const link = managementLinkOf(trip.id);
   return (
     <section aria-labelledby={titleId} className="ticket published-trip">
@@ -33,22 +40,39 @@ export function PublishedTrip({ trip }: { trip: PublishedTripResponse }) {
           <span>{formatSeats(trip.seats)}</span>
           <span>{formatPrice(trip.pricePerSeat)} par place</span>
         </p>
+        <p className="published-trip-check">
+          Vérifiez votre trajet. S’il y a une erreur, annulez-le avec votre code.
+        </p>
       </header>
       <div className="ticket-tear" aria-hidden="true" />
-      <dl className="ticket-body published-trip-body">
-        <div className="ticket-field">
-          <dt>Code de gestion</dt>
-          <dd className="ticket-code select-all" data-part="management-code">
-            {trip.managementCode}
-          </dd>
-        </div>
-        <div className="ticket-field">
-          <dt>Lien de gestion</dt>
-          <dd className="published-trip-link select-all" data-part="management-link">
-            {link}
-          </dd>
-        </div>
-      </dl>
+      <div role="group" aria-labelledby={keepId} className="published-trip-keep">
+        <h3 id={keepId} className="published-trip-keep-title">
+          À conserver
+        </h3>
+        <dl className="ticket-body published-trip-body">
+          <div className="ticket-field">
+            <dt>Code de gestion</dt>
+            <dd className="ticket-code select-all" data-part="management-code">
+              {trip.managementCode}
+            </dd>
+            <dd className="ticket-note">Gardez-le pour vous : il permet d’annuler le trajet.</dd>
+          </div>
+          <div className="ticket-field">
+            <dt>Lien de gestion</dt>
+            <dd className="published-trip-link select-all" data-part="management-link">
+              {link}
+            </dd>
+          </div>
+        </dl>
+        <a
+          href={whatsappShareUrl(publishedTripShareText(trip, link))}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={buttonVariants({ size: 'lg', className: 'thumb-action whatsapp-action' })}
+        >
+          Envoyer sur WhatsApp
+        </a>
+      </div>
     </section>
   );
 }

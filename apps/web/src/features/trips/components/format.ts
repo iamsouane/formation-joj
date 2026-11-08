@@ -77,3 +77,8 @@ export function formatPhone(phone: string): string {
 export function phoneHref(phone: string): string {
   return SENEGAL_PHONE.test(phone) ? `tel:+221${phone}` : `tel:${phone}`;
 }
+
+/** « 1 place », « 3 places » : les places publiées. */
+export function formatSeats(seats: number): string {
+  return seats === 1 ? '1 place' : `${seats} places`;
+}
