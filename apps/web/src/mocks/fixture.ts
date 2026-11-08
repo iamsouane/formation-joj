@@ -14,6 +14,8 @@ import type { TripResponse } from '@joj/shared';
 export interface StoredTrip extends Omit<TripResponse, 'remainingSeats'> {
   driverPhone: string;
   managementCode: string;
+  /** L'instant où le conducteur a annulé le trajet, s'il l'a fait. */
+  cancelledAt?: string;
 }
 
 const HOUR = 60 * 60 * 1000;
@@ -84,6 +86,8 @@ export interface StoredBooking {
   passengerName: string;
   passengerPhone: string;
   bookingCode: string;
+  /** L'instant où le supporter a annulé sa réservation, s'il l'a fait. */
+  cancelledAt?: string;
 }
 
 const initial = (): { trips: StoredTrip[]; bookings: StoredBooking[] } => ({

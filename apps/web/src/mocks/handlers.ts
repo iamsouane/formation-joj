@@ -1,6 +1,10 @@
 import {
+  bookingCodeParamSchema,
   type BookingConfirmationResponse,
+  type BookingDetailsResponse,
+  type BookingStatus,
   bookSeatSchema,
+  cancelTripSchema,
   type ProblemDetails,
   type PublishedTripResponse,
   publishTripSchema,
@@ -13,7 +17,7 @@ import {
 import { delay, http, HttpResponse, type RequestHandler } from 'msw';
 import type { z } from 'zod';
 import { mockControl } from './control';
-import { fixture, type StoredTrip } from './fixture';
+import { fixture, type StoredBooking, type StoredTrip } from './fixture';
 
 /**
  * La fausse API des tests du front : le même contrat que apps/api (mêmes schémas zod, mêmes
@@ -23,6 +27,7 @@ import { fixture, type StoredTrip } from './fixture';
 
 const TITLES: Record<number, string> = {
   400: 'Bad Request',
+  403: 'Forbidden',
   404: 'Not Found',
   409: 'Conflict',
   500: 'Internal Server Error',
@@ -76,13 +81,40 @@ function normalisePhone(phone: string): string {
   return phone.replace(/[\s-]/g, '').replace(/^(\+221|00221)/, '');
 }
 
+/** Comme l'API : une réservation annulée ne tient plus de place. */
 const passengerPhonesOf = (tripId: string) =>
-  fixture.bookings.filter((booking) => booking.tripId === tripId).map((b) => b.passengerPhone);
+  fixture.bookings
+    .filter((booking) => booking.tripId === tripId && booking.cancelledAt === undefined)
+    .map((b) => b.passengerPhone);
+
+const tripNotFound = (tripId: string) =>
+  problem(404, 'TRIP_NOT_FOUND', `No trip ${tripId}`, { details: { tripId } });
+
+const bookingNotFound = () => problem(404, 'BOOKING_NOT_FOUND', 'No booking with this code');
+
+/** Comme le domaine de l'API : l'annulation du supporter l'emporte sur celle du trajet. */
+function statusOf(booking: StoredBooking, trip: StoredTrip): BookingStatus {
+  if (booking.cancelledAt !== undefined) return 'cancelled';
+  return trip.cancelledAt === undefined ? 'active' : 'trip_cancelled';
+}
+
+/** La réservation désignée par le code du chemin, avec son trajet ; sinon la réponse d'erreur. */
+function findBooking(
+  params: Record<string, unknown>,
+): { booking: StoredBooking; trip: StoredTrip } | Response {
+  const param = bookingCodeParamSchema.safeParse(params);
+  if (!param.success) return validationFailed(param.error);
+  const booking = fixture.bookings.find((b) => b.bookingCode === param.data.bookingCode);
+  const trip = booking && fixture.trips.find((candidate) => candidate.id === booking.tripId);
+  if (booking === undefined || trip === undefined) return bookingNotFound();
+  return { booking, trip };
+}
 
 /** Ce que la liste montre d'un trajet : ni le téléphone du conducteur, ni le code de gestion. */
 function toPublic({
   driverPhone: _phone,
   managementCode: _code,
+  cancelledAt: _cancelledAt,
   ...trip
 }: StoredTrip): TripResponse {
   return { ...trip, remainingSeats: trip.seats - passengerPhonesOf(trip.id).length };
@@ -104,6 +136,7 @@ export const handlers: RequestHandler[] = [
 
     const now = Date.now();
     const upcoming = fixture.trips
+      .filter((trip) => trip.cancelledAt === undefined)
       .filter((trip) => trip.site === site && Date.parse(trip.departureAt) > now)
       .sort(byDeparture)
       .map(toPublic);
@@ -150,8 +183,11 @@ export const handlers: RequestHandler[] = [
     const { tripId } = param.data;
 
     const trip = fixture.trips.find((candidate) => candidate.id === tripId);
-    if (trip === undefined) {
-      return problem(404, 'TRIP_NOT_FOUND', `No trip ${tripId}`, { details: { tripId } });
+    if (trip === undefined) return tripNotFound(tripId);
+    if (trip.cancelledAt !== undefined) {
+      return problem(409, 'TRIP_CANCELLED', 'This trip has been cancelled by its driver', {
+        details: { tripId },
+      });
     }
     if (Date.parse(trip.departureAt) <= Date.now()) {
       return problem(409, 'TRIP_DEPARTED', 'This trip has already departed', {
@@ -184,5 +220,58 @@ export const handlers: RequestHandler[] = [
       driverPhone: trip.driverPhone,
     };
     return HttpResponse.json(confirmation, { status: 201 });
+  }),
+
+  http.get('*/api/bookings/:bookingCode', async ({ params }) => {
+    const failure = await gate('GET', '/api/bookings/:bookingCode');
+    if (failure) return failure;
+    const found = findBooking(params);
+    if (found instanceof Response) return found;
+    const { booking, trip } = found;
+
+    const details: BookingDetailsResponse = {
+      bookingCode: booking.bookingCode,
+      passengerName: booking.passengerName,
+      status: statusOf(booking, trip),
+      trip: {
+        id: trip.id,
+        departurePlace: trip.departurePlace,
+        site: trip.site,
+        departureAt: trip.departureAt,
+        pricePerSeat: trip.pricePerSeat,
+        driverPhone: trip.driverPhone,
+      },
+    };
+    return HttpResponse.json(details);
+  }),
+
+  http.post('*/api/bookings/:bookingCode/cancellation', async ({ params }) => {
+    const failure = await gate('POST', '/api/bookings/:bookingCode/cancellation');
+    if (failure) return failure;
+    const found = findBooking(params);
+    if (found instanceof Response) return found;
+
+    found.booking.cancelledAt ??= new Date().toISOString();
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post('*/api/trips/:tripId/cancellation', async ({ request, params }) => {
+    const failure = await gate('POST', '/api/trips/:tripId/cancellation');
+    if (failure) return failure;
+    const param = tripIdParamSchema.safeParse(params);
+    if (!param.success) return validationFailed(param.error);
+    const input = cancelTripSchema.safeParse(await request.json());
+    if (!input.success) return validationFailed(input.error);
+    const { tripId } = param.data;
+
+    const trip = fixture.trips.find((candidate) => candidate.id === tripId);
+    if (trip === undefined) return tripNotFound(tripId);
+    if (input.data.managementCode !== trip.managementCode) {
+      return problem(403, 'MANAGEMENT_CODE_INVALID', 'This management code is not the trip one', {
+        details: { tripId },
+      });
+    }
+    trip.cancelledAt ??= new Date().toISOString();
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
