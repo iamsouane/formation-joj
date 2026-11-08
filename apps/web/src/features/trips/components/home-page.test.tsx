@@ -64,6 +64,31 @@ describe('HomePage', () => {
     expect(list.closest('[data-slot="departures"]')).not.toBeNull();
   });
 
+  it('005-AS1: lets the departures of a site leave before those of the next one enter', async () => {
+    const { user } = await open('/?site=dakar');
+    await screen.findByRole('list', { name: 'Départs vers Dakar' });
+    // Le plus grand nombre de listes présentes en même temps, à chaque changement du DOM.
+    let mostListsAtOnce = 0;
+    const observer = new MutationObserver(() => {
+      const lists = document.querySelectorAll('ul[aria-label^="Départs vers"]').length;
+      mostListsAtOnce = Math.max(mostListsAtOnce, lists);
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    await user.click(screen.getByRole('radio', { name: 'Diamniadio' }));
+
+    // D'abord, l'ancienne liste sort, seule…
+    const leaving = screen.getByRole('list', { name: 'Départs vers Dakar' });
+    expect(leaving.closest('[data-phase]')).toHaveAttribute('data-phase', 'leaving');
+    expect(screen.queryByRole('list', { name: 'Départs vers Diamniadio' })).not.toBeInTheDocument();
+    // …puis la nouvelle entre, et les deux ne sont jamais à l'écran ensemble.
+    const entering = await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    expect(entering.closest('[data-phase]')).toHaveAttribute('data-phase', 'entering');
+    expect(screen.queryByRole('list', { name: 'Départs vers Dakar' })).not.toBeInTheDocument();
+    observer.disconnect();
+    expect(mostListsAtOnce).toBe(1);
+  });
+
   it('005-AS2: shows an empty road instead of a second mascot', async () => {
     fixture.trips = fixture.trips.filter((trip) => trip.site !== 'saly');
     const { user } = await open();

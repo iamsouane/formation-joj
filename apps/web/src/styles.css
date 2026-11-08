@@ -975,9 +975,23 @@ body {
   clip-path: polygon(0.8rem 0, 100% 0, 100% 100%, 0.8rem 100%, 0 50%);
 }
 
-/* Les départs entrent une fois le bandeau replié : un léger glissé vers le haut. */
-.departures-enter {
-  animation: departures-enter 420ms var(--ease-out-soft) 120ms both;
+/*
+ * Les départs entrent une fois le bandeau replié, ou après la sortie de ceux du site précédent :
+ * un léger glissé vers le haut. La sortie est plus brève et plus discrète que l'entrée.
+ */
+.departures[data-phase='entering'] {
+  animation: departures-enter 420ms var(--ease-out-soft) both;
+}
+
+.departures[data-phase='leaving'] {
+  animation: departures-leave 180ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+@keyframes departures-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
 }
 
 @keyframes departures-enter {
@@ -1285,7 +1299,7 @@ body {
     animation: none !important;
   }
 
-  .departures-enter {
+  .departures[data-phase] {
     animation: none;
   }
 }
