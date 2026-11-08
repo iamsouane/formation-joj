@@ -1,3 +1,4 @@
+import type { BookingStatus } from '@joj/shared';
 import { normalisePhone } from './phone';
 import type { Trip } from './trip';
 import { TripError } from './trips.errors';
@@ -9,6 +10,8 @@ export interface BookingProps {
   passengerPhone: string;
   bookingCode: string;
   createdAt: Date;
+  /** L'instant où le supporter a annulé sa réservation ; absent tant qu'il ne l'a pas fait. */
+  cancelledAt?: Date;
 }
 
 export interface NewBooking {
@@ -27,6 +30,7 @@ export class Booking {
 
   static create({ trip, now, ...booking }: NewBooking): Booking {
     const passengerPhone = normalisePhone(booking.passengerPhone);
+    assertNotCancelled(trip);
     assertNotDeparted(trip, now);
     assertNotAlreadyBooked(trip, passengerPhone);
     assertNotFull(trip);
@@ -60,6 +64,30 @@ export class Booking {
 
   get createdAt(): Date {
     return this.props.createdAt;
+  }
+
+  get cancelledAt(): Date | undefined {
+    return this.props.cancelledAt;
+  }
+
+  /** Annule la réservation ; déjà annulée, elle est renvoyée telle quelle, sa première date conservée. */
+  cancel(now: Date): Booking {
+    if (this.props.cancelledAt !== undefined) return this;
+    return new Booking({ ...this.props, cancelledAt: now });
+  }
+
+  /** L'annulation du supporter l'emporte sur celle du trajet. */
+  statusOn(trip: Trip): BookingStatus {
+    if (this.props.cancelledAt !== undefined) return 'cancelled';
+    return trip.isCancelled ? 'trip_cancelled' : 'active';
+  }
+}
+
+function assertNotCancelled(trip: Trip): void {
+  if (trip.isCancelled) {
+    throw new TripError('TRIP_CANCELLED', 'This trip has been cancelled by its driver', {
+      tripId: trip.id,
+    });
   }
 }
 

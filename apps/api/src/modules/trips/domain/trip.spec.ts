@@ -72,4 +72,29 @@ describe('Trip', () => {
       expect.objectContaining({ code: 'DEPARTURE_IN_PAST' }),
     );
   });
+
+  describe('cancel', () => {
+    const LATER = new Date('2026-11-08T10:00:00.000Z');
+
+    it('003-AS4: cancels a trip with its management code', () => {
+      const trip = Trip.create(pikineToDiamniadio);
+      const cancelled = trip.cancel('abc123', LATER);
+      expect(cancelled.isCancelled).toBe(true);
+      expect(cancelled.cancelledAt).toEqual(LATER);
+      expect(trip.isCancelled).toBe(false);
+    });
+
+    it('003-AS4: keeps the first cancellation date when cancelled twice', () => {
+      const cancelled = Trip.create(pikineToDiamniadio).cancel('abc123', NOW);
+      expect(cancelled.cancel('abc123', LATER).cancelledAt).toEqual(NOW);
+    });
+
+    it('003-AS6: rejects another management code', () => {
+      const cancel = () => Trip.create(pikineToDiamniadio).cancel('other-code', LATER);
+      expect(cancel).toThrow(TripError);
+      expect(cancel).toThrow(
+        expect.objectContaining({ code: 'MANAGEMENT_CODE_INVALID', kind: 'FORBIDDEN' }),
+      );
+    });
+  });
 });

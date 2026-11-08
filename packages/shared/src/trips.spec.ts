@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bookingCodeParamSchema,
   bookingConfirmationSchema,
+  bookingDetailsSchema,
+  cancelTripSchema,
   bookSeatSchema,
   publishTripSchema,
   publishedTripSchema,
@@ -129,4 +132,57 @@ describe('phones', () => {
       ).toBe(true);
     },
   );
+});
+
+describe('bookingCodeParamSchema', () => {
+  it('003-AS2: accepts a booking code and rejects an empty or too long one', () => {
+    expect(bookingCodeParamSchema.parse({ bookingCode: 'booking-code-1' })).toEqual({
+      bookingCode: 'booking-code-1',
+    });
+    expect(bookingCodeParamSchema.safeParse({ bookingCode: '' }).success).toBe(false);
+    expect(bookingCodeParamSchema.safeParse({ bookingCode: 'x'.repeat(33) }).success).toBe(false);
+  });
+});
+
+describe('cancelTripSchema', () => {
+  it('003-AS6: accepts a management code, trimmed, and rejects an empty one', () => {
+    expect(cancelTripSchema.parse({ managementCode: ' abc123 ' })).toEqual({
+      managementCode: 'abc123',
+    });
+    expect(cancelTripSchema.safeParse({ managementCode: '  ' }).success).toBe(false);
+  });
+});
+
+describe('bookingDetailsSchema', () => {
+  const details = {
+    bookingCode: 'booking-code-1',
+    passengerName: 'Awa',
+    status: 'active',
+    trip: {
+      id: '0199f5c2-0000-7000-8000-000000000001',
+      departurePlace: 'Pikine',
+      site: 'diamniadio',
+      departureAt: '2026-11-09T08:00:00.000Z',
+      pricePerSeat: 1000,
+      driverPhone: '771234567',
+    },
+  };
+
+  it('003-AS1: shows the trip with the driver phone and the status, without the management code', () => {
+    expect(
+      bookingDetailsSchema.parse({
+        ...details,
+        passengerPhone: '771112233',
+        trip: { ...details.trip, managementCode: 'abc123' },
+      }),
+    ).toEqual(details);
+  });
+
+  it.each(['active', 'cancelled', 'trip_cancelled'])('003-AS5: accepts the status %j', (status) => {
+    expect(bookingDetailsSchema.safeParse({ ...details, status }).success).toBe(true);
+  });
+
+  it('003-AS5: rejects an unknown status', () => {
+    expect(bookingDetailsSchema.safeParse({ ...details, status: 'departed' }).success).toBe(false);
+  });
 });

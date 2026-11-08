@@ -64,4 +64,37 @@ describe('Booking', () => {
     const book = () => Booking.create({ ...awa, trip: trip({ departureAt: YESTERDAY_8AM }) });
     expect(book).toThrow(expect.objectContaining({ code: 'TRIP_DEPARTED', kind: 'CONFLICT' }));
   });
+
+  it('003-AS7: rejects a cancelled trip with free seats', () => {
+    const book = () => Booking.create({ ...awa, trip: trip({ cancelledAt: NOW }) });
+    expect(book).toThrow(expect.objectContaining({ code: 'TRIP_CANCELLED', kind: 'CONFLICT' }));
+  });
+
+  describe('status', () => {
+    const LATER = new Date('2026-11-08T10:00:00.000Z');
+    const booked = () => Booking.create({ ...awa, trip: trip() });
+
+    it('003-AS1: is active when neither the booking nor the trip is cancelled', () => {
+      expect(booked().statusOn(trip())).toBe('active');
+    });
+
+    it('003-AS3: is cancelled once the supporter cancels the booking', () => {
+      const cancelled = booked().cancel(LATER);
+      expect(cancelled.cancelledAt).toEqual(LATER);
+      expect(cancelled.statusOn(trip())).toBe('cancelled');
+      expect(cancelled.cancel(new Date('2026-11-08T11:00:00.000Z')).cancelledAt).toEqual(LATER);
+    });
+
+    it('003-AS5: is trip_cancelled when the driver cancelled the trip', () => {
+      expect(booked().statusOn(trip({ cancelledAt: LATER }))).toBe('trip_cancelled');
+    });
+
+    it('003-AS3: stays cancelled when both the booking and the trip are cancelled', () => {
+      expect(
+        booked()
+          .cancel(LATER)
+          .statusOn(trip({ cancelledAt: LATER })),
+      ).toBe('cancelled');
+    });
+  });
 });

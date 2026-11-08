@@ -14,6 +14,12 @@ const TRIP_ERROR_KINDS = {
   TRIP_DEPARTED: 'CONFLICT',
   /** Aucun trajet n'a cet identifiant. */
   TRIP_NOT_FOUND: 'NOT_FOUND',
+  /** Le conducteur a annulé le trajet : on ne peut plus y réserver. */
+  TRIP_CANCELLED: 'CONFLICT',
+  /** Le code de gestion donné n'est pas celui du trajet. */
+  MANAGEMENT_CODE_INVALID: 'FORBIDDEN',
+  /** Aucune réservation n'a ce code. */
+  BOOKING_NOT_FOUND: 'NOT_FOUND',
 } as const satisfies Record<string, ErrorKind>;
 
 export type TripErrorCode = keyof typeof TRIP_ERROR_KINDS;

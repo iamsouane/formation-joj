@@ -81,3 +81,41 @@ export const bookingConfirmationSchema = z.object({
   driverPhone: z.string(),
 });
 export type BookingConfirmationResponse = z.infer<typeof bookingConfirmationSchema>;
+
+export const BOOKING_CODE_MAX_LENGTH = 32;
+export const TRIP_MANAGEMENT_CODE_MAX_LENGTH = 32;
+
+/** Paramètre de chemin de `GET /api/bookings/:bookingCode` et de son annulation. */
+export const bookingCodeParamSchema = z.object({
+  bookingCode: z.string().min(1).max(BOOKING_CODE_MAX_LENGTH),
+});
+export type BookingCodeParam = z.infer<typeof bookingCodeParamSchema>;
+
+/** Corps de `POST /api/trips/:tripId/cancellation` : le code de gestion remis au conducteur. */
+export const cancelTripSchema = z.object({
+  managementCode: z.string().trim().min(1).max(TRIP_MANAGEMENT_CODE_MAX_LENGTH),
+});
+export type CancelTripInput = z.infer<typeof cancelTripSchema>;
+
+/**
+ * Le statut d'une réservation consultée : « actif », « annulé » par le supporter, ou
+ * « trajet annulé » par le conducteur. L'annulation du supporter l'emporte.
+ */
+export const BOOKING_STATUSES = ['active', 'cancelled', 'trip_cancelled'] as const;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+
+/** Ce que voit le supporter qui consulte sa réservation : le trajet, avec le téléphone du conducteur. */
+export const bookingDetailsSchema = z.object({
+  bookingCode: z.string(),
+  passengerName: z.string(),
+  status: z.enum(BOOKING_STATUSES),
+  trip: z.object({
+    id: z.uuid(),
+    departurePlace: z.string(),
+    site: z.enum(TRIP_SITES),
+    departureAt: z.iso.datetime(),
+    pricePerSeat: z.int(),
+    driverPhone: z.string(),
+  }),
+});
+export type BookingDetailsResponse = z.infer<typeof bookingDetailsSchema>;

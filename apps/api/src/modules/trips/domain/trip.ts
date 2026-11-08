@@ -14,6 +14,8 @@ export interface TripProps {
   createdAt: Date;
   /** Les téléphones normalisés des supporters qui ont réservé ce trajet. */
   passengerPhones: readonly string[];
+  /** L'instant où le conducteur a annulé le trajet ; absent tant qu'il ne l'a pas fait. */
+  cancelledAt?: Date;
 }
 
 /** Ce que la persistance relit ; un trajet sans réservation peut omettre `passengerPhones`. */
@@ -91,6 +93,28 @@ export class Trip {
   }
 
   /** `phone` est déjà normalisé. */
+  get cancelledAt(): Date | undefined {
+    return this.props.cancelledAt;
+  }
+
+  get isCancelled(): boolean {
+    return this.props.cancelledAt !== undefined;
+  }
+
+  /**
+   * Annule le trajet si `managementCode` est le sien. Un trajet déjà annulé est renvoyé tel quel :
+   * la première date d'annulation est conservée.
+   */
+  cancel(managementCode: string, now: Date): Trip {
+    if (managementCode !== this.props.managementCode) {
+      throw new TripError('MANAGEMENT_CODE_INVALID', 'This management code is not the trip one', {
+        tripId: this.props.id,
+      });
+    }
+    if (this.isCancelled) return this;
+    return new Trip({ ...this.props, cancelledAt: now });
+  }
+
   hasPassenger(phone: string): boolean {
     return this.props.passengerPhones.includes(phone);
   }
