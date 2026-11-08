@@ -27,7 +27,7 @@ Le conducteur publie un trajet : lieu de départ, site, heure de départ, nombre
 
 ### TR2 — Réserver une place
 
-Le supporter réserve une place en donnant son nom et son téléphone. Il reçoit un code de réservation et voit le téléphone du conducteur pour fixer le point de rendez-vous. Règles : un trajet complet est refusé ; un même supporter ne réserve pas deux fois le même trajet.
+Le supporter réserve une place en donnant son nom et son téléphone. Il reçoit un code de réservation et voit le téléphone du conducteur pour fixer le point de rendez-vous. Règles : un trajet complet est refusé ; un même supporter ne réserve pas deux fois le même trajet ; un trajet déjà parti ne peut pas être réservé.
 
 ### TR3 — Annuler
 
