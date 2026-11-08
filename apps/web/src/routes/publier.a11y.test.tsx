@@ -64,4 +64,14 @@ describe('publication page accessibility', () => {
     expect(within(form).getByLabelText('Lieu de départ')).toHaveFocus();
     expect(axeFindings(await runAxe())).toEqual([]);
   });
+
+  it('006-AS3: focuses the site choice when only the site is missing', async () => {
+    mockControl.setTripDraft(understood({ site: null }));
+    await publishAnnouncement('je pars de Pikine demain 8h, 3 places, 1000 F');
+    const form = await screen.findByRole('form', { name: 'Publier avec le formulaire' });
+
+    // Le premier champ signalé, pas le premier champ du formulaire.
+    expect(within(form).getByRole('radio', { name: 'Dakar' })).toHaveFocus();
+    expect(within(form).getByLabelText('Lieu de départ')).not.toHaveFocus();
+  });
 });

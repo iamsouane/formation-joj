@@ -64,9 +64,12 @@ export function TripForm({
   // Au montage seulement : ensuite, le focus reste où le conducteur le met.
   useEffect(() => {
     const form = formRef.current;
-    form
-      ?.querySelector<HTMLInputElement>('[aria-invalid="true"], [data-invalid] input, input')
-      ?.focus();
+    // `querySelector` rend le premier élément du document parmi toutes les variantes : on cherche
+    // donc d'abord un champ signalé, et seulement à défaut le premier champ.
+    const flagged = form?.querySelector<HTMLInputElement>(
+      '[aria-invalid="true"], [data-invalid] input',
+    );
+    (flagged ?? form?.querySelector<HTMLInputElement>('input'))?.focus();
   }, []);
 
   function submit(event: FormEvent<HTMLFormElement>) {
