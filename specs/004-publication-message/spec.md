@@ -53,7 +53,7 @@ Le conducteur écrit déjà son annonce sur WhatsApp ; lui imposer un formulaire
 
 ## Questions ouvertes
 
-- Lieu de départ absent du message : hypothèse, il compte aussi parmi les champs manquants (422 MESSAGE_UNREADABLE), puisque TR1 l'exige pour publier.
+- Lieu de départ absent du message : validé, il compte aussi parmi les champs manquants (422 MESSAGE_UNREADABLE), puisque TR1 l'exige pour publier.
 - Participation absente du message : décidé, elle compte parmi les champs manquants (422 MESSAGE_UNREADABLE) ; « gratuit » ou « 0 F » écrit dans le message donne 0. Rien n'est déduit par défaut.
 - Assistant indisponible ou réponse inexploitable : décidé, refus 503 avec le code ASSISTANT_UNAVAILABLE, sans scénario ; rien n'est publié.
-- Téléphone invalide ou places extraites inférieures à 1 : hypothèse, refusés comme une saisie invalide, comme en TR1.
+- Téléphone invalide ou places extraites inférieures à 1 : validé, refusés comme une saisie invalide, comme en TR1.
