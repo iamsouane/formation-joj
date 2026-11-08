@@ -31,7 +31,7 @@ export function Hero({ site, onSiteChange }: HeroProps) {
       data-state={folded ? 'band' : 'open'}
       {...tiltHandlers}
     >
-      <HeroBackdrop />
+      <HeroBackdrop compact={folded} />
       <div className="hero-inner">
         <div className="hero-copy" data-slot="hero-copy">
           {/* La marque ramène au hero ouvert : l'adresse sans site. */}

@@ -43,17 +43,25 @@ function CarSilhouette() {
 /**
  * Le décor du hero, purement visuel (hors de l'arbre d'accessibilité) : un soleil levant dont les
  * rayons tournent, une route en perspective où des voitures roulent vers le poteau Dakar,
- * Diamniadio, Saly, des confettis qui flottent et la frise du maillot qui défile. Sous moins
- * d'animations, ni confettis ni voitures ; le reste est figé par `styles.css`.
+ * Diamniadio, Saly, des confettis qui flottent et la frise du maillot qui défile. Dans le bandeau,
+ * la même scène en réduit, sans confettis ni voitures. Sous moins d'animations, ni confettis ni
+ * voitures ; le reste est figé par `styles.css`.
  */
-export function HeroBackdrop() {
+export function HeroBackdrop({ compact = false }: { compact?: boolean }) {
   const reduced = useReducedMotion();
+  // Un seul grand moment : confettis et voitures seulement dans le hero ouvert.
+  const lively = !reduced && !compact;
 
   return (
-    <div className="hero-backdrop" aria-hidden="true" data-motion={reduced ? 'reduced' : 'full'}>
+    <div
+      className="hero-backdrop"
+      aria-hidden="true"
+      data-motion={reduced ? 'reduced' : 'full'}
+      data-compact={compact}
+    >
       <div className="hero-sun-rays" data-part="sun-rays" />
       <div className="hero-sun" data-part="sun" />
-      {!reduced &&
+      {lively &&
         CONFETTI.map((confetto) => (
           <span
             key={`${confetto.left}-${confetto.top}`}
@@ -72,7 +80,7 @@ export function HeroBackdrop() {
         <div className="hero-road-edge" data-part="road-edge" />
         <div className="hero-road-surface" data-part="road-surface" />
         <div className="hero-road-line" data-part="road-line" />
-        {!reduced &&
+        {lively &&
           CARS.map((car) => (
             <div
               key={car.delay}

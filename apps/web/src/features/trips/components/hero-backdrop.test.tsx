@@ -16,8 +16,8 @@ function prefersReducedMotion(reduce: boolean) {
   }));
 }
 
-function renderBackdrop() {
-  const { container } = render(<HeroBackdrop />);
+function renderBackdrop(compact = false) {
+  const { container } = render(<HeroBackdrop compact={compact} />);
   const backdrop = container.firstElementChild;
   if (!(backdrop instanceof HTMLElement)) throw new Error('backdrop not found');
   const parts = (name: string) => backdrop.querySelectorAll(`[data-part="${name}"]`).length;
@@ -64,5 +64,15 @@ describe('HeroBackdrop', () => {
     const tracks = [...backdrop.querySelectorAll('[data-part="car-track"]')];
     expect(tracks).toHaveLength(parts('car'));
     for (const track of tracks) expect(track.querySelector('[data-part="car"]')).not.toBeNull();
+  });
+
+  it('005-AS7: keeps the same scene in the band, without confetti nor cars', () => {
+    prefersReducedMotion(false);
+    const { backdrop, parts } = renderBackdrop(true);
+
+    expect(backdrop).toHaveAttribute('data-compact', 'true');
+    for (const part of ['sun', 'sun-rays', 'road', 'frieze']) expect(parts(part)).toBe(1);
+    expect(parts('confetto')).toBe(0);
+    expect(parts('car')).toBe(0);
   });
 });

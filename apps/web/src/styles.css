@@ -342,9 +342,13 @@ body {
  * La route, dessinée à plat : un trapèze dont la pointe touche l'horizon, bordé de jaune, avec sa
  * ligne centrale. Aucune perspective 3D : le rendu est le même dans tous les navigateurs.
  */
+/* La route fait deux fois la largeur de l'écran, centrée sur l'axe de la scène (--scene-x). */
 .hero-road {
   position: absolute;
-  inset: var(--horizon) 0 0;
+  top: var(--horizon);
+  bottom: 0;
+  left: calc(var(--scene-x) - 100%);
+  width: 200%;
   overflow: hidden;
   translate: calc(var(--tilt-x) * -16px) 0;
 }
@@ -356,17 +360,17 @@ body {
 
 .hero-road-edge {
   background: var(--joj-yellow);
-  clip-path: polygon(47.4% 0, 52.6% 0, 122% 100%, -22% 100%);
+  clip-path: polygon(49.35% 0, 50.65% 0, 86% 100%, 14% 100%);
 }
 
 .hero-road-surface {
   background: linear-gradient(180deg, #5a4a3a 0, #262626 22%);
-  clip-path: polygon(48% 0, 52% 0, 116% 100%, -16% 100%);
+  clip-path: polygon(49.5% 0, 50.5% 0, 83% 100%, 17% 100%);
 }
 
 .hero-road-line {
   background: repeating-linear-gradient(180deg, transparent 0 7%, #fff 7% 12%);
-  clip-path: polygon(49.85% 0, 50.15% 0, 51.4% 100%, 48.6% 100%);
+  clip-path: polygon(49.96% 0, 50.04% 0, 50.7% 100%, 49.3% 100%);
 }
 
 /*
@@ -390,11 +394,11 @@ body {
 }
 
 .hero-car[data-lane='left'] {
-  left: 18%;
+  left: 32%;
 }
 
 .hero-car[data-lane='right'] {
-  left: 62%;
+  left: 58%;
 }
 
 .hero-car-body {
@@ -513,9 +517,24 @@ body {
   }
 }
 
-/* Dans le bandeau, le décor se réduit au ciel et à la frise. */
-.hero[data-state='band']
-  :is(.hero-sun, .hero-sun-rays, .hero-ground, .hero-road, .hero-signpost, .hero-confetto) {
+/*
+ * Dans le bandeau, la même scène en réduit : l'horizon descend, le soleil se lève derrière la
+ * mascotte rangée à droite, la route file vers elle.
+ */
+.hero[data-state='band'] .hero-backdrop {
+  --horizon: 80%;
+  --scene-x: 82%;
+}
+
+.hero[data-state='band'] .hero-sun {
+  width: 8rem;
+}
+
+.hero[data-state='band'] .hero-sun-rays {
+  width: 22rem;
+}
+
+.hero[data-state='band'] .hero-signpost {
   display: none;
 }
 
@@ -834,11 +853,9 @@ body {
     --scene-x: 74%;
   }
 
-  /* La route garde sa pointe sous la mascotte et déborde largement des deux côtés. */
-  .hero-road {
-    right: auto;
-    left: calc(var(--scene-x) - 100%);
-    width: 200%;
+  .hero[data-state='band'] .hero-backdrop {
+    --horizon: 82%;
+    --scene-x: 83%;
   }
 
   .hero-signpost {
