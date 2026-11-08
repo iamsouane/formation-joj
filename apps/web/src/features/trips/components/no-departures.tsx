@@ -16,6 +16,7 @@ function EmptyRoad() {
   return (
     <svg
       viewBox="0 0 120 90"
+      preserveAspectRatio="xMidYMid slice"
       className="no-departures-road"
       data-part="empty-road"
       aria-hidden="true"

@@ -1203,18 +1203,17 @@ body {
 .no-departures {
   position: relative;
   display: grid;
-  grid-template-columns: 5.5rem minmax(0, 1fr);
   gap: 1rem;
-  align-items: center;
   padding: 1rem;
   border: 2px solid var(--joj-black);
   background: #fff6dc;
 }
 
+/* Sur téléphone, la route vide est un bandeau au-dessus du texte ; à côté dès 640 px. */
 .no-departures-road {
   display: block;
   width: 100%;
-  height: auto;
+  height: 5.5rem;
   border: 2px solid var(--joj-black);
 }
 
@@ -1222,7 +1221,13 @@ body {
   .no-departures {
     max-width: 40rem;
     grid-template-columns: 8rem minmax(0, 1fr);
+    align-items: center;
     padding: 1.5rem;
+  }
+
+  .no-departures-road {
+    height: auto;
+    aspect-ratio: 4 / 3;
   }
 }
 
