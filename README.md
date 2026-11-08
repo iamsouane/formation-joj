@@ -113,7 +113,7 @@ Le code ne dépend pas du mode : un seul provider Nest fournit l'instance Drizzl
 
 ## Ajouter une fonctionnalité
 
-Dans cet ordre, en écrivant chaque test avant le code et en le voyant échouer. Les titres des tests (`describe`, `it`) s'écrivent en anglais et commencent par l'identifiant du scénario, précédé du numéro de la spec : `it('001-AS2: rejects a full trip', …)`. Modèle : le module de référence de la branche `main` (voir `CLAUDE.md`). Avec Claude Code, la [méthode](#méthode) suit cet ordre pour toi.
+Dans cet ordre, en écrivant chaque test avant le code et en le voyant échouer. Les titres des tests (`describe`, `it`) s'écrivent en anglais et commencent par l'identifiant du scénario, précédé du numéro de la spec : `it('001-AS2: rejects a full trip', …)`. Modèle : le module `trips` du projet ; le module de référence de la branche `main` reste lisible (voir `CLAUDE.md`). Avec Claude Code, la [méthode](#méthode) suit cet ordre pour toi.
 
 1. **Schéma partagé** : `packages/shared/src/<nom>.ts` (schémas Zod d'entrée et de réponse), exporté par `index.ts`.
 2. **Entité et son test** : `domain/<entité>.ts`, `domain/<nom>.errors.ts`, `domain/<entité>.spec.ts`.
