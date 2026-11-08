@@ -99,3 +99,11 @@ La relecture indépendante relève qu'une participation ou un nombre de places m
 La relecture indépendante du passage 1 relève que le test d'AS2 ne vérifie pas tout ce que l'« Alors » promet après une publication par le formulaire : le lien de gestion et le trajet compris.
 
 - [x] T09 [006-AS2] Compléter d'abord le cas « 006-AS2: switches to the form at any time, keeping the phone » dans `publish-page.test.tsx` : après la publication, le billet montre le jour et l'heure (9 nov. 08:00), 3 places, « 1 000 FCFA par place », le code et le lien `<origine>/trajets/<id>/gestion`, comme en AS1 ; corriger le billet si le test échoue (preuve : relecteur, `publish-page.test.tsx:120-140`, `[data-part="management-link"]` n'y est jamais lu)
+
+### Hors /converge
+
+Corrections demandées par la relecture humaine après le passage 2, faites hors du cycle `/converge`. T10 et T11 sont inscrites après coup pour la traçabilité : leurs commits existent déjà et ne sont pas réécrits.
+
+- [x] T10 [006-AS2] Écrire d'abord le cas « 006-AS2: disables the switch to the form while the announcement is read » dans `publish-page.test.tsx`, puis désactiver « Remplir le formulaire » pendant la lecture de l'annonce, avec le libellé « Patientez… », pour qu'aucune double publication ne soit possible (commit `fb93c07`)
+- [x] T11 [006-AS3] Écrire d'abord le cas « 006-AS3: keeps the missing marks until each field is filled, even after another refusal » dans `publish-page.test.tsx`, puis garder chaque marque « Absent de votre annonce » jusqu'à ce que son champ soit rempli, quel que soit le refus suivant (commit `2815b8e`)
+- [ ] T12 [006-AS7] Écrire d'abord le cas « 006-AS7: brings a refused announcement to the form with the refused fields marked » dans `publish-page.test.tsx`, puis amener au formulaire un VALIDATION_FAILED reçu après une annonce, l'annonce affichée au-dessus comme en AS3 et les champs refusés marqués (preuve : relecteur final, `announcement-form.tsx:57,70`, le message renvoie à des champs signalés que l'écran de l'annonce ne peut pas montrer)
