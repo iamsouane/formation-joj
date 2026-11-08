@@ -4,10 +4,13 @@ import {
   bookingDetailsSchema,
   publishedTripSchema,
   TRIP_SITES,
+  type TripDraft,
   tripListSchema,
 } from '@joj/shared';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
+import { FakeTripMessageReader } from '../src/modules/trips/application/testing/fake-trip-message-reader';
+import { TripMessageReader } from '../src/modules/trips/application/trip-message.reader';
 import { TripRepository } from '../src/modules/trips/application/trip.repository';
 import { Trip } from '../src/modules/trips/domain/trip';
 import { createTestApp } from './create-test-app';
@@ -339,6 +342,129 @@ describe('/api/trips (e2e)', () => {
       expect(await statusOf(bookingCode)).toBe('trip_cancelled');
       const trips = app.get(TripRepository);
       expect((await trips.findTrip(trip.id))?.remainingSeats).toBe(2);
+    });
+  });
+
+  describe('from a message', () => {
+    const message = 'je pars de Pikine pour Diamniadio demain 8h, 3 places, 1000 F';
+    const driverPhone = '+221771234567';
+
+    /** « AAAA-MM-JJT08:00 » à Dakar (UTC+0), `days` jours après aujourd'hui. */
+    const dakarAt8 = (days: number) =>
+      `${new Date(Date.now() + days * 24 * HOUR).toISOString().slice(0, 10)}T08:00`;
+
+    const understood = (draft: Partial<TripDraft> = {}): TripDraft => ({
+      departurePlace: 'Pikine',
+      site: 'Diamniadio',
+      departureAt: dakarAt8(1),
+      seats: 3,
+      pricePerSeat: 1000,
+      ...draft,
+    });
+
+    /** Le faux assistant que `createTestApp` met à la place de Claude. */
+    function assistant(): FakeTripMessageReader {
+      const reader = app.get(TripMessageReader);
+      if (!(reader instanceof FakeTripMessageReader)) {
+        throw new Error('The e2e tests must never call the real assistant');
+      }
+      return reader;
+    }
+
+    const publishFromMessage = (body: object) => api().post('/api/trips/from-message').send(body);
+
+    async function storedTrips(): Promise<Trip[]> {
+      const trips = app.get(TripRepository);
+      const bySite = await Promise.all(
+        TRIP_SITES.map((site) => trips.listUpcomingBySite(site, new Date(0))),
+      );
+      return bySite.flat();
+    }
+
+    it('004-AS1: publishes the understood trip (201) with a management code', async () => {
+      assistant().willRead(understood());
+
+      const response = await publishFromMessage({ message, driverPhone }).expect(201);
+
+      expect(response.body).not.toHaveProperty('driverPhone');
+      const published = publishedTripSchema.parse(response.body);
+      expect(published).toMatchObject({
+        departurePlace: 'Pikine',
+        site: 'diamniadio',
+        departureAt: `${dakarAt8(1)}:00.000Z`,
+        seats: 3,
+        remainingSeats: 3,
+        pricePerSeat: 1000,
+      });
+      expect(published.managementCode).not.toBe('');
+      expect((await listDiamniadio()).map((trip) => trip.id)).toEqual([published.id]);
+    });
+
+    it('004-AS2: rejects an unknown site (400 SITE_UNKNOWN) and creates no trip', async () => {
+      assistant().willRead(understood({ site: 'Thiès' }));
+
+      const response = await publishFromMessage({ message, driverPhone }).expect(400);
+
+      expect(response.body).toMatchObject({ code: 'SITE_UNKNOWN' });
+      expect(await storedTrips()).toEqual([]);
+    });
+
+    it('004-AS3: rejects a departure in the past (400 DEPARTURE_IN_PAST) and creates no trip', async () => {
+      assistant().willRead(understood({ departureAt: dakarAt8(-1) }));
+
+      const response = await publishFromMessage({ message, driverPhone }).expect(400);
+
+      expect(response.body).toMatchObject({ code: 'DEPARTURE_IN_PAST' });
+      expect(await storedTrips()).toEqual([]);
+    });
+
+    it('004-AS4: rejects an empty message (400 MESSAGE_EMPTY) without calling the assistant', async () => {
+      assistant().willRead(understood());
+
+      const response = await publishFromMessage({ message: '  ', driverPhone }).expect(400);
+
+      expect(response.body).toMatchObject({ code: 'MESSAGE_EMPTY' });
+      expect(assistant().received).toEqual([]);
+      expect(await storedTrips()).toEqual([]);
+    });
+
+    it('004-AS5: rejects a message lacking information (422 MESSAGE_UNREADABLE) with the missing fields', async () => {
+      assistant().willRead({
+        departurePlace: null,
+        site: 'Diamniadio',
+        departureAt: null,
+        seats: null,
+        pricePerSeat: null,
+      });
+
+      const response = await publishFromMessage({
+        message: 'je vais à Diamniadio, qui vient ?',
+        driverPhone,
+      }).expect(422);
+
+      expect(response.body).toMatchObject({
+        code: 'MESSAGE_UNREADABLE',
+        details: { missingFields: ['departurePlace', 'departureAt', 'seats', 'pricePerSeat'] },
+      });
+      expect(await storedTrips()).toEqual([]);
+    });
+
+    it('answers 503 ASSISTANT_UNAVAILABLE and publishes nothing when the assistant is down', async () => {
+      assistant().willFail();
+
+      const response = await publishFromMessage({ message, driverPhone }).expect(503);
+
+      expect(response.body).toMatchObject({ code: 'ASSISTANT_UNAVAILABLE' });
+      expect(await storedTrips()).toEqual([]);
+    });
+
+    it('rejects a trip with no seat as an invalid input (400 VALIDATION_FAILED)', async () => {
+      assistant().willRead(understood({ seats: 0 }));
+
+      const response = await publishFromMessage({ message, driverPhone }).expect(400);
+
+      expect(response.body).toMatchObject({ code: 'VALIDATION_FAILED' });
+      expect(await storedTrips()).toEqual([]);
     });
   });
 });

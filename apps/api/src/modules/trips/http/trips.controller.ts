@@ -7,6 +7,7 @@ import {
   cancelTripSchema,
   type PublishedTripResponse,
   publishedTripSchema,
+  publishTripFromMessageSchema,
   publishTripSchema,
   type TripResponse,
   tripIdParamSchema,
@@ -18,9 +19,11 @@ import { BookSeat } from '../application/use-cases/book-seat';
 import { CancelTrip } from '../application/use-cases/cancel-trip';
 import { ListUpcomingTrips } from '../application/use-cases/list-upcoming-trips';
 import { PublishTrip } from '../application/use-cases/publish-trip';
+import { PublishTripFromMessage } from '../application/use-cases/publish-trip-from-message';
 import type { Trip } from '../domain/trip';
 
 class PublishTripDto extends createZodDto(publishTripSchema) {}
+class PublishTripFromMessageDto extends createZodDto(publishTripFromMessageSchema) {}
 class UpcomingTripsQueryDto extends createZodDto(upcomingTripsQuerySchema) {}
 class TripDto extends createZodDto(tripSchema) {}
 class PublishedTripDto extends createZodDto(publishedTripSchema) {}
@@ -35,6 +38,7 @@ class CancelTripDto extends createZodDto(cancelTripSchema) {}
 export class TripsController {
   constructor(
     private readonly publishTrip: PublishTrip,
+    private readonly publishTripFromMessage: PublishTripFromMessage,
     private readonly listUpcomingTrips: ListUpcomingTrips,
     private readonly bookSeat: BookSeat,
     private readonly cancelTrip: CancelTrip,
@@ -52,6 +56,16 @@ export class TripsController {
   @ZodSerializerDto(PublishedTripDto)
   async publish(@Body() body: PublishTripDto): Promise<PublishedTripResponse> {
     const trip = await this.publishTrip.execute(body);
+    return { ...toResponse(trip), managementCode: trip.managementCode };
+  }
+
+  /** Le trajet compris dans l'annonce du conducteur, publié après les contrôles de TR1, et son code de gestion. */
+  @Post('from-message')
+  @ZodSerializerDto(PublishedTripDto)
+  async publishFromMessage(
+    @Body() body: PublishTripFromMessageDto,
+  ): Promise<PublishedTripResponse> {
+    const trip = await this.publishTripFromMessage.execute(body);
     return { ...toResponse(trip), managementCode: trip.managementCode };
   }
 
