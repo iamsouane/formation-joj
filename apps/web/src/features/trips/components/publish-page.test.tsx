@@ -247,6 +247,46 @@ describe('PublishPage', () => {
     expect(fixture.trips).toHaveLength(before);
   });
 
+  it('006-AS3: keeps the missing marks until each field is filled, even after another refusal', async () => {
+    mockControl.setTripDraft(
+      understood({ departurePlace: null, departureAt: null, seats: null, pricePerSeat: null }),
+    );
+    const { user } = await openPublishPage();
+    await user.type(
+      screen.getByLabelText('Votre annonce WhatsApp'),
+      'je vais à Diamniadio, qui vient ?',
+    );
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+    const form = await screen.findByRole('form', { name: 'Publier avec le formulaire' });
+    const absent = (label: string) => {
+      const field = within(form).getByLabelText(label);
+      expect(field).toHaveAttribute('aria-invalid', 'true');
+      expect(field).toHaveAccessibleDescription('Absent de votre annonce');
+    };
+
+    // Le lieu rempli perd sa marque ; les autres la gardent, même après une panne du serveur.
+    await user.type(within(form).getByLabelText('Lieu de départ'), 'Pikine');
+    expect(within(form).getByLabelText('Lieu de départ')).not.toHaveAttribute('aria-invalid');
+    mockControl.failNext('POST /api/trips');
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+    expect(await within(form).findByRole('alert')).toHaveTextContent(
+      'Une erreur est survenue, réessayez.',
+    );
+    absent('Jour et heure de départ');
+    absent('Places proposées');
+    absent('Participation par place, en FCFA');
+    expect(within(form).getByLabelText('Lieu de départ')).not.toHaveAttribute('aria-invalid');
+
+    // Un refus des champs ne les efface pas non plus : un champ encore vide reste « absent ».
+    await user.type(within(form).getByLabelText('Places proposées'), '3');
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+    expect(await within(form).findByText('Vérifiez les champs signalés.')).toBeInTheDocument();
+    absent('Jour et heure de départ');
+    absent('Participation par place, en FCFA');
+    expect(within(form).getByLabelText('Places proposées')).not.toHaveAttribute('aria-invalid');
+  });
+
   it('006-AS4: falls back to the form when the assistant does not answer', async () => {
     mockControl.failAssistant();
     const before = fixture.trips.length;

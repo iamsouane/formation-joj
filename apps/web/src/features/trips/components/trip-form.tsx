@@ -6,6 +6,7 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,11 +23,15 @@ interface TripFormProps {
   onPhoneChange: (phone: string) => void;
   pending: boolean;
   onPublish: (input: PublishTripInput) => void;
-  /** Les champs signalés, chacun avec son message. */
+  /** Les champs que l'annonce n'a pas donnés : signalés tant qu'ils ne sont pas remplis. */
+  missingFields?: readonly TripFormField[];
+  /** Les champs refusés par l'API, chacun avec son message. */
   fieldErrors?: TripFormFieldErrors;
   /** Sous le bouton : l'attente, ou le refus traduit. */
   children?: ReactNode;
 }
+
+const MISSING_IN_ANNOUNCEMENT = 'Absent de votre annonce';
 
 /** « 2026-11-08T15:00 » : l'instant présent, à l'heure de Dakar (UTC+0), au format du champ. */
 const dakarNow = () => new Date().toISOString().slice(0, 16);
@@ -45,7 +50,8 @@ function wholeNumber(value: FormDataEntryValue | null): number {
  * Le formulaire classique d'un trajet. Le site se choisit parmi les trois sites des JOJ ; le jour
  * et l'heure se saisissent à l'heure de Dakar, et le champ ne propose pas d'heure passée (une
  * aide de saisie : la règle reste celle de l'API). Le téléphone est partagé avec l'annonce.
- * Un champ signalé porte `aria-invalid` et son message, lu avec lui. À son arrivée, le
+ * Un champ signalé porte `aria-invalid` et son message, lu avec lui. Un champ absent de l'annonce
+ * le reste tant qu'il n'est pas rempli, quel que soit le refus suivant. À son arrivée, le
  * formulaire prend le focus de ce qui vient de disparaître : le premier champ signalé, sinon le
  * premier champ.
  */
@@ -54,11 +60,17 @@ export function TripForm({
   onPhoneChange,
   pending,
   onPublish,
+  missingFields = [],
   fieldErrors = {},
   children,
 }: TripFormProps) {
+  const [filled, setFilled] = useState<ReadonlySet<string>>(new Set());
+  const errorOf = (field: TripFormField) =>
+    missingFields.includes(field) && !filled.has(field)
+      ? MISSING_IN_ANNOUNCEMENT
+      : fieldErrors[field];
   const siteErrorId = useId();
-  const siteError = fieldErrors.site;
+  const siteError = errorOf('site');
   const formRef = useRef<HTMLFormElement>(null);
 
   // Au montage seulement : ensuite, le focus reste où le conducteur le met.
@@ -71,6 +83,18 @@ export function TripForm({
     );
     (flagged ?? form?.querySelector<HTMLInputElement>('input'))?.focus();
   }, []);
+
+  /** Un champ qui reçoit une valeur est rempli ; vidé, il ne l'est plus. */
+  function trackFilled(event: FormEvent<HTMLFormElement>) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    setFilled((current) => {
+      const next = new Set(current);
+      if (input.value.trim() === '') next.delete(input.name);
+      else next.add(input.name);
+      return next;
+    });
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -92,11 +116,12 @@ export function TripForm({
       ref={formRef}
       aria-label="Publier avec le formulaire"
       onSubmit={submit}
+      onInput={trackFilled}
       className="publish-form"
     >
       <TripField
         label="Lieu de départ"
-        error={fieldErrors.departurePlace}
+        error={errorOf('departurePlace')}
         name="departurePlace"
         maxLength={TRIP_DEPARTURE_PLACE_MAX_LENGTH}
         autoComplete="off"
@@ -123,7 +148,7 @@ export function TripForm({
       </fieldset>
       <TripField
         label="Jour et heure de départ"
-        error={fieldErrors.departureAt}
+        error={errorOf('departureAt')}
         name="departureAt"
         type="datetime-local"
         min={dakarNow()}
@@ -131,20 +156,20 @@ export function TripForm({
       <div className="publish-pair">
         <TripField
           label="Places proposées"
-          error={fieldErrors.seats}
+          error={errorOf('seats')}
           name="seats"
           inputMode="numeric"
         />
         <TripField
           label="Participation par place, en FCFA"
-          error={fieldErrors.pricePerSeat}
+          error={errorOf('pricePerSeat')}
           name="pricePerSeat"
           inputMode="numeric"
         />
       </div>
       <TripField
         label="Votre téléphone"
-        error={fieldErrors.driverPhone}
+        error={errorOf('driverPhone')}
         name="driverPhone"
         type="tel"
         inputMode="tel"

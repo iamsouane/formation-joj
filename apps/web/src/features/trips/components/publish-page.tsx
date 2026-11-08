@@ -6,7 +6,7 @@ import { usePublishTrip, usePublishTripFromMessage } from '../api/trips.queries'
 import { AnnouncementForm } from './announcement-form';
 import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
-import { missingFieldsOf } from './missing-fields';
+import { missingFieldsOf, type TripDraftField } from './missing-fields';
 import { publishErrorMessage, refusedFieldsOf } from './publish-error-message';
 import { PublishedTrip } from './published-trip';
 import { TripForm, type TripFormFieldErrors } from './trip-form';
@@ -17,18 +17,13 @@ const REFUSED_FIELD = 'À vérifier';
  * Pourquoi l'application a amené le conducteur au formulaire : une annonce incomplète (avec ce
  * qui y manque), ou un assistant qui ne répond pas.
  */
-type Fallback = { reason: 'unreadable'; missing: TripFormFieldErrors } | { reason: 'unavailable' };
-
-const MISSING_IN_ANNOUNCEMENT = 'Absent de votre annonce';
+type Fallback = { reason: 'unreadable'; missing: TripDraftField[] } | { reason: 'unavailable' };
 
 /** L'annonce n'a pas pu être lue jusqu'au bout : le conducteur la complète dans le formulaire. */
 function fallbackFor(error: unknown): Fallback | null {
   const missing = missingFieldsOf(error);
   if (missing) {
-    return {
-      reason: 'unreadable',
-      missing: Object.fromEntries(missing.map((field) => [field, MISSING_IN_ANNOUNCEMENT])),
-    };
+    return { reason: 'unreadable', missing };
   }
   return error instanceof ApiError && error.code === 'ASSISTANT_UNAVAILABLE'
     ? { reason: 'unavailable' }
@@ -75,13 +70,12 @@ export function PublishPage() {
   // Un refus de l'annonce qui ne mène pas au formulaire s'affiche sous l'annonce.
   const announcementError =
     fromMessage.isError && !fallbackFor(fromMessage.error) ? fromMessage.error : null;
-  // Les champs absents de l'annonce restent signalés jusqu'à la publication par le formulaire ;
-  // ensuite, ce sont ceux que l'API refuse.
-  const formFieldErrors: TripFormFieldErrors | undefined = fromForm.isError
+  // Les champs refusés par l'API ; ceux absents de l'annonce, le formulaire les signale lui-même
+  // tant qu'ils ne sont pas remplis.
+  const refusedFields: TripFormFieldErrors | undefined = fromForm.isError
     ? Object.fromEntries(refusedFieldsOf(fromForm.error).map((field) => [field, REFUSED_FIELD]))
-    : fallback?.reason === 'unreadable' && !fromForm.isPending
-      ? fallback.missing
-      : undefined;
+    : undefined;
+  const missingFields = fallback?.reason === 'unreadable' ? fallback.missing : undefined;
 
   return (
     <>
@@ -97,7 +91,8 @@ export function PublishPage() {
               onPhoneChange={setPhone}
               pending={waiting}
               onPublish={publishFromForm}
-              fieldErrors={formFieldErrors}
+              missingFields={missingFields}
+              fieldErrors={refusedFields}
             >
               <p role="status" className="publish-status">
                 {waiting && 'Publication en cours…'}
