@@ -1,6 +1,6 @@
 # 005 — Accueil, chercher et réserver depuis son téléphone
 
-**Statut** : Validée
+**Statut** : Implémentée
 **PRD** : specs/prd-covoiturage.md, TR5
 
 ## Contexte
