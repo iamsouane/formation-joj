@@ -1,5 +1,6 @@
 import type { TripSite } from '@joj/shared';
 import { useId } from 'react';
+import { HeroBackdrop } from './hero-backdrop';
 import { MascotStage } from './mascot-stage';
 import { SitePicker } from './site-picker';
 
@@ -19,6 +20,7 @@ export function Hero({ site, onSiteChange }: HeroProps) {
 
   return (
     <section aria-labelledby={titleId} className="hero" data-state={folded ? 'band' : 'open'}>
+      <HeroBackdrop />
       <div className="hero-inner">
         <div className="hero-brand">
           <span className="hero-logo">

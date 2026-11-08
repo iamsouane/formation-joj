@@ -1,0 +1,54 @@
+/**
+ * Le décor vivant du hero. jsdom n'applique pas le CSS : le test vérifie ce que le code rend
+ * (le décor hors de l'arbre d'accessibilité, ses pièces mobiles) ; le mouvement se voit dans un
+ * navigateur. `prefers-reduced-motion` est simulé par un faux `matchMedia`.
+ */
+import { render } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { HeroBackdrop } from './hero-backdrop';
+
+function prefersReducedMotion(reduce: boolean) {
+  vi.stubGlobal('matchMedia', (query: string) => ({
+    matches: reduce && query === '(prefers-reduced-motion: reduce)',
+    media: query,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
+}
+
+function renderBackdrop() {
+  const { container } = render(<HeroBackdrop />);
+  const backdrop = container.firstElementChild;
+  if (!(backdrop instanceof HTMLElement)) throw new Error('backdrop not found');
+  const parts = (name: string) => backdrop.querySelectorAll(`[data-part="${name}"]`).length;
+  return { backdrop, parts };
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('HeroBackdrop', () => {
+  it('005-AS6: draws a living backdrop out of the accessibility tree', () => {
+    prefersReducedMotion(false);
+    const { backdrop, parts } = renderBackdrop();
+
+    expect(backdrop).toHaveAttribute('aria-hidden', 'true');
+    expect(backdrop).toHaveAttribute('data-motion', 'full');
+    for (const part of ['sun-rays', 'sun', 'road', 'frieze']) expect(parts(part)).toBe(1);
+    expect(parts('car')).toBeGreaterThanOrEqual(2);
+    expect(parts('confetto')).toBeGreaterThanOrEqual(8);
+    expect(backdrop.querySelector('[data-part="signpost"]')).toHaveTextContent(
+      /Dakar.*Diamniadio.*Saly/,
+    );
+  });
+
+  it('005-AS6: drops the confetti and the moving cars on reduced motion', () => {
+    prefersReducedMotion(true);
+    const { backdrop, parts } = renderBackdrop();
+
+    expect(backdrop).toHaveAttribute('data-motion', 'reduced');
+    expect(parts('confetto')).toBe(0);
+    expect(parts('car')).toBe(0);
+    expect(parts('road')).toBe(1);
+    expect(parts('signpost')).toBe(1);
+  });
+});

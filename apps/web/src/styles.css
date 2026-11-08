@@ -239,6 +239,220 @@ body {
 }
 
 /*
+ * Le décor du hero (hero-backdrop.tsx), derrière le contenu. --horizon place la ligne d'horizon :
+ * le soleil s'y lève, la route y file. Chaque pièce mobile n'anime que `transform` ou `opacity`.
+ */
+.hero-backdrop {
+  --horizon: 62%;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-inner {
+  z-index: 1;
+}
+
+/* Le soleil levant, et ses rayons qui tournent très lentement autour de lui. */
+.hero-sun,
+.hero-sun-rays {
+  position: absolute;
+  top: var(--horizon);
+  left: 50%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% -50%;
+}
+
+.hero-sun {
+  width: min(80vw, 24rem);
+  background: radial-gradient(circle, #fff1b8 0%, #ffe27a 55%, #ffd447 100%);
+}
+
+.hero-sun-rays {
+  width: min(190vw, 56rem);
+  background: repeating-conic-gradient(rgb(255 255 255 / 0.3) 0 5deg, transparent 5deg 15deg);
+  mask-image: radial-gradient(closest-side, #000 35%, transparent 100%);
+  animation: hero-rays 90s linear infinite;
+}
+
+@keyframes hero-rays {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* Le sol, sous l'horizon : il cache la moitié basse du soleil. */
+.hero-ground {
+  position: absolute;
+  inset: var(--horizon) 0 0;
+  border-top: 2px solid var(--joj-black);
+  background: linear-gradient(180deg, #e9820f, #d96a0a);
+}
+
+/*
+ * La route : un plan couché en perspective, dont le bout se perd à l'horizon. Les voitures y
+ * roulent vers le fond, redressées face à nous.
+ */
+.hero-road {
+  position: absolute;
+  inset: var(--horizon) 0 0;
+  overflow: hidden;
+  perspective: 240px;
+  perspective-origin: 50% 0;
+  mask-image: linear-gradient(180deg, transparent 0, #000 1.5rem);
+}
+
+.hero-road-plane {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 130%;
+  height: 1000%;
+  translate: -50% 0;
+  transform-origin: 50% 100%;
+  transform: rotateX(80deg);
+  transform-style: preserve-3d;
+  background:
+    linear-gradient(0deg, #fff 0 45%, transparent 45%) 50% 0 / 2% 7.5rem repeat-y,
+    linear-gradient(90deg, var(--joj-yellow) 0 2%, transparent 2% 98%, var(--joj-yellow) 98%),
+    #262626;
+}
+
+.hero-car {
+  position: absolute;
+  bottom: 1%;
+  width: 4.5rem;
+  transform-style: preserve-3d;
+  animation: hero-car-drive 7.8s linear infinite;
+}
+
+.hero-car-body {
+  display: block;
+  width: 100%;
+  transform-origin: 50% 100%;
+  transform: rotateX(-80deg);
+  animation: hero-car-fade 7.8s linear infinite;
+  animation-delay: inherit;
+}
+
+/* Le trajet seul, sans opacité : une opacité aplatirait la voiture contre la route. */
+@keyframes hero-car-drive {
+  to {
+    transform: translateY(-900px);
+  }
+}
+
+@keyframes hero-car-fade {
+  from,
+  to {
+    opacity: 0;
+  }
+  8%,
+  80% {
+    opacity: 1;
+  }
+}
+
+/* Le poteau indicateur, au bord de la route : trois flèches vertes, comme sur les routes du pays. */
+.hero-signpost {
+  position: absolute;
+  top: var(--horizon);
+  left: 70%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 1.4rem;
+  translate: 0 -100%;
+  background: linear-gradient(
+      90deg,
+      transparent 0.6rem,
+      var(--joj-black) 0.6rem 0.8rem,
+      transparent 0.8rem
+    )
+    no-repeat;
+}
+
+.hero-sign {
+  width: max-content;
+  padding: 0.12rem 0.9rem 0.12rem 0.45rem;
+  border: 1.5px solid var(--joj-white);
+  background: var(--joj-green);
+  color: var(--joj-white);
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+  clip-path: polygon(0 0, calc(100% - 0.55rem) 0, 100% 50%, calc(100% - 0.55rem) 100%, 0 100%);
+}
+
+.hero-sign[data-direction='left'] {
+  padding: 0.12rem 0.45rem 0.12rem 0.9rem;
+  clip-path: polygon(0.55rem 0, 100% 0, 100% 100%, 0.55rem 100%, 0 50%);
+}
+
+/* Les confettis flottent sur place, chacun à son rythme. */
+.hero-confetto {
+  position: absolute;
+  width: 0.45rem;
+  height: 0.8rem;
+  border-radius: 1px;
+  background: var(--joj-green);
+  animation: hero-confetto 8s var(--ease-breath) infinite;
+}
+
+.hero-confetto:nth-child(3n) {
+  background: var(--joj-red);
+}
+
+.hero-confetto:nth-child(3n + 1) {
+  background: #fff3b0;
+}
+
+@keyframes hero-confetto {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(0.6rem, 1rem) rotate(200deg);
+  }
+}
+
+/* La frise de l'ourlet du maillot, triangles vert, rouge et jaune, qui défile en bas du hero. */
+.hero-frieze {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(100% + 4.5rem);
+  height: 0.9rem;
+  border-top: 2px solid var(--joj-black);
+  background:
+    conic-gradient(from 135deg at 16.667% 0, var(--joj-green) 90deg, transparent 0) 0 0 / 4.5rem
+      100%,
+    conic-gradient(from 135deg at 50% 0, var(--joj-red) 90deg, transparent 0) 0 0 / 4.5rem 100%,
+    conic-gradient(from 135deg at 83.333% 0, var(--joj-yellow) 90deg, transparent 0) 0 0 / 4.5rem
+      100%,
+    var(--joj-black);
+  animation: hero-frieze 3.6s linear infinite;
+}
+
+@keyframes hero-frieze {
+  to {
+    transform: translateX(-4.5rem);
+  }
+}
+
+/* Dans le bandeau, le décor se réduit au ciel et à la frise. */
+.hero[data-state='band']
+  :is(.hero-sun, .hero-sun-rays, .hero-ground, .hero-road, .hero-signpost, .hero-confetto) {
+  display: none;
+}
+
+/*
  * La scène de la mascotte (mascot-stage.tsx). Le JavaScript pose --tilt-x et --tilt-y, de -1 à 1,
  * selon la position du doigt ou de la souris. Seuls `transform` et `opacity` bougent : rien ne
  * recalcule la mise en page.
@@ -330,10 +544,19 @@ body {
   }
 }
 
-/* Les boutons de site, posés en bas du hero, à portée du pouce. */
+/* Les boutons de site, posés en bas du hero, à portée du pouce ; la légende reste pour les lecteurs d'écran. */
 .hero .site-picker {
   margin-top: 0.75rem;
   view-transition-name: site-picker;
+}
+
+.hero .site-picker legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .hero .site-picker label {
@@ -429,6 +652,7 @@ body {
 /* Moins d'animations : la mascotte est posée, immobile, et le reste aussi. */
 @media (prefers-reduced-motion: reduce) {
   .mascot-stage *,
+  .hero-backdrop *,
   .flame-celebration {
     animation: none !important;
     transition: none !important;
