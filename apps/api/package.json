@@ -12,6 +12,7 @@
     "db:reset": "node scripts/db.mts reset"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
     "@electric-sql/pglite": "^0.5.12",
     "@joj/shared": "workspace:*",
     "@nestjs/common": "^11.2.8",
