@@ -49,6 +49,20 @@ describe('home page on a phone screen', () => {
   });
 });
 
+describe('hero layout', () => {
+  it('005-AS7: lays the hero out as a copy column and a scene column', async () => {
+    await renderRoute({ initialEntries: ['/'] });
+    const slot = (name: string) => heroOf().querySelector(`[data-slot="${name}"]`);
+
+    // Sur ordinateur, titre et boutons forment la colonne de gauche, la mascotte celle de droite.
+    expect(slot('hero-copy')).toContainElement(screen.getByRole('heading', { level: 1 }));
+    expect(slot('hero-actions')).toContainElement(screen.getByRole('radio', { name: 'Saly' }));
+    expect(slot('hero-scene')).toContainElement(
+      screen.getByRole('img', { name: 'La mascotte des JOJ Dakar 2026' }),
+    );
+  });
+});
+
 describe('back to the hero', () => {
   it('005-AS7: the brand in the band leads back to the opened hero, at the address without a site', async () => {
     const user = userEvent.setup();

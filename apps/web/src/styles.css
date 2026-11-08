@@ -163,13 +163,28 @@ body {
 
 .hero-inner {
   position: relative;
-  display: flex;
+  display: grid;
   width: 100%;
   max-width: 28rem;
   flex: 1;
-  flex-direction: column;
+  grid-template-areas: 'copy' 'scene' 'actions';
+  grid-template-rows: auto 1fr auto;
   margin-inline: auto;
   padding: 0.75rem 1rem 1.75rem;
+}
+
+.hero-copy {
+  grid-area: copy;
+}
+
+.hero-scene {
+  display: flex;
+  min-height: 13rem;
+  grid-area: scene;
+}
+
+.hero-actions {
+  grid-area: actions;
 }
 
 .hero-brand {
@@ -221,13 +236,26 @@ body {
   line-height: 1.3;
 }
 
-/* Le bandeau : la marque, le titre sur une ligne, la mascotte en petit à droite, les boutons. */
+/*
+ * Le bandeau : la marque et le titre à gauche, la mascotte à droite dans sa propre colonne, assez
+ * haute pour danser sans être coupée (la marge du haut laisse la place aux sauts), les boutons.
+ */
 .hero[data-state='band'] {
   min-height: 0;
 }
 
 .hero[data-state='band'] .hero-inner {
+  grid-template-areas: 'copy scene' 'actions actions';
+  grid-template-columns: minmax(0, 1fr) 6.5rem;
+  grid-template-rows: auto auto;
+  column-gap: 0.5rem;
   padding-bottom: 1.5rem;
+}
+
+.hero[data-state='band'] .hero-scene {
+  height: 9rem;
+  min-height: 0;
+  padding-top: 1.1rem;
 }
 
 .hero[data-state='band'] .hero-title {
@@ -246,6 +274,8 @@ body {
  */
 .hero-backdrop {
   --horizon: 62%;
+  /* L'axe de la scène : le soleil et la route s'alignent sur la mascotte. */
+  --scene-x: 50%;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -276,7 +306,7 @@ body {
 .hero-sun-rays {
   position: absolute;
   top: var(--horizon);
-  left: 50%;
+  left: var(--scene-x);
   aspect-ratio: 1;
   border-radius: 50%;
   translate: calc(-50% + var(--tilt-x) * -6px) calc(-50% + var(--tilt-y) * -4px);
@@ -499,19 +529,9 @@ body {
   --tilt-y: 0;
   position: relative;
   flex: 1;
-  min-height: 13rem;
   perspective: 900px;
   touch-action: pan-y;
   view-transition-name: mascot;
-}
-
-.hero[data-state='band'] .mascot-stage {
-  position: absolute;
-  top: 0.4rem;
-  right: 0.75rem;
-  width: 5.5rem;
-  height: 7rem;
-  min-height: 0;
 }
 
 .mascot-shadow,
@@ -766,6 +786,79 @@ body {
     opacity: 0;
     filter: blur(4px);
     transform: translateY(0.75rem);
+  }
+}
+
+/*
+ * Sur ordinateur (1024 px et plus) : deux colonnes, le titre et les boutons à gauche, la grande
+ * mascotte à droite ; le soleil, la route et le poteau suivent la mascotte. Dans le bandeau, la
+ * mascotte garde au moins 160 px de haut.
+ */
+@media (min-width: 1024px) {
+  .hero-inner {
+    max-width: 76rem;
+    grid-template-areas: 'copy scene' 'actions scene';
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: 1fr auto;
+    column-gap: 3rem;
+    padding: 1.5rem 2.5rem 3rem;
+  }
+
+  .hero-copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .hero-title {
+    font-size: clamp(5.5rem, 9vw, 9.5rem);
+  }
+
+  .hero-lede {
+    max-width: 26rem;
+    font-size: 1.3rem;
+  }
+
+  .hero-actions {
+    max-width: 34rem;
+  }
+
+  .hero-scene {
+    height: min(64svh, 38rem);
+    min-height: 0;
+    align-self: end;
+  }
+
+  .hero-backdrop {
+    --horizon: 68%;
+    --scene-x: 74%;
+  }
+
+  /* La route garde sa pointe sous la mascotte et déborde largement des deux côtés. */
+  .hero-road {
+    right: auto;
+    left: calc(var(--scene-x) - 100%);
+    width: 200%;
+  }
+
+  .hero-signpost {
+    left: calc(var(--scene-x) + 13%);
+  }
+
+  .hero[data-state='band'] .hero-inner {
+    grid-template-areas: 'copy scene' 'actions scene';
+    grid-template-columns: minmax(0, 1fr) 12rem;
+    grid-template-rows: auto auto;
+    padding-bottom: 1.75rem;
+  }
+
+  .hero[data-state='band'] .hero-scene {
+    height: 13.5rem;
+    padding-top: 1.5rem;
+  }
+
+  .hero[data-state='band'] .hero-title {
+    font-size: 3.25rem;
   }
 }
 
