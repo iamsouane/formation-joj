@@ -166,10 +166,8 @@ body {
   width: 100%;
   max-width: 28rem;
   flex: 1;
-  grid-template-areas: 'copy copy' 'scene actions';
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: auto 1fr;
-  column-gap: 0.25rem;
+  grid-template-areas: 'copy' 'scene' 'actions';
+  grid-template-rows: auto 1fr auto;
   margin-inline: auto;
   padding: 0.75rem 1rem 1.75rem;
 }
@@ -184,15 +182,14 @@ body {
   grid-area: scene;
 }
 
-/*
- * Sur téléphone, la mascotte partage sa rangée avec les panneaux : sa hauteur est bornée pour que
- * la pose la plus large (la flamme, 504 × 800) tienne dans sa colonne sans être coupée.
- */
-@media (max-width: 1023.98px) {
-  .hero[data-state='open'] .hero-scene {
-    height: min(44svh, 16.5rem);
-    align-self: end;
-  }
+/* Sur téléphone, la mascotte est la vedette : la scène prend toute la hauteur libre, centrée. */
+.hero[data-state='open'] .hero-scene {
+  justify-content: center;
+  padding-block: 0.5rem 0.75rem;
+}
+
+.hero[data-state='open'] .hero-actions {
+  padding-bottom: 1rem;
 }
 
 .hero-actions {
@@ -238,6 +235,7 @@ body {
 
 .hero-title span {
   display: block;
+  white-space: nowrap;
 }
 
 .hero-lede {
@@ -286,8 +284,8 @@ body {
  */
 .hero-backdrop {
   --horizon: 62%;
-  /* L'axe de la scène : le soleil et la route s'alignent sur la mascotte, à gauche des panneaux. */
-  --scene-x: 31%;
+  /* L'axe de la scène : le soleil et la route s'alignent sur la mascotte. */
+  --scene-x: 50%;
   position: absolute;
   inset: 0;
   z-index: 0;
@@ -868,10 +866,7 @@ body {
 .signpost {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.45rem;
-  padding-bottom: 2.6rem;
+  gap: 0.35rem;
 }
 
 .signpost legend {
@@ -884,6 +879,7 @@ body {
 }
 
 .signpost-pole {
+  display: none;
   position: absolute;
   top: 0.6rem;
   bottom: 0;
@@ -897,9 +893,19 @@ body {
   position: relative;
   z-index: 1;
   display: block;
+  flex: 1 1 0;
   border-radius: 3px;
   cursor: pointer;
-  transition: transform 160ms var(--ease-out-soft);
+  transition:
+    transform 160ms var(--ease-out-soft),
+    opacity 240ms var(--ease-out-soft),
+    filter 240ms var(--ease-out-soft);
+}
+
+/* Une fois un site choisi, les autres panneaux s'effacent ; le choisi reste en pleine couleur. */
+.sign[data-dimmed='true'] {
+  opacity: 0.5;
+  filter: saturate(0.55);
 }
 
 .sign:has(:focus-visible) {
@@ -909,24 +915,47 @@ body {
 
 .sign-panel {
   display: flex;
-  min-width: 9.25rem;
   min-height: 3rem;
   align-items: center;
-  padding: 0.2rem 1.8rem 0.2rem 0.9rem;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.2rem 1.1rem 0.2rem 0.6rem;
   background: var(--joj-green);
   box-shadow: inset 0 0 0 3px var(--joj-white);
   color: var(--joj-white);
   font-family: var(--font-display);
-  font-size: 1.3rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-  clip-path: polygon(0 0, calc(100% - 1.1rem) 0, 100% 50%, calc(100% - 1.1rem) 100%, 0 100%);
+  clip-path: polygon(0 0, calc(100% - 0.8rem) 0, 100% 50%, calc(100% - 0.8rem) 100%, 0 100%);
 }
 
 .sign[data-direction='left'] .sign-panel {
-  padding: 0.2rem 0.9rem 0.2rem 1.8rem;
-  clip-path: polygon(1.1rem 0, 100% 0, 100% 100%, 1.1rem 100%, 0 50%);
+  padding: 0.2rem 0.6rem 0.2rem 1.1rem;
+  clip-path: polygon(0.8rem 0, 100% 0, 100% 100%, 0.8rem 100%, 0 50%);
+}
+
+/* La marque du panneau choisi : une coche blanche dans un disque noir. */
+.sign-mark {
+  position: relative;
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 50%;
+  background: var(--joj-black);
+}
+
+.sign-mark::after {
+  content: '';
+  position: absolute;
+  top: 0.22rem;
+  left: 0.4rem;
+  width: 0.3rem;
+  height: 0.55rem;
+  border: solid var(--joj-white);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .sign:has(:checked) .sign-panel {
@@ -949,35 +978,13 @@ body {
   transform: scale(0.97);
 }
 
-/* Dans le bandeau, les panneaux s'alignent sur une rangée, sans poteau. */
+/* Dans le bandeau, les panneaux gardent la rangée, un peu plus serrée. */
 .hero[data-state='band'] .signpost {
-  flex-direction: row;
-  gap: 0.35rem;
   margin-top: 0.75rem;
-  padding-bottom: 0;
-}
-
-.hero[data-state='band'] .signpost-pole {
-  display: none;
 }
 
 .hero[data-state='band'] .sign {
-  flex: 1 1 0;
   max-width: 13rem;
-}
-
-.hero[data-state='band'] .sign-panel {
-  min-width: 0;
-  min-height: 2.75rem;
-  justify-content: center;
-  padding: 0.2rem 1.1rem 0.2rem 0.5rem;
-  font-size: 0.95rem;
-  clip-path: polygon(0 0, calc(100% - 0.8rem) 0, 100% 50%, calc(100% - 0.8rem) 100%, 0 100%);
-}
-
-.hero[data-state='band'] .sign[data-direction='left'] .sign-panel {
-  padding: 0.2rem 0.5rem 0.2rem 1.1rem;
-  clip-path: polygon(0.8rem 0, 100% 0, 100% 100%, 0.8rem 100%, 0 50%);
 }
 
 /*
@@ -1016,7 +1023,7 @@ body {
   .hero-inner {
     max-width: 68.75rem;
     grid-template-areas: 'copy scene actions';
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr) auto;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr) auto;
     grid-template-rows: 1fr;
     column-gap: 2rem;
     padding: 1.5rem 2.5rem 3rem;
@@ -1029,7 +1036,7 @@ body {
   }
 
   .hero-title {
-    font-size: clamp(5.5rem, 9vw, 9.5rem);
+    font-size: clamp(5rem, 8.4vw, 9rem);
   }
 
   .hero-lede {
@@ -1037,14 +1044,38 @@ body {
     font-size: 1.3rem;
   }
 
-  .hero-actions {
-    padding-bottom: 1rem;
+  /* Sur ordinateur, le hero ouvert dresse le vrai poteau : les panneaux empilés, en grand. */
+  .hero[data-state='open'] .signpost {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    padding-bottom: 2.6rem;
   }
 
-  .sign-panel {
+  .hero[data-state='open'] .signpost-pole {
+    display: block;
+  }
+
+  .hero[data-state='open'] .sign {
+    flex: none;
+  }
+
+  .hero[data-state='open'] .sign-panel {
     min-width: 11rem;
     min-height: 3.5rem;
+    justify-content: flex-start;
+    padding: 0.2rem 1.8rem 0.2rem 0.9rem;
     font-size: 1.55rem;
+    clip-path: polygon(0 0, calc(100% - 1.1rem) 0, 100% 50%, calc(100% - 1.1rem) 100%, 0 100%);
+  }
+
+  .hero[data-state='open'] .sign[data-direction='left'] .sign-panel {
+    padding: 0.2rem 0.9rem 0.2rem 1.8rem;
+    clip-path: polygon(1.1rem 0, 100% 0, 100% 100%, 1.1rem 100%, 0 50%);
+  }
+
+  .hero[data-state='band'] .sign-panel {
+    font-size: 1.05rem;
   }
 
   .hero-scene {

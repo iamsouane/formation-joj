@@ -47,6 +47,9 @@ export function SitePicker({ value, onChange }: SitePickerProps) {
           className="sign"
           data-site={site}
           data-direction={DIRECTIONS[site]}
+          // Le panneau choisi porte sa marque ; une fois un site choisi, les autres s'atténuent.
+          data-selected={value === site}
+          data-dimmed={value !== undefined && value !== site}
           onPointerDown={() => {
             pointerPressed.current = true;
           }}
@@ -59,7 +62,12 @@ export function SitePicker({ value, onChange }: SitePickerProps) {
             onChange={() => choose(site)}
             className="sr-only"
           />
-          <span className="sign-panel">{SITE_LABELS[site]}</span>
+          <span className="sign-panel">
+            {value === site && (
+              <span className="sign-mark" data-part="sign-mark" aria-hidden="true" />
+            )}
+            {SITE_LABELS[site]}
+          </span>
         </label>
       ))}
     </fieldset>

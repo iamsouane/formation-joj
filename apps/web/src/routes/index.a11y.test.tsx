@@ -64,6 +64,33 @@ describe('hero layout', () => {
 });
 
 describe('direction signs', () => {
+  it('005-AS7: on a phone, the mascot is the star and the chosen sign stands out', async () => {
+    const user = userEvent.setup();
+    await renderRoute({ initialEntries: ['/'] });
+    const signs = () => [...heroOf().querySelectorAll<HTMLElement>('.sign')];
+
+    // Hero ouvert : la scène de la mascotte occupe sa propre rangée, entière, entre le texte et les
+    // panneaux ; aucun panneau n'est choisi ni atténué.
+    const scene = heroOf().querySelector('[data-slot="hero-scene"]');
+    expect(scene?.children).toHaveLength(1);
+    expect(scene?.firstElementChild).toHaveClass('mascot-stage');
+    expect(signs().map((sign) => sign.dataset['selected'])).toEqual(['false', 'false', 'false']);
+    expect(signs().map((sign) => sign.dataset['dimmed'])).toEqual(['false', 'false', 'false']);
+    expect(heroOf().querySelector('[data-part="sign-mark"]')).toBeNull();
+
+    within(heroOf()).getByRole('radio', { name: 'Saly' }).focus();
+    await user.keyboard(' ');
+    await screen.findByRole('list', { name: 'Départs vers Saly' });
+
+    // Site choisi : son panneau porte la marque, les deux autres sont atténués.
+    expect(signs().map((sign) => sign.dataset['selected'])).toEqual(['false', 'false', 'true']);
+    expect(signs().map((sign) => sign.dataset['dimmed'])).toEqual(['true', 'true', 'false']);
+    const marks = heroOf().querySelectorAll('[data-part="sign-mark"]');
+    expect(marks).toHaveLength(1);
+    expect(marks[0]?.closest('.sign')).toHaveAttribute('data-site', 'saly');
+    expect(marks[0]).toHaveAttribute('aria-hidden', 'true');
+  });
+
   it('005-AS7: turns the site buttons into the direction signs of the scene', async () => {
     await renderRoute({ initialEntries: ['/'] });
     const hero = heroOf();
