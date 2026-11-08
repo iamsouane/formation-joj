@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useBookSeat } from '../api/trips.queries';
+import { bookingErrorMessage } from './booking-error-message';
 
 interface BookingFormProps {
   trip: TripResponse;
@@ -52,6 +53,11 @@ export function BookingForm({ trip, onBooked }: BookingFormProps) {
           className="h-11"
         />
       </div>
+      {bookSeat.isError && (
+        <p role="alert" className="font-semibold text-destructive">
+          {bookingErrorMessage(bookSeat.error)}
+        </p>
+      )}
       <Button type="submit" size="lg" disabled={bookSeat.isPending}>
         Confirmer la réservation
       </Button>
