@@ -7,6 +7,7 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { renderWithProviders } from '@/test/utils';
 import { PublishedTrip } from './published-trip';
+import { publishedTripShareText } from './whatsapp-share';
 
 const trip: PublishedTripResponse = {
   id: '0199f5c2-0000-7000-8000-000000000201',
@@ -43,7 +44,7 @@ describe('PublishedTrip', () => {
 
     const send = screen.getByRole('link', { name: 'Envoyer sur WhatsApp' });
     const href = send.getAttribute('href') ?? '';
-    expect(href.startsWith('https://wa.me/?text=')).toBe(true);
+    expect(href.startsWith('https://api.whatsapp.com/send?text=')).toBe(true);
     const text = new URL(href).searchParams.get('text') ?? '';
     expect(text).toContain('Pikine → Diamniadio');
     expect(text).toContain('08:00');
@@ -53,5 +54,21 @@ describe('PublishedTrip', () => {
     expect(text).toContain(managementLink);
     expect(send).toHaveAttribute('target', '_blank');
     expect(send).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  it('006-AS6: keeps the whole message, line breaks included, in the WhatsApp link', () => {
+    renderWithProviders(<PublishedTrip trip={trip} />);
+
+    const href = screen.getByRole('link', { name: 'Envoyer sur WhatsApp' }).getAttribute('href');
+    const url = new URL(href ?? '');
+    // wa.me redirige vers `api.whatsapp.com/send/?…&type=custom_url` dès que le texte contient une
+    // adresse : WhatsApp ne partage alors que le lien. On vise directement la page d'envoi.
+    expect(`${url.origin}${url.pathname}`).toBe('https://api.whatsapp.com/send');
+    expect([...url.searchParams.keys()]).toEqual(['text']);
+    const text = url.searchParams.get('text') ?? '';
+    expect(text).toBe(publishedTripShareText(trip, managementLink));
+    expect(text.split('\n')[1]).toBe('Pikine → Diamniadio');
+    // Tout le texte est encodé : aucun retour à la ligne ni espace brut dans l'adresse.
+    expect(href).not.toMatch(/[\s\n]/);
   });
 });
