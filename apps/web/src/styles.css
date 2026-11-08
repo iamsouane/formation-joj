@@ -1468,7 +1468,13 @@ body {
   }
 
   .ticket-body {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  }
+
+  /* Le code reste sur une ligne : corps un peu plus petit, interlettrage plus serré. */
+  .ticket-code {
+    font-size: 3rem;
+    letter-spacing: 0.05em;
   }
 
   .flame-celebration {
