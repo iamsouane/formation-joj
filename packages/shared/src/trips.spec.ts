@@ -105,3 +105,28 @@ describe('bookingConfirmationSchema', () => {
     ).toEqual({ bookingCode: 'booking-code-1', driverPhone: '771234567' });
   });
 });
+
+describe('phones', () => {
+  const malformed = ['abc', '+221', '----', 'hello world'];
+
+  it.each(malformed)('002-AS1: rejects a malformed phone (%j)', (phone) => {
+    expect(bookSeatSchema.safeParse({ passengerName: 'Awa', passengerPhone: phone }).success).toBe(
+      false,
+    );
+    expect(publishTripSchema.safeParse({ ...pikineToDiamniadio, driverPhone: phone }).success).toBe(
+      false,
+    );
+  });
+
+  it.each(['77 123 45 67', '77-123-45-67', '+221771234567', '00221 77 123 45 67'])(
+    '002-AS1: accepts a well-formed phone (%j)',
+    (phone) => {
+      expect(
+        bookSeatSchema.safeParse({ passengerName: 'Awa', passengerPhone: phone }).success,
+      ).toBe(true);
+      expect(
+        publishTripSchema.safeParse({ ...pikineToDiamniadio, driverPhone: phone }).success,
+      ).toBe(true);
+    },
+  );
+});

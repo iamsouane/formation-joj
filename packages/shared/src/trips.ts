@@ -13,6 +13,20 @@ export const TRIP_DRIVER_PHONE_MAX_LENGTH = 20;
  */
 const siteInputSchema = z.string().trim().min(1);
 
+/**
+ * Un téléphone saisi : une fois retirés espaces, tirets et préfixe +221 ou 00221 (ce que fait la
+ * normalisation du domaine), il ne reste que des chiffres, au moins un.
+ */
+const phoneInputSchema = (maxLength: number) =>
+  z
+    .string()
+    .trim()
+    .min(1)
+    .max(maxLength)
+    .refine((phone) => /^\d+$/.test(phone.replace(/[\s-]/g, '').replace(/^(\+221|00221)/, '')), {
+      message: 'Invalid phone number',
+    });
+
 /** Corps de `POST /api/trips`. */
 export const publishTripSchema = z.object({
   departurePlace: z.string().trim().min(1).max(TRIP_DEPARTURE_PLACE_MAX_LENGTH),
@@ -20,7 +34,7 @@ export const publishTripSchema = z.object({
   departureAt: z.iso.datetime({ offset: true }),
   seats: z.int().min(1),
   pricePerSeat: z.int().min(0),
-  driverPhone: z.string().trim().min(1).max(TRIP_DRIVER_PHONE_MAX_LENGTH),
+  driverPhone: phoneInputSchema(TRIP_DRIVER_PHONE_MAX_LENGTH),
 });
 export type PublishTripInput = z.infer<typeof publishTripSchema>;
 
@@ -57,7 +71,7 @@ export type TripIdParam = z.infer<typeof tripIdParamSchema>;
 /** Corps de `POST /api/trips/:tripId/bookings`. Le domaine normalise le téléphone. */
 export const bookSeatSchema = z.object({
   passengerName: z.string().trim().min(1).max(BOOKING_PASSENGER_NAME_MAX_LENGTH),
-  passengerPhone: z.string().trim().min(1).max(BOOKING_PASSENGER_PHONE_MAX_LENGTH),
+  passengerPhone: phoneInputSchema(BOOKING_PASSENGER_PHONE_MAX_LENGTH),
 });
 export type BookSeatInput = z.infer<typeof bookSeatSchema>;
 

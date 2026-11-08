@@ -154,6 +154,16 @@ describe('mock bookings API', () => {
     expect(await response.json()).toMatchObject({ code: 'TRIP_DEPARTED' });
   });
 
+  it.each(['+221', '----', 'abc'])(
+    '002-AS1: rejects a malformed phone %j with a 400 VALIDATION_FAILED problem',
+    async (passengerPhone) => {
+      const response = await book(pikineToDiamniadio.id, { passengerName: 'Awa', passengerPhone });
+      expect(response.status).toBe(400);
+      expect(await response.json()).toMatchObject({ code: 'VALIDATION_FAILED' });
+      expect(await remainingSeatsOf(pikineToDiamniadio.id)).toBe(3);
+    },
+  );
+
   it('002-AS6: rejects an unknown trip with a 404 TRIP_NOT_FOUND problem', async () => {
     const response = await book('0199f5c2-0000-7000-8000-0000000000ff');
     expect(response.status).toBe(404);

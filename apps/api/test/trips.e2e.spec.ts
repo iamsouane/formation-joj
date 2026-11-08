@@ -212,6 +212,18 @@ describe('/api/trips (e2e)', () => {
       expect(response.body).toMatchObject({ code: 'TRIP_DEPARTED' });
     });
 
+    it.each(['+221', '----', 'abc'])(
+      '002-AS1: rejects a malformed phone %j (400 VALIDATION_FAILED) and books nothing',
+      async (passengerPhone) => {
+        const trip = await publish(3);
+
+        const response = await book(trip.id, { passengerName: 'Awa', passengerPhone }).expect(400);
+
+        expect(response.body).toMatchObject({ code: 'VALIDATION_FAILED' });
+        expect(await remainingSeats()).toEqual([3]);
+      },
+    );
+
     it('002-AS6: rejects an unknown trip (404 TRIP_NOT_FOUND)', async () => {
       const response = await book('0199f5c2-0000-7000-8000-0000000000ff').expect(404);
       expect(response.body).toMatchObject({ code: 'TRIP_NOT_FOUND' });
