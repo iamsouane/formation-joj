@@ -99,3 +99,10 @@ Le rendu de TR5 ne convient pas à la relecture humaine : le hero est refait, sa
 - [x] T09 [005-AS6] Écrire d'abord les cas « 005-AS6: dances by alternating the standing and flame poses under the pointer tilt » et « 005-AS6: holds one still standing pose on reduced motion » dans `mascot-stage.test.tsx`, puis la chorégraphie sur quatre temps (balancement autour des pieds, sauts avec écrasement et étirement, alternance des poses sur le temps fort, ondes du djembé, halo de la flamme), sans miroir
 - [x] T10 [005-AS4] Écrire d'abord le cas « 005-AS4: celebrates the booking with a rain of confetti, none on reduced motion » dans `booking-form.test.tsx`, puis `confetti-rain.tsx` dans la confirmation, à côté du saut de joie de la mascotte à la flamme
 - [x] T11 [005-AS7] Écrire d'abord les audits axe-core du hero ouvert et replié dans `routes/index.a11y.test.tsx` (« 005-AS6: the opened hero is clean », « 005-AS7: the folded hero is clean »), puis les corriger ; vérifier ensuite dans un navigateur à 360 × 640 que le premier départ est visible sans défiler, avec et sans moins d'animations
+
+### Passage 3
+
+La relecture indépendante du passage 2 relève que les plans du décor ne suivent plus le pointeur (AS6), et un cas où un choix au clavier serait animé.
+
+- [ ] T12 [005-AS6] Écrire d'abord le cas « 005-AS6: shifts the backdrop planes in depth with the pointer, over the whole hero » dans `routes/index.a11y.test.tsx`, puis poser `--tilt-x` et `--tilt-y` sur le hero entier, pour que le soleil, ses rayons, la route, le poteau et la frise s'en servent à leur profondeur (preuve : relecteur, `hero-backdrop.tsx:49-95` et `styles.css:456-505`, aucun plan du décor ne lit `--tilt-x`)
+- [ ] T13 [005-AS7] Écrire d'abord le cas « 005-AS7: still folds at once from the keyboard after tapping the site already chosen » dans `routes/index.a11y.test.tsx`, puis oublier l'appui du doigt dès qu'une touche est pressée dans le choix du site (preuve : relecteur, `site-picker.tsx:17-21`, l'appui reste retenu si le site touché était déjà choisi)
