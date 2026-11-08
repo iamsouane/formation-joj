@@ -45,6 +45,7 @@ export function SitePicker({ value, onChange }: SitePickerProps) {
         <label
           key={site}
           className="sign"
+          data-site={site}
           data-direction={DIRECTIONS[site]}
           onPointerDown={() => {
             pointerPressed.current = true;

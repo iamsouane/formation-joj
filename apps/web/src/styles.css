@@ -770,6 +770,24 @@ body {
   }
 }
 
+/*
+ * La course vers le panneau (mascot-stage.tsx) : la scène glisse et rapetisse (API Web Animations),
+ * la foulée bondit sur place, une pose debout seule, l'ombre immobile sous les pieds.
+ */
+.mascot-stage[data-dance='run'] .mascot-dance {
+  animation: mascot-stride 0.3s var(--ease-breath) infinite;
+}
+
+@keyframes mascot-stride {
+  0%,
+  100% {
+    transform: scale(1.03, 0.96);
+  }
+  50% {
+    transform: translateY(-7%) scale(0.97, 1.05);
+  }
+}
+
 /* Le halo de la flamme, posé sur la torche (en haut à gauche de l'image) : il vacille. */
 .mascot-halo {
   position: absolute;
