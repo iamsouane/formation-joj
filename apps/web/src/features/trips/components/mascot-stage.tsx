@@ -14,12 +14,11 @@ function setTilt(stage: HTMLElement, x: string, y: string) {
 }
 
 /**
- * La mascotte debout, mise en scène en profondeur : le soleil, la frise et le sol sont des plans
- * qui glissent à des vitesses différentes ; la mascotte s'incline vers le doigt ou la souris et
- * son ombre s'éloigne d'autant. Le JavaScript ne pose que `--tilt-x` et `--tilt-y` ; le reste
+ * La mascotte debout, au centre du hero : elle s'incline vers le doigt ou la souris et son ombre
+ * s'éloigne d'autant. Le JavaScript ne pose que `--tilt-x` et `--tilt-y` ; le reste
  * (transitions, entrée avec rebond, respiration) est dans `styles.css`, coupé sous
- * `prefers-reduced-motion`. En mode compact, une fois le site choisi, la scène se resserre pour
- * laisser les départs tenir dans l'écran d'un téléphone.
+ * `prefers-reduced-motion`. En mode compact, une fois le site choisi, la mascotte se range en petit
+ * dans le bandeau du hero.
  */
 export function MascotStage({ compact = false }: { compact?: boolean }) {
   const reduced = useReducedMotion();
@@ -48,9 +47,6 @@ export function MascotStage({ compact = false }: { compact?: boolean }) {
       onPointerLeave={settle}
       onPointerCancel={settle}
     >
-      <div className="mascot-plane mascot-sun" aria-hidden="true" />
-      <div className="mascot-plane mascot-frieze" aria-hidden="true" />
-      <div className="mascot-plane mascot-ground" aria-hidden="true" />
       <div className="mascot-shadow" aria-hidden="true" />
       <div className="mascot-tilt">
         <div className="mascot-enter">

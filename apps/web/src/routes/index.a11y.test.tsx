@@ -1,7 +1,8 @@
 /**
- * L'accueil sur un écran de téléphone : une fois le site choisi, la scène de la mascotte se
- * resserre et les départs suivent immédiatement le choix du site. jsdom ne mesure rien : la
- * hauteur se vérifie dans un navigateur à 360 × 640 ; ici, la structure qui la rend possible.
+ * L'accueil sur un écran de téléphone : un hero plein écran porte le titre et les boutons de site ;
+ * une fois le site choisi, il se replie en bandeau et les départs le suivent immédiatement. jsdom
+ * ne mesure rien : la hauteur se vérifie dans un navigateur à 360 × 640 ; ici, la structure qui
+ * la rend possible.
  * Puis un audit axe-core de chaque état de l'accueil.
  */
 import { screen, within } from '@testing-library/react';
@@ -13,8 +14,8 @@ import { server } from '@/mocks/node';
 import { axeFindings, runAxe } from '@/test/axe';
 import { renderRoute } from '@/test/utils';
 
-const stageOf = () =>
-  screen.getByRole('img', { name: 'La mascotte des JOJ Dakar 2026' }).closest('[data-compact]');
+/** Le hero de l'accueil : la région qui porte le titre et le choix du site. */
+const heroOf = () => screen.getByRole('region', { name: 'Cap sur les Jeux' });
 
 async function openBookingForm() {
   const user = userEvent.setup();
@@ -27,17 +28,24 @@ async function openBookingForm() {
 }
 
 describe('home page on a phone screen', () => {
-  it('005-AS7: shows the departures right after the site picker, with a compact stage', async () => {
+  it('005-AS7: opens on a full-screen hero holding the title and the site buttons, then folds it into a band above the departures', async () => {
     const user = userEvent.setup();
     await renderRoute({ initialEntries: ['/'] });
-    expect(stageOf()).toHaveAttribute('data-compact', 'false');
 
-    await user.click(screen.getByRole('radio', { name: 'Diamniadio' }));
+    const hero = heroOf();
+    expect(hero).toHaveAttribute('data-state', 'open');
+    expect(within(hero).getByRole('heading', { level: 1, name: 'Cap sur les Jeux' })).toBeVisible();
+    expect(
+      within(hero)
+        .getAllByRole('radio')
+        .map((radio) => radio.getAttribute('value')),
+    ).toEqual(['dakar', 'diamniadio', 'saly']);
+
+    await user.click(within(hero).getByRole('radio', { name: 'Diamniadio' }));
 
     const list = await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
-    expect(stageOf()).toHaveAttribute('data-compact', 'true');
-    const picker = screen.getByRole('group', { name: 'Votre site d’épreuve' });
-    expect(picker.nextElementSibling).toBe(list);
+    expect(heroOf()).toHaveAttribute('data-state', 'band');
+    expect(heroOf().nextElementSibling).toContainElement(list);
   });
 });
 

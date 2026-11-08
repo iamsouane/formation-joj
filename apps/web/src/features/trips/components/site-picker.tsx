@@ -10,7 +10,7 @@ interface SitePickerProps {
 /** Les trois sites des JOJ, en boutons radio assez grands pour un pouce. */
 export function SitePicker({ value, onChange }: SitePickerProps) {
   return (
-    <fieldset className="flex flex-col gap-2">
+    <fieldset className="site-picker flex flex-col">
       <legend className="mb-2 text-sm font-semibold">Votre site d’épreuve</legend>
       <div className="grid grid-cols-3 border-2 border-foreground">
         {TRIP_SITES.map((site) => (

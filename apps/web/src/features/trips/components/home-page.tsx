@@ -4,8 +4,7 @@ import { useUpcomingTrips } from '../api/trips.queries';
 import { BookingConfirmation } from './booking-confirmation';
 import { BookingForm } from './booking-form';
 import { DepartureList } from './departure-list';
-import { MascotStage } from './mascot-stage';
-import { SitePicker } from './site-picker';
+import { Hero } from './hero';
 
 interface HomePageProps {
   site: TripSite | undefined;
@@ -15,15 +14,13 @@ interface HomePageProps {
 /** L'accueil : choisir son site, voir ses départs à venir, puis réserver une place. */
 export function HomePage({ site, onSiteChange }: HomePageProps) {
   return (
-    <div className="flex flex-col gap-5">
-      <MascotStage compact={site !== undefined} />
-      <h1 className="font-display text-4xl leading-none font-extrabold uppercase">
-        Où allez-vous pour les Jeux ?
-      </h1>
-      <SitePicker value={site} onChange={onSiteChange} />
-      {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
-      {site && <UpcomingDepartures key={site} site={site} />}
-    </div>
+    <>
+      <Hero site={site} onSiteChange={onSiteChange} />
+      <div className="departures-enter mx-auto flex w-full max-w-md flex-col gap-4 px-4 pt-5">
+        {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
+        {site && <UpcomingDepartures key={site} site={site} />}
+      </div>
+    </>
   );
 }
 

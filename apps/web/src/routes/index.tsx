@@ -9,7 +9,12 @@ const homeSearchSchema = z.object({ site: z.enum(TRIP_SITES).optional().catch(un
 function Home() {
   const { site } = Route.useSearch();
   const navigate = Route.useNavigate();
-  return <HomePage site={site} onSiteChange={(next) => navigate({ search: { site: next } })} />;
+  return (
+    <HomePage
+      site={site}
+      onSiteChange={(next) => navigate({ search: { site: next }, viewTransition: true })}
+    />
+  );
 }
 
 export const Route = createFileRoute('/')({

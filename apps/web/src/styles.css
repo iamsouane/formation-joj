@@ -140,74 +140,142 @@
 }
 
 /*
+ * Le hero de l'accueil (hero.tsx) : pleine largeur, pleine hauteur à l'arrivée, sans cadre.
+ * Une fois le site choisi, il devient un bandeau ; le passage d'un état à l'autre est une
+ * transition de vue du navigateur (voir plus bas), qui n'anime que des instantanés composités.
+ */
+body {
+  overflow-x: clip;
+}
+
+.hero {
+  position: relative;
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(180deg, #ee7300 0%, var(--joj-orange) 30%, var(--joj-yellow) 62%);
+  view-transition-name: hero;
+}
+
+.hero-inner {
+  position: relative;
+  display: flex;
+  width: 100%;
+  max-width: 28rem;
+  flex: 1;
+  flex-direction: column;
+  margin-inline: auto;
+  padding: 0.75rem 1rem 1.75rem;
+}
+
+.hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hero-logo {
+  display: block;
+  width: 2.75rem;
+  height: 2.75rem;
+  overflow: hidden;
+  background: var(--joj-white);
+}
+
+.hero-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.55);
+}
+
+/* Le titre est le premier choc visuel : très grand, serré, en noir sur le ciel orange. */
+.hero-title {
+  margin-top: 1rem;
+  font-family: var(--font-display);
+  font-size: clamp(4.25rem, 22vw, 7.5rem);
+  font-weight: 800;
+  line-height: 0.82;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  view-transition-name: hero-title;
+}
+
+.hero-title span {
+  display: block;
+}
+
+.hero-lede {
+  margin-top: 0.6rem;
+  max-width: 17rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Le bandeau : la marque, le titre sur une ligne, la mascotte en petit à droite, les boutons. */
+.hero[data-state='band'] {
+  min-height: 0;
+}
+
+.hero[data-state='band'] .hero-inner {
+  padding-bottom: 1.5rem;
+}
+
+.hero[data-state='band'] .hero-title {
+  margin-top: 0.6rem;
+  font-size: 2rem;
+  line-height: 0.9;
+}
+
+.hero[data-state='band'] .hero-title span {
+  display: inline;
+}
+
+/*
  * La scène de la mascotte (mascot-stage.tsx). Le JavaScript pose --tilt-x et --tilt-y, de -1 à 1,
- * selon la position du doigt ou de la souris ; chaque plan s'en sert à sa profondeur. Seuls
- * `transform` et `opacity` bougent : rien ne recalcule la mise en page.
+ * selon la position du doigt ou de la souris. Seuls `transform` et `opacity` bougent : rien ne
+ * recalcule la mise en page.
  */
 .mascot-stage {
   --tilt-x: 0;
   --tilt-y: 0;
-  --figure-height: 13.5rem;
   position: relative;
-  height: 17rem;
-  overflow: hidden;
-  isolation: isolate;
+  flex: 1;
+  min-height: 13rem;
   perspective: 900px;
   touch-action: pan-y;
-  border: 2px solid var(--joj-black);
-  background: var(--joj-white);
+  view-transition-name: mascot;
 }
 
-.mascot-plane,
+.hero[data-state='band'] .mascot-stage {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.75rem;
+  width: 5.5rem;
+  height: 7rem;
+  min-height: 0;
+}
+
 .mascot-shadow,
 .mascot-tilt {
   position: absolute;
-  transition: transform 600ms var(--ease-out-soft);
-}
-
-/* Le plan du fond, le soleil : il bouge à peine. */
-.mascot-sun {
-  top: 1rem;
   left: 50%;
-  width: 11rem;
-  aspect-ratio: 1;
-  margin-left: -5.5rem;
-  border-radius: 50%;
-  background: var(--joj-yellow);
-  transform: translate3d(calc(var(--tilt-x) * -6px), calc(var(--tilt-y) * -4px), 0);
-}
-
-/* Le plan du milieu, la frise rouge et verte du maillot de la mascotte. */
-.mascot-frieze {
-  right: -10%;
-  bottom: 4.5rem;
-  left: -10%;
-  height: 1.25rem;
-  border-block: 2px solid var(--joj-black);
-  background:
-    conic-gradient(from 135deg at 50% 0, var(--joj-red) 90deg, transparent 0) 0 0 / 1.25rem 100%,
-    var(--joj-green);
-  transform: translate3d(calc(var(--tilt-x) * -12px), 0, 0);
-}
-
-/* Le plan de devant, le sol orange : il glisse le plus. */
-.mascot-ground {
-  right: -10%;
-  bottom: 0;
-  left: -10%;
-  height: 4.6rem;
-  border-top: 2px solid var(--joj-black);
-  background: var(--joj-orange);
-  transform: translate3d(calc(var(--tilt-x) * -20px), 0, 0);
+  translate: -50% 0;
+  transition: transform 600ms var(--ease-out-soft);
 }
 
 /* L'ombre s'éloigne du côté où la mascotte se penche. */
 .mascot-shadow {
-  bottom: 3.6rem;
-  left: 50%;
-  width: 6.5rem;
-  height: 1rem;
-  margin-left: -3.25rem;
+  bottom: 0.25rem;
+  width: 42%;
+  height: 0.9rem;
   border-radius: 50%;
   background: rgb(0 0 0 / 0.22);
   filter: blur(3px);
@@ -215,11 +283,9 @@
 }
 
 .mascot-tilt {
-  bottom: 3.75rem;
-  left: 50%;
-  height: var(--figure-height);
+  bottom: 0.6rem;
+  height: calc(100% - 0.75rem);
   aspect-ratio: 388 / 800;
-  margin-left: calc(var(--figure-height) * 388 / 800 / -2);
   transform-origin: 50% 100%;
   transform: translateX(calc(var(--tilt-x) * 6px)) rotateY(calc(var(--tilt-x) * 14deg))
     rotateX(calc(var(--tilt-y) * -8deg));
@@ -264,6 +330,47 @@
   }
 }
 
+/* Les boutons de site, posés en bas du hero, à portée du pouce. */
+.hero .site-picker {
+  margin-top: 0.75rem;
+  view-transition-name: site-picker;
+}
+
+.hero .site-picker label {
+  background: var(--joj-white);
+}
+
+.hero .site-picker label:has(:checked) {
+  background: var(--joj-black);
+  color: var(--joj-white);
+}
+
+/* Les départs entrent une fois le bandeau replié : un léger glissé vers le haut. */
+.departures-enter {
+  animation: departures-enter 420ms var(--ease-out-soft) 120ms both;
+}
+
+@keyframes departures-enter {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(0.75rem);
+  }
+}
+
+/* Le repli du hero : le navigateur fond l'ancien état dans le nouveau, la mascotte glisse. */
+::view-transition-group(*) {
+  animation-duration: 520ms;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+::view-transition-old(hero),
+::view-transition-new(hero) {
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+
 /* Le saut de joie de la mascotte à la flamme (flame-celebration.tsx), une seule fois. */
 .flame-celebration {
   transform-origin: 50% 100%;
@@ -292,41 +399,6 @@
     opacity: 1;
     transform: none;
   }
-}
-
-/*
- * Le mode compact, une fois le site choisi : sur un écran de 360 × 640, la scène laisse la place au
- * choix du site et au premier départ. Le changement suit le geste de l'utilisateur, sans animation
- * de hauteur (la mise en page serait recalculée à chaque image).
- */
-.mascot-stage[data-compact='true'] {
-  --figure-height: 6.75rem;
-  height: 8.5rem;
-}
-
-.mascot-stage[data-compact='true'] .mascot-sun {
-  top: 0.75rem;
-  width: 6rem;
-  margin-left: -3rem;
-}
-
-.mascot-stage[data-compact='true'] .mascot-frieze {
-  bottom: 2.4rem;
-  height: 0.9rem;
-}
-
-.mascot-stage[data-compact='true'] .mascot-ground {
-  height: 2.5rem;
-}
-
-.mascot-stage[data-compact='true'] .mascot-shadow {
-  bottom: 1.7rem;
-  width: 3.5rem;
-  margin-left: -1.75rem;
-}
-
-.mascot-stage[data-compact='true'] .mascot-tilt {
-  bottom: 1.9rem;
 }
 
 /*
@@ -367,4 +439,16 @@
 .flame-celebration[data-motion='reduced'] {
   animation: none !important;
   transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  .departures-enter {
+    animation: none;
+  }
 }
