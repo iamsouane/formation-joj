@@ -31,8 +31,15 @@ interface TripFormProps {
 /** « 2026-11-08T15:00 » : l'instant présent, à l'heure de Dakar (UTC+0), au format du champ. */
 const dakarNow = () => new Date().toISOString().slice(0, 16);
 
-/** Un nombre saisi ; un champ vide ou illisible n'est pas deviné, l'API le refusera. */
-const wholeNumber = (value: FormDataEntryValue | null) => Number.parseInt(String(value ?? ''), 10);
+/**
+ * Un nombre entier saisi : des chiffres, groupés ou non par des espaces (« 1 000 », comme le billet
+ * l'affiche). Toute autre saisie (« 3,5 », « 2 places », un champ vide) n'est ni tronquée ni
+ * devinée : elle vaut `NaN`, qui part `null`, et l'API la refuse comme une saisie invalide.
+ */
+function wholeNumber(value: FormDataEntryValue | null): number {
+  const digits = String(value ?? '').replace(/[\s\u00a0\u202f]/g, '');
+  return /^\d+$/.test(digits) ? Number(digits) : Number.NaN;
+}
 
 /**
  * Le formulaire classique d'un trajet. Le site se choisit parmi les trois sites des JOJ ; le jour

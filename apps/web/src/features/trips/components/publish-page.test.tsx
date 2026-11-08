@@ -5,7 +5,7 @@
  * les délais de la fausse API restent réels.
  */
 import type { TripDraft } from '@joj/shared';
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockControl } from '@/mocks/control';
@@ -138,6 +138,45 @@ describe('PublishPage', () => {
     expect(confirmation.querySelector('[data-part="management-code"]')).toHaveTextContent(
       fixture.trips.at(-1)!.managementCode,
     );
+  });
+
+  it('006-AS2: sends the seats and the price as typed, never a truncated number', async () => {
+    const { user, seen } = await openPublishPage();
+    await user.click(screen.getByRole('button', { name: 'Remplir le formulaire' }));
+    const form = screen.getByRole('form', { name: 'Publier avec le formulaire' });
+    await user.type(within(form).getByLabelText('Lieu de départ'), 'Pikine');
+    await user.click(within(form).getByRole('radio', { name: 'Diamniadio' }));
+    fireEvent.change(within(form).getByLabelText('Jour et heure de départ'), {
+      target: { value: '2026-11-09T08:00' },
+    });
+    await user.type(within(form).getByLabelText('Votre téléphone'), '77 123 45 67');
+    const seats = within(form).getByLabelText('Places proposées');
+    const price = within(form).getByLabelText('Participation par place, en FCFA');
+
+    // « 2 places » n'est pas un nombre : il n'est pas deviné, l'API le refuse.
+    await user.type(seats, '2 places');
+    await user.type(price, '1 000');
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+
+    expect(await within(form).findByRole('alert')).toHaveTextContent(
+      'Vérifiez les champs signalés.',
+    );
+    expect(seats).toHaveAttribute('aria-invalid', 'true');
+    expect(writes(seen).at(-1)?.body).toMatchObject({ seats: null, pricePerSeat: 1000 });
+
+    // « 1 000 », comme l'affiche le billet, se lit mille ; « 3,5 » n'est pas tronqué en 3.
+    await user.clear(seats);
+    await user.type(seats, '3,5');
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+    await waitFor(() => expect(writes(seen)).toHaveLength(2));
+    expect(writes(seen).at(-1)?.body).toMatchObject({ seats: null, pricePerSeat: 1000 });
+
+    await user.clear(seats);
+    await user.type(seats, '3');
+    await user.click(within(form).getByRole('button', { name: 'Publier' }));
+    await screen.findByRole('region', { name: 'Trajet publié' });
+    expect(writes(seen).at(-1)?.body).toMatchObject({ seats: 3, pricePerSeat: 1000 });
+    expect(fixture.trips.at(-1)).toMatchObject({ seats: 3, pricePerSeat: 1000 });
   });
 
   it('006-AS3: falls back to the form with the announcement above and the missing fields marked', async () => {
