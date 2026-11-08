@@ -94,4 +94,76 @@ describe('DrizzleTripRepository (in-memory PGlite, migrations applied)', () => {
     };
     expect(await repository.reserve(randomUUID(), book)).toBeUndefined();
   });
+
+  describe('cancellations', () => {
+    const LATER = at('2026-11-08T10:00:00.000Z');
+
+    async function bookAwa(site: TripSite, departureAt: Date, passengerPhone = '77 123 45 67') {
+      const trip = tripTo(site, departureAt);
+      await repository.insert(trip);
+      const booking = await repository.reserve(trip.id, (stored) =>
+        Booking.create({
+          id: randomUUID(),
+          trip: stored,
+          passengerName: 'Awa',
+          passengerPhone,
+          bookingCode: randomUUID().slice(0, 12),
+          now: NOW,
+        }),
+      );
+      if (booking === undefined) throw new Error('the trip must exist');
+      return { trip, booking };
+    }
+
+    it('003-AS1: finds a booking and its trip by booking code', async () => {
+      const { trip, booking } = await bookAwa('dakar', at('2026-11-12T08:00:00.000Z'));
+
+      const found = await repository.findBookingByCode(booking.bookingCode);
+
+      expect(found?.booking).toEqual(booking);
+      expect(found?.booking.cancelledAt).toBeUndefined();
+      expect(found?.trip).toMatchObject({
+        id: trip.id,
+        departurePlace: 'Pikine',
+        isCancelled: false,
+      });
+      expect(await repository.findBookingByCode('unknown-code')).toBeUndefined();
+    });
+
+    it('003-AS3: a cancelled booking no longer holds a seat, and the phone can book again', async () => {
+      const { trip, booking } = await bookAwa('saly', at('2026-11-12T08:00:00.000Z'));
+
+      await repository.saveBookingCancellation(booking.cancel(LATER));
+
+      const found = await repository.findBookingByCode(booking.bookingCode);
+      expect(found?.booking.cancelledAt).toEqual(LATER);
+      expect((await repository.findTrip(trip.id))?.remainingSeats).toBe(3);
+      const rebooked = await repository.reserve(trip.id, (stored) =>
+        Booking.create({
+          id: randomUUID(),
+          trip: stored,
+          passengerName: 'Awa',
+          passengerPhone: '+221771234567',
+          bookingCode: randomUUID().slice(0, 12),
+          now: NOW,
+        }),
+      );
+      expect(rebooked?.passengerPhone).toBe('771234567');
+      expect((await repository.findTrip(trip.id))?.remainingSeats).toBe(2);
+    });
+
+    it('003-AS4: a cancelled trip is not listed, and is still found with its bookings', async () => {
+      const { trip, booking } = await bookAwa('diamniadio', at('2026-11-12T09:00:00.000Z'));
+
+      await repository.saveTripCancellation(trip.cancel(trip.managementCode, LATER));
+
+      const listed = await repository.listUpcomingBySite('diamniadio', NOW);
+      expect(listed.map((candidate) => candidate.id)).not.toContain(trip.id);
+      expect((await repository.findTrip(trip.id))?.cancelledAt).toEqual(LATER);
+      expect((await repository.findBookingByCode(booking.bookingCode))?.trip.isCancelled).toBe(
+        true,
+      );
+      expect(await repository.findTrip(randomUUID())).toBeUndefined();
+    });
+  });
 });

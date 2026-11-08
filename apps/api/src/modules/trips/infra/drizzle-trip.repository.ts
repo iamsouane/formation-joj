@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { TripSite } from '@joj/shared';
-import { and, asc, eq, gt, inArray } from 'drizzle-orm';
+import { and, asc, eq, gt, inArray, isNull } from 'drizzle-orm';
 import type { Database } from '../../../core/database/database';
 import { DATABASE } from '../../../core/database/database.module';
 import { isUniqueViolation } from '../../../core/database/pg-errors';
@@ -9,7 +9,7 @@ import type { Booking } from '../domain/booking';
 import type { Trip } from '../domain/trip';
 import { TripError } from '../domain/trips.errors';
 import { BOOKINGS_TRIP_PASSENGER_PHONE_KEY, bookings } from './bookings.schema';
-import { toBookingRow, toDomain, toRow } from './trip.mapper';
+import { toBooking, toBookingRow, toDomain, toRow } from './trip.mapper';
 import { trips } from './trips.schema';
 
 @Injectable()
@@ -26,7 +26,7 @@ export class DrizzleTripRepository extends TripRepository {
     const rows = await this.db
       .select()
       .from(trips)
-      .where(and(eq(trips.site, site), gt(trips.departureAt, now)))
+      .where(and(eq(trips.site, site), gt(trips.departureAt, now), isNull(trips.cancelledAt)))
       .orderBy(asc(trips.departureAt));
     const phones = await this.passengerPhonesOf(
       this.db,
@@ -47,23 +47,43 @@ export class DrizzleTripRepository extends TripRepository {
     });
   }
 
-  async findTrip(_tripId: string): Promise<Trip | undefined> {
-    throw new Error('non implémenté');
+  async findTrip(tripId: string): Promise<Trip | undefined> {
+    const [row] = await this.db.select().from(trips).where(eq(trips.id, tripId));
+    if (row === undefined) return undefined;
+    const phones = await this.passengerPhonesOf(this.db, [tripId]);
+    return toDomain(row, phones.get(tripId));
   }
 
-  async findBookingByCode(_bookingCode: string): Promise<BookedTrip | undefined> {
-    throw new Error('non implémenté');
+  async findBookingByCode(bookingCode: string): Promise<BookedTrip | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.bookingCode, bookingCode));
+    if (row === undefined) return undefined;
+    const trip = await this.findTrip(row.tripId);
+    if (trip === undefined) return undefined;
+    return { booking: toBooking(row), trip };
   }
 
-  async saveTripCancellation(_trip: Trip): Promise<void> {
-    throw new Error('non implémenté');
+  /**
+   * Attend la fin d'une réservation en cours, qui verrouille le trajet : une réservation qui
+   * suit voit le trajet annulé.
+   */
+  async saveTripCancellation(trip: Trip): Promise<void> {
+    await this.db
+      .update(trips)
+      .set({ cancelledAt: trip.cancelledAt ?? null })
+      .where(eq(trips.id, trip.id));
   }
 
-  async saveBookingCancellation(_booking: Booking): Promise<void> {
-    throw new Error('non implémenté');
+  async saveBookingCancellation(booking: Booking): Promise<void> {
+    await this.db
+      .update(bookings)
+      .set({ cancelledAt: booking.cancelledAt ?? null })
+      .where(eq(bookings.id, booking.id));
   }
 
-  /** Les téléphones des réservations, par trajet. */
+  /** Les téléphones des réservations non annulées, par trajet. */
   private async passengerPhonesOf(
     db: Pick<Database, 'select'>,
     tripIds: string[],
@@ -73,7 +93,7 @@ export class DrizzleTripRepository extends TripRepository {
     const rows = await db
       .select({ tripId: bookings.tripId, passengerPhone: bookings.passengerPhone })
       .from(bookings)
-      .where(inArray(bookings.tripId, tripIds));
+      .where(and(inArray(bookings.tripId, tripIds), isNull(bookings.cancelledAt)));
     for (const { tripId, passengerPhone } of rows) {
       phones.set(tripId, [...(phones.get(tripId) ?? []), passengerPhone]);
     }

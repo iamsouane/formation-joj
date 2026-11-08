@@ -25,6 +25,8 @@ export const trips = pgTable(
     driverPhone: varchar('driver_phone', { length: 20 }).notNull(),
     managementCode: varchar('management_code', { length: 32 }).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true, precision: 3 }).notNull(),
+    // Nulle tant que le conducteur n'a pas annulé : un trajet annulé n'est plus listé (003-AS4).
+    cancelledAt: timestamp('cancelled_at', { withTimezone: true, precision: 3 }),
   },
   (table) => [
     // Un code de gestion désigne un seul trajet (annulation en TR3).

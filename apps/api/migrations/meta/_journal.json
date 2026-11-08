@@ -15,6 +15,13 @@
       "when": 1794141857381,
       "tag": "0001_bookings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794145387701,
+      "tag": "0002_cancellations",
+      "breakpoints": true
     }
   ]
 }
