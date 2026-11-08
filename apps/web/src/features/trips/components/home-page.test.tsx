@@ -143,6 +143,24 @@ describe('HomePage', () => {
     expect(screen.queryByRole('list', { name: 'Départs vers Saly' })).not.toBeInTheDocument();
   });
 
+  it('005-AS2: keeps the empty title on two lines and offers full-width sites', async () => {
+    fixture.trips = fixture.trips.filter((trip) => trip.site === 'dakar');
+    await open('/?site=saly');
+
+    const empty = await screen.findByRole('region', {
+      name: 'Aucun départ pour l’instant vers Saly',
+    });
+    // Deux segments, chacun sur sa ligne : le titre ne dépasse jamais deux lignes.
+    const lines = [...empty.querySelectorAll('h2 [data-part="title-line"]')];
+    expect(lines.map((line) => line.textContent)).toEqual([
+      'Aucun départ pour l’instant',
+      'vers Saly',
+    ]);
+    expect(
+      await within(empty).findByRole('button', { name: 'Voir les départs vers Dakar' }),
+    ).toHaveClass('thumb-action');
+  });
+
   it('005-AS2: offers the other sites that have departures', async () => {
     fixture.trips = fixture.trips.filter((trip) => trip.site === 'dakar');
     const { user, router } = await open('/?site=saly');

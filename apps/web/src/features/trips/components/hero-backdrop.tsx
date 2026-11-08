@@ -72,7 +72,7 @@ export function HeroBackdrop({ compact = false }: { compact?: boolean }) {
       <div className="hero-road" data-part="road">
         <div className="hero-road-edge" data-part="road-edge" />
         <div className="hero-road-surface" data-part="road-surface" />
-        <div className="hero-road-line" data-part="road-line" />
+        {!compact && <div className="hero-road-line" data-part="road-line" />}
         {lively &&
           CARS.map((car) => (
             <div

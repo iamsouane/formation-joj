@@ -51,17 +51,27 @@ export function NoDepartures({ site, onSiteChange }: NoDeparturesProps) {
     <section aria-labelledby={titleId} className="no-departures">
       <EmptyRoad />
       <div className="flex flex-col gap-3">
-        <h2 id={titleId} className="font-display text-3xl leading-none font-extrabold">
-          Aucun départ pour l’instant vers {SITE_LABELS[site]}
+        {/* Deux segments, un par ligne : le titre ne dépasse jamais deux lignes sur un téléphone. */}
+        <h2
+          id={titleId}
+          className="font-display text-[1.65rem] leading-none font-extrabold sm:text-3xl"
+        >
+          <span className="block" data-part="title-line">
+            Aucun départ pour l’instant
+          </span>{' '}
+          <span className="block" data-part="title-line">
+            vers {SITE_LABELS[site]}
+          </span>
         </h2>
         {withDepartures.length > 0 && (
           <>
             <p>Des conducteurs partent déjà vers :</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
               {withDepartures.map((other) => (
                 <Button
                   key={other}
                   size="lg"
+                  className="thumb-action"
                   aria-label={`Voir les départs vers ${SITE_LABELS[other]}`}
                   onClick={(event) => choose(other, event)}
                 >

@@ -72,5 +72,7 @@ describe('HeroBackdrop', () => {
     for (const part of ['sun', 'sun-rays', 'road', 'frieze']) expect(parts(part)).toBe(1);
     expect(parts('confetto')).toBe(0);
     expect(parts('car')).toBe(0);
+    // Plus de trait blanc sous les panneaux : la ligne centrale de la route reste dans le hero ouvert.
+    expect(parts('road-line')).toBe(0);
   });
 });

@@ -50,6 +50,24 @@ describe('BookingForm', () => {
     ).toBeInTheDocument();
   });
 
+  it('005-AS4: fits the thumb: full-width actions and phone-friendly fields', async () => {
+    const { form } = await openBookingForm('Pikine');
+
+    // Les actions principales prennent toute la largeur d'un téléphone (la classe le décide en CSS).
+    expect(
+      screen.getByRole('button', { name: 'Annuler : ne pas réserver depuis Pikine' }),
+    ).toHaveClass('thumb-action');
+    expect(within(form).getByRole('button', { name: 'Confirmer la réservation' })).toHaveClass(
+      'thumb-action',
+    );
+    // Le clavier du téléphone propose le bon pavé et le bon remplissage automatique.
+    expect(within(form).getByLabelText('Votre nom')).toHaveAttribute('autocomplete', 'name');
+    const phone = within(form).getByLabelText('Votre téléphone');
+    expect(phone).toHaveAttribute('type', 'tel');
+    expect(phone).toHaveAttribute('inputmode', 'tel');
+    expect(phone).toHaveAttribute('autocomplete', 'tel');
+  });
+
   /** La fausse API refuse la prochaine réservation avec ce statut et ce code. */
   function refuseBooking(status: number, code: string) {
     server.use(

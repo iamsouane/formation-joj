@@ -76,7 +76,7 @@ export function DepartureList({
               <Button
                 size="lg"
                 variant={open ? 'outline' : 'default'}
-                className="departure-action"
+                className="departure-action thumb-action"
                 aria-expanded={open}
                 aria-label={
                   open

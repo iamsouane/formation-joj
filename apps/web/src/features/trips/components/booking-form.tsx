@@ -58,7 +58,7 @@ export function BookingForm({ trip, onBooked }: BookingFormProps) {
           {bookingErrorMessage(bookSeat.error)}
         </p>
       )}
-      <Button type="submit" size="lg" disabled={bookSeat.isPending}>
+      <Button type="submit" size="lg" className="thumb-action" disabled={bookSeat.isPending}>
         Confirmer la réservation
       </Button>
     </form>

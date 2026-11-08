@@ -38,7 +38,7 @@ export function BookingConfirmation({ trip, confirmation, onDone }: BookingConfi
           {formatPhone(confirmation.driverPhone)}
         </a>
       </p>
-      <Button variant="outline" onClick={onDone} className="self-start">
+      <Button variant="outline" onClick={onDone} className="thumb-action self-start">
         Voir les autres départs
       </Button>
     </section>

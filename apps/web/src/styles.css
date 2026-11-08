@@ -1226,6 +1226,17 @@ body {
   }
 }
 
+/* Les actions principales se prennent au pouce : toute la largeur sur téléphone, leur taille ailleurs. */
+.thumb-action {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .thumb-action {
+    width: auto;
+  }
+}
+
 /*
  * Un départ, encadré comme les bulles du logo : un trait noir et le coin haut droit replié.
  * Le pli est un triangle blanc traversé d'une diagonale noire, posé sur le coin.
