@@ -1,12 +1,18 @@
+import { TRIP_SITES } from '@joj/shared';
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
+import { HomePage } from '@/features/trips/components/home-page';
+
+/** Le site choisi vit dans l'adresse : `/?site=saly` se partage et survit au retour arrière. */
+const homeSearchSchema = z.object({ site: z.enum(TRIP_SITES).optional().catch(undefined) });
 
 function Home() {
-  return (
-    <div className="flex flex-col items-start gap-4">
-      <h1 className="text-3xl font-semibold">Jeux Olympiques de la Jeunesse, Dakar 2026</h1>
-      <p className="text-muted-foreground">Ton application commence ici.</p>
-    </div>
-  );
+  const { site } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  return <HomePage site={site} onSiteChange={(next) => navigate({ search: { site: next } })} />;
 }
 
-export const Route = createFileRoute('/')({ component: Home });
+export const Route = createFileRoute('/')({
+  validateSearch: homeSearchSchema,
+  component: Home,
+});
