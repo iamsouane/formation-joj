@@ -22,17 +22,23 @@ export function readableMessage(message: string): string {
   return trimmed;
 }
 
+/** Absent : `null`, ou un texte vide ou fait d'espaces que l'assistant aurait renvoyé à la place. */
+function isMissing(value: string | number | null): boolean {
+  return value === null || (typeof value === 'string' && value.trim() === '');
+}
+
 /** Le trajet du brouillon ; aucun champ absent n'est complété par défaut. */
 export function completeTripDraft(draft: TripDraft): CompleteTripDraft {
   const { departurePlace, site, departureAt, seats, pricePerSeat } = draft;
+  const missingFields = TRIP_DRAFT_FIELDS.filter((field) => isMissing(draft[field]));
   if (
+    missingFields.length > 0 ||
     departurePlace === null ||
     site === null ||
     departureAt === null ||
     seats === null ||
     pricePerSeat === null
   ) {
-    const missingFields = TRIP_DRAFT_FIELDS.filter((field) => draft[field] === null);
     throw new TripError('MESSAGE_UNREADABLE', 'The message lacks trip information', {
       missingFields,
     });

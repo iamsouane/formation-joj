@@ -48,6 +48,14 @@ describe('completeTripDraft', () => {
     });
   });
 
+  it('004-AS5: counts a blank place or site returned by the assistant as missing', () => {
+    const error = errorOf(() =>
+      completeTripDraft({ ...pikineToDiamniadio, departurePlace: '   ', site: '' }),
+    );
+    expect(error.code).toBe('MESSAGE_UNREADABLE');
+    expect(error.details).toEqual({ missingFields: ['departurePlace', 'site'] });
+  });
+
   it('keeps a free trip: a price of 0 is not missing', () => {
     expect(completeTripDraft({ ...pikineToDiamniadio, pricePerSeat: 0 }).pricePerSeat).toBe(0);
   });
