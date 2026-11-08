@@ -1,6 +1,7 @@
-import type { PublishTripInput } from '@joj/shared';
-import { describe, expect, it } from 'vitest';
+import { type PublishTripInput, TRIP_SITES, type TripDraft } from '@joj/shared';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Trip } from '../domain/trip';
+import { FakeTripMessageReader } from './testing/fake-trip-message-reader';
 import { InMemoryTripRepository } from './testing/in-memory-trip.repository';
 import { BookSeat } from './use-cases/book-seat';
 import { CancelBooking } from './use-cases/cancel-booking';
@@ -8,6 +9,7 @@ import { CancelTrip } from './use-cases/cancel-trip';
 import { GetBooking } from './use-cases/get-booking';
 import { ListUpcomingTrips } from './use-cases/list-upcoming-trips';
 import { PublishTrip } from './use-cases/publish-trip';
+import { PublishTripFromMessage } from './use-cases/publish-trip-from-message';
 
 const HOUR = 60 * 60 * 1000;
 const inHours = (hours: number) => new Date(Date.now() + hours * HOUR);
@@ -215,3 +217,120 @@ describe('trips (application layer)', () => {
     });
   });
 });
+
+describe('publishing a trip from a message (application layer)', () => {
+  const message = 'je pars de Pikine pour Diamniadio demain 8h, 3 places, 1000 F';
+  const driverPhone = '+221771234567';
+  const pikineToDiamniadio: TripDraft = {
+    departurePlace: 'Pikine',
+    site: 'Diamniadio',
+    departureAt: '2026-11-09T08:00',
+    seats: 3,
+    pricePerSeat: 1000,
+  };
+
+  function setupFromMessage() {
+    const trips = new InMemoryTripRepository();
+    const reader = new FakeTripMessageReader();
+    return {
+      trips,
+      reader,
+      publishFromMessage: new PublishTripFromMessage(reader, new PublishTrip(trips)),
+      listUpcomingTrips: new ListUpcomingTrips(trips),
+    };
+  }
+
+  /** Tous les trajets enregistrés, quel que soit leur site ou leur heure de départ. */
+  async function storedTrips(trips: InMemoryTripRepository): Promise<Trip[]> {
+    const bySite = await Promise.all(
+      TRIP_SITES.map((site) => trips.listUpcomingBySite(site, new Date(0))),
+    );
+    return bySite.flat();
+  }
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('004-AS1: publishes a trip from a message, understood at Dakar time', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-08T15:00:00.000Z'));
+    const { reader, publishFromMessage, listUpcomingTrips } = setupFromMessage();
+    reader.willRead(pikineToDiamniadio);
+
+    const published = await publishFromMessage.execute({ message, driverPhone });
+
+    expect(reader.received).toEqual([{ message, now: new Date('2026-11-08T15:00:00.000Z') }]);
+    expect(published).toMatchObject({
+      departurePlace: 'Pikine',
+      site: 'diamniadio',
+      departureAt: new Date('2026-11-09T08:00:00.000Z'),
+      seats: 3,
+      pricePerSeat: 1000,
+      driverPhone: '771234567',
+    });
+    expect(published.managementCode).not.toBe('');
+    expect((await listUpcomingTrips.execute('diamniadio')).map((trip) => trip.id)).toEqual([
+      published.id,
+    ]);
+  });
+
+  it('004-AS2: rejects an unknown site extracted by the assistant', async () => {
+    const { trips, reader, publishFromMessage } = setupFromMessage();
+    reader.willRead({ ...pikineToDiamniadio, site: 'Thiès', departureAt: tomorrowAt8() });
+
+    await expect(publishFromMessage.execute({ message, driverPhone })).rejects.toMatchObject({
+      code: 'SITE_UNKNOWN',
+    });
+    expect(await storedTrips(trips)).toEqual([]);
+  });
+
+  it('004-AS3: rejects a departure in the past extracted by the assistant', async () => {
+    const { trips, reader, publishFromMessage } = setupFromMessage();
+    reader.willRead({ ...pikineToDiamniadio, departureAt: dakarTimeAt8(-1) });
+
+    await expect(publishFromMessage.execute({ message, driverPhone })).rejects.toMatchObject({
+      code: 'DEPARTURE_IN_PAST',
+    });
+    expect(await storedTrips(trips)).toEqual([]);
+  });
+
+  it('004-AS4: does not call the assistant for an empty message', async () => {
+    const { trips, reader, publishFromMessage } = setupFromMessage();
+    reader.willRead(pikineToDiamniadio);
+
+    await expect(publishFromMessage.execute({ message: '   ', driverPhone })).rejects.toMatchObject(
+      { code: 'MESSAGE_EMPTY' },
+    );
+    expect(reader.received).toEqual([]);
+    expect(await storedTrips(trips)).toEqual([]);
+  });
+
+  it('refuses a draft with no seat as an invalid input', async () => {
+    const { trips, reader, publishFromMessage } = setupFromMessage();
+    reader.willRead({ ...pikineToDiamniadio, seats: 0, departureAt: tomorrowAt8() });
+
+    await expect(publishFromMessage.execute({ message, driverPhone })).rejects.toMatchObject({
+      code: 'VALIDATION_FAILED',
+    });
+    expect(await storedTrips(trips)).toEqual([]);
+  });
+
+  it('publishes nothing when the assistant is unavailable', async () => {
+    const { trips, reader, publishFromMessage } = setupFromMessage();
+    reader.willFail();
+
+    await expect(publishFromMessage.execute({ message, driverPhone })).rejects.toMatchObject({
+      code: 'ASSISTANT_UNAVAILABLE',
+    });
+    expect(await storedTrips(trips)).toEqual([]);
+  });
+});
+
+/** « AAAA-MM-JJT08:00 » à Dakar (UTC+0), `days` jours après aujourd'hui. */
+function dakarTimeAt8(days: number): string {
+  const day = new Date(Date.now() + days * 24 * HOUR);
+  return `${day.toISOString().slice(0, 10)}T08:00`;
+}
+
+const tomorrowAt8 = () => dakarTimeAt8(1);
