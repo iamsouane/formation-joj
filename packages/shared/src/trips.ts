@@ -35,6 +35,8 @@ export const tripSchema = z.object({
   site: z.enum(TRIP_SITES),
   departureAt: z.iso.datetime(),
   seats: z.int(),
+  /** Les places publiées moins les réservations. */
+  remainingSeats: z.int(),
   pricePerSeat: z.int(),
 });
 export type TripResponse = z.infer<typeof tripSchema>;

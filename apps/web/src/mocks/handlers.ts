@@ -74,7 +74,7 @@ function toPublic({
   managementCode: _code,
   ...trip
 }: StoredTrip): TripResponse {
-  return trip;
+  return { ...trip, remainingSeats: trip.seats };
 }
 
 const byDeparture = (a: StoredTrip, b: StoredTrip) =>

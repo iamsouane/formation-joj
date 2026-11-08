@@ -8,7 +8,7 @@ import type { TripResponse } from '@joj/shared';
  */
 
 /** Un trajet tel que la base le garde : avec le téléphone du conducteur et le code de gestion. */
-export interface StoredTrip extends TripResponse {
+export interface StoredTrip extends Omit<TripResponse, 'remainingSeats'> {
   driverPhone: string;
   managementCode: string;
 }

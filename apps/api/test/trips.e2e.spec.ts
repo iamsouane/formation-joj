@@ -1,5 +1,10 @@
 import type { INestApplication } from '@nestjs/common';
-import { publishedTripSchema, TRIP_SITES, tripListSchema } from '@joj/shared';
+import {
+  bookingConfirmationSchema,
+  publishedTripSchema,
+  TRIP_SITES,
+  tripListSchema,
+} from '@joj/shared';
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { TripRepository } from '../src/modules/trips/application/trip.repository';
@@ -120,5 +125,96 @@ describe('/api/trips (e2e)', () => {
     expect(response.headers['content-type']).toContain('application/problem+json');
     expect(response.body).toMatchObject({ code: 'DEPARTURE_IN_PAST' });
     expect(await listDiamniadio()).toEqual([]);
+  });
+
+  describe('bookings', () => {
+    const awa = { passengerName: 'Awa', passengerPhone: '77 123 45 67' };
+    const publish = async (seats = 3) =>
+      publishedTripSchema.parse(
+        (
+          await api()
+            .post('/api/trips')
+            .send({ ...pikineToDiamniadio(), seats })
+            .expect(201)
+        ).body,
+      );
+    const book = (tripId: string, passenger = awa) =>
+      api().post(`/api/trips/${tripId}/bookings`).send(passenger);
+    const remainingSeats = async () => (await listDiamniadio()).map((trip) => trip.remainingSeats);
+
+    it('002-AS1: books a seat (201) and returns a booking code and the normalised driver phone', async () => {
+      const trip = await publish();
+
+      const response = await book(trip.id).expect(201);
+
+      expect(bookingConfirmationSchema.parse(response.body)).toEqual({
+        bookingCode: expect.stringMatching(/^\S{8,}$/),
+        driverPhone: '771234567',
+      });
+    });
+
+    it('002-AS2: lists the trip with 2 remaining seats after one booking, without the driver phone', async () => {
+      const trip = await publish(3);
+      await book(trip.id).expect(201);
+
+      const response = await api().get('/api/trips?site=diamniadio').expect(200);
+
+      expect(response.body).toEqual([expect.objectContaining({ id: trip.id, remainingSeats: 2 })]);
+      expect(response.body[0]).not.toHaveProperty('driverPhone');
+    });
+
+    it('002-AS3: rejects a full trip (409 TRIP_FULL) and books nothing', async () => {
+      const trip = await publish(1);
+      await book(trip.id).expect(201);
+
+      const response = await book(trip.id, {
+        passengerName: 'Moussa',
+        passengerPhone: '78 000 00 00',
+      }).expect(409);
+
+      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.body).toMatchObject({ code: 'TRIP_FULL' });
+      expect(await remainingSeats()).toEqual([0]);
+    });
+
+    it('002-AS4: rejects a second booking from the same phone (409 PASSENGER_ALREADY_BOOKED)', async () => {
+      const trip = await publish(3);
+      await book(trip.id, { passengerName: 'Awa', passengerPhone: '77 123 45 67' }).expect(201);
+
+      const response = await book(trip.id, {
+        passengerName: 'Awa Ndiaye',
+        passengerPhone: '+221771234567',
+      }).expect(409);
+
+      expect(response.body).toMatchObject({ code: 'PASSENGER_ALREADY_BOOKED' });
+      expect(await remainingSeats()).toEqual([2]);
+    });
+
+    it('002-AS5: rejects a departed trip (409 TRIP_DEPARTED)', async () => {
+      const departedId = '0199f5c2-0000-7000-8000-0000000000ab';
+      // Un trajet déjà parti ne peut pas être publié : on le place directement dans le dépôt.
+      await app.get(TripRepository).insert(
+        Trip.restore({
+          id: departedId,
+          departurePlace: 'Rufisque',
+          site: 'diamniadio',
+          departureAt: new Date(inHours(-2)),
+          seats: 2,
+          pricePerSeat: 500,
+          driverPhone: '770000000',
+          managementCode: 'departed-code',
+          createdAt: new Date(inHours(-24)),
+        }),
+      );
+
+      const response = await book(departedId).expect(409);
+
+      expect(response.body).toMatchObject({ code: 'TRIP_DEPARTED' });
+    });
+
+    it('002-AS6: rejects an unknown trip (404 TRIP_NOT_FOUND)', async () => {
+      const response = await book('0199f5c2-0000-7000-8000-0000000000ff').expect(404);
+      expect(response.body).toMatchObject({ code: 'TRIP_NOT_FOUND' });
+    });
   });
 });

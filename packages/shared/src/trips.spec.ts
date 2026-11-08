@@ -23,6 +23,7 @@ const publicTrip = {
   site: 'diamniadio',
   departureAt: '2026-11-09T08:00:00.000Z',
   seats: 3,
+  remainingSeats: 3,
   pricePerSeat: 1000,
 };
 
