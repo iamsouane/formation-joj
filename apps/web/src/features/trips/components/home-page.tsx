@@ -6,6 +6,7 @@ import { useUpcomingTrips } from '../api/trips.queries';
 import { BookingConfirmation } from './booking-confirmation';
 import { BookingForm } from './booking-form';
 import { DepartureList } from './departure-list';
+import { DeparturesLoading } from './departures-loading';
 import { Hero } from './hero';
 import { NoDepartures } from './no-departures';
 import { useFoldChoreography } from './use-fold-choreography';
@@ -44,9 +45,12 @@ export function HomePage({ site, onSiteChange }: HomePageProps) {
         data-phase={phase}
         className="departures content-column"
       >
-        {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. */}
-        {shownSite && (
+        {/* Un autre site repart de zéro : ni trajet choisi, ni confirmation. Pendant la course
+            de la mascotte, les départs attendent : des cartes d'attente tiennent leur place. */}
+        {shownSite ? (
           <UpcomingDepartures key={shownSite} site={shownSite} onSiteChange={chooseSite} />
+        ) : (
+          site && <DeparturesLoading />
         )}
       </div>
     </>
@@ -111,7 +115,7 @@ function UpcomingDepartures({
   if (booked) {
     return <BookingConfirmation {...booked} onDone={() => setBooked(undefined)} />;
   }
-  if (trips.isPending) return <p className="text-muted-foreground">Chargement des départs…</p>;
+  if (trips.isPending) return <DeparturesLoading />;
   if (trips.isError) {
     return (
       <p role="alert" className="text-destructive">

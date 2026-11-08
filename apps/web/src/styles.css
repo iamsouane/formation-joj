@@ -1946,3 +1946,42 @@ body {
   text-decoration: none;
   cursor: progress;
 }
+
+/*
+ * Les cartes d'attente des départs : la bulle d'un départ, avec des barres à la place de l'heure,
+ * du trajet et des places. Elles restent immobiles : le texte au-dessus dit l'attente, et rien
+ * n'anime autre chose que `transform` ou `opacity`.
+ */
+.departure-placeholder {
+  display: flex;
+  min-height: 9.5rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem;
+}
+
+.placeholder-bar {
+  display: block;
+  height: 1rem;
+  background: var(--muted);
+}
+
+.placeholder-time {
+  width: 40%;
+  height: 2.75rem;
+}
+
+.placeholder-route {
+  width: 70%;
+  height: 1.5rem;
+}
+
+.placeholder-meta {
+  width: 55%;
+}
+
+.departures-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

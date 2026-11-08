@@ -205,4 +205,23 @@ describe('HomePage', () => {
     });
     await waitFor(() => expect(screen.getByText(/Ouakam/)).toBeInTheDocument());
   });
+
+  it('006-AS1: shows placeholder departures while the list loads, from the moment the site is chosen', async () => {
+    mockControl.setLatency(400);
+    const { user } = await open();
+
+    await user.click(screen.getByRole('radio', { name: 'Diamniadio' }));
+
+    // Dès le choix, même pendant la course de la mascotte : des cartes d'attente, pas une zone vide.
+    const loading = screen.getByRole('status', { name: 'Chargement des départs…' });
+    expect(loading).toHaveAttribute('aria-busy', 'true');
+    expect(
+      loading.querySelectorAll('[data-part="departure-placeholder"]').length,
+    ).toBeGreaterThanOrEqual(2);
+
+    await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    expect(
+      screen.queryByRole('status', { name: 'Chargement des départs…' }),
+    ).not.toBeInTheDocument();
+  });
 });
