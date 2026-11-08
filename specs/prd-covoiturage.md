@@ -41,9 +41,13 @@ Le conducteur colle un message libre (« je pars de Pikine pour Diamniadio demai
 
 Un accueil qui donne envie : la mascotte prend du relief, s'incline sous le doigt ou la souris, son ombre et les plans du décor bougent en profondeur, elle respire et arrive avec un rebond ; les départs du site choisi sont visibles sans faire défiler sur un écran de téléphone, et l'animation s'arrête si l'utilisateur a demandé moins d'animations ; si le temps manque, le relief de la mascotte passe après le parcours chercher puis réserver. Depuis l'accueil, le supporter choisit un site, voit les départs à venir avec leurs places restantes et leur participation, réserve avec son nom et son téléphone, puis voit son code de réservation et le téléphone du conducteur ; la mascotte à la flamme apparaît alors avec un saut de joie. Chaque refus (trajet complet, déjà réservé, déjà parti…) s'affiche en français compréhensible. Aucune nouvelle règle métier : les écrans s'appuient sur TR1 et TR2.
 
-### TR6 — Publier un trajet et gérer ses codes depuis son téléphone
+### TR6 — Publier un trajet depuis son téléphone
 
-Le conducteur colle son annonce WhatsApp dans un champ dédié (TR4), ou passe à tout moment à un formulaire classique ; l'application l'y amène aussi d'elle-même si l'annonce est incomplète (les informations manquantes sont signalées) ou si l'assistant est indisponible. Il voit le trajet tel qu'il a été compris, puis son code de gestion, présenté comme à conserver. Avec leurs codes, le supporter consulte ou annule sa réservation et le conducteur annule son trajet (TR3). Depuis son billet, le supporter envoie sur WhatsApp le trajet, son code et le téléphone du conducteur, pour les garder sous la main et les partager. Chaque refus (code inconnu, déjà annulé…) s'affiche en français compréhensible. Aucune nouvelle règle métier.
+Le conducteur colle son annonce WhatsApp dans un champ dédié (TR4), ou passe à tout moment à un formulaire classique (TR1) ; l'application l'y amène aussi d'elle-même si l'annonce est incomplète (les informations manquantes sont signalées) ou si l'assistant est indisponible. Il voit le trajet tel qu'il a été compris, puis son code de gestion et son lien de gestion, présentés comme à conserver : le lien désigne le trajet, le code se saisit à part et n'apparaît jamais dans l'adresse. Il peut les envoyer sur WhatsApp, comme le billet du supporter (TR7). Chaque refus (site inconnu, départ passé, annonce vide…) s'affiche en français compréhensible. Aucune nouvelle règle métier.
+
+### TR7 — Gérer ses codes depuis son téléphone
+
+Avec son code, le supporter consulte sa réservation (active, annulée ou trajet annulé) et l'annule ; le conducteur ouvre son lien de gestion et annule son trajet en saisissant son code de gestion (TR3). Depuis son billet, le supporter envoie sur WhatsApp le trajet, son code et le téléphone du conducteur, pour les garder sous la main et les partager. Chaque refus (code inconnu, code de gestion erroné…) s'affiche en français compréhensible. Aucune nouvelle règle métier.
 
 ## Hors périmètre
 
@@ -52,5 +56,4 @@ Le conducteur colle son annonce WhatsApp dans un champ dédié (TR4), ou passe �
 ## Hypothèses et risques
 
 - Hypothèses : les sites se limitent à Dakar, Diamniadio et Saly (sinon la liste devra s'élargir) ; le supporter est reconnu par son téléphone pour empêcher la double réservation ; l'accord des formateurs couvre l'usage du logo et de la mascotte pour ce projet de bootcamp seulement, une diffusion publique demanderait l'accord du comité d'organisation.
-- Risque : sans notification, un passager ne voit l'annulation de son trajet que s'il consulte sa réservation.
-- Risque : si Claude interprète mal une heure (« demain », « 8h »), le trajet publié serait faux ; la revalidation de TR4 ne détecte qu'un départ passé ou un site inconnu.
+- Risques : sans notification, un passager ne voit l'annulation de son trajet que s'il consulte sa réservation ; si Claude interprète mal une heure (« demain », « 8h »), le trajet publié serait faux, car la revalidation de TR4 ne détecte qu'un départ passé ou un site inconnu ; un code perdu et jamais envoyé sur WhatsApp ne se retrouve pas (risque assumé, aucune tranche de récupération).
