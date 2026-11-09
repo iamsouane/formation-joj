@@ -1,6 +1,6 @@
 # 007 — Gérer ses codes depuis son téléphone
 
-**Statut** : Validée
+**Statut** : Implémentée
 **PRD** : specs/prd-covoiturage.md, TR7
 
 ## Contexte
