@@ -33,7 +33,9 @@ export function isPhonePointer(): boolean {
 
 /**
  * Le message du conducteur. Le trajet et le code passent avant le lien : ils restent lisibles même
- * si l'application qui reçoit le message ne garde que l'adresse.
+ * si l'application qui reçoit le message ne garde que l'adresse. Il a la forme d'une adresse que
+ * WhatsApp lit en entier sur iPhone : des mots (« Kolda vers Diamniadio », pas de flèche), des
+ * espaces simples (pas d'insécable dans « 1 000 »), et aucune ligne vide.
  */
 export function publishedTripShareText(
   trip: PublishedTripResponse,
@@ -41,13 +43,11 @@ export function publishedTripShareText(
 ): string {
   return [
     'Mon trajet pour les JOJ Dakar 2026',
-    `${formatPlace(trip.departurePlace)} → ${SITE_LABELS[trip.site]}`,
+    `Trajet ${formatPlace(trip.departurePlace)} vers ${SITE_LABELS[trip.site]}`,
     `${formatDepartureDay(trip.departureAt)} à ${formatDepartureTime(trip.departureAt)}`,
-    `${formatSeats(trip.seats)}, ${formatPrice(trip.pricePerSeat)} par place`,
-    '',
+    `${formatSeats(trip.seats)}, ${formatPrice(trip.pricePerSeat).replace(/\s/g, ' ')} par place`,
     `Code de gestion : ${trip.managementCode}`,
     'Code à garder pour vous, ne le partagez pas.',
-    '',
     `Lien de gestion : ${managementLink}`,
   ].join('\n');
 }

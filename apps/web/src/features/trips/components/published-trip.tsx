@@ -95,8 +95,9 @@ export function PublishedTrip({ trip }: { trip: PublishedTripResponse }) {
         <a
           href={onPhone ? whatsappAppUrl(message) : whatsappShareUrl(message)}
           onClick={share}
-          target="_blank"
-          rel="noopener noreferrer"
+          // L'application WhatsApp s'ouvre dans le même onglet, comme une adresse tapée ;
+          // WhatsApp Web, dans un nouvel onglet.
+          {...(onPhone ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
           className={buttonVariants({ size: 'lg', className: 'thumb-action whatsapp-action' })}
         >
           Envoyer sur WhatsApp

@@ -422,7 +422,9 @@ describe('PublishPage', () => {
       'Colobane → Diamniadio',
     );
     const share = within(confirmation).getByRole('link', { name: 'Envoyer sur WhatsApp' });
-    expect(decodeURIComponent(share.getAttribute('href') ?? '')).toContain('Colobane → Diamniadio');
+    expect(decodeURIComponent(share.getAttribute('href') ?? '')).toContain(
+      'Trajet Colobane vers Diamniadio',
+    );
     // La donnée reste telle que publiée : seul l'affichage change.
     expect(fixture.trips.at(-1)?.departurePlace).toBe('colobane');
   });

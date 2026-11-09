@@ -64,7 +64,7 @@ describe('PublishedTrip', () => {
     const href = send.getAttribute('href') ?? '';
     expect(href.startsWith('https://api.whatsapp.com/send?text=')).toBe(true);
     const text = new URL(href).searchParams.get('text') ?? '';
-    expect(text).toContain('Pikine → Diamniadio');
+    expect(text).toContain('Trajet Pikine vers Diamniadio');
     expect(text).toContain('08:00');
     expect(text).toContain('3 places');
     expect(text).toContain(`Code de gestion : ${trip.managementCode}`);
@@ -85,7 +85,7 @@ describe('PublishedTrip', () => {
     expect([...url.searchParams.keys()]).toEqual(['text']);
     const text = url.searchParams.get('text') ?? '';
     expect(text).toBe(publishedTripShareText(trip, managementLink));
-    expect(text.split('\n')[1]).toBe('Pikine → Diamniadio');
+    expect(text.split('\n')[1]).toBe('Trajet Pikine vers Diamniadio');
     // Tout le texte est encodé : aucun retour à la ligne ni espace brut dans l'adresse.
     expect(href).not.toMatch(/[\s\n]/);
   });
@@ -103,7 +103,9 @@ describe('PublishedTrip', () => {
     expect(Object.keys(shared ?? {})).toEqual(['text']);
     // Le trajet et le code viennent avant le lien : ils restent si l'application retire l'adresse.
     const text = publishedTripShareText(trip, managementLink);
-    expect(text.indexOf('Pikine → Diamniadio')).toBeLessThan(text.indexOf(managementLink));
+    expect(text.indexOf('Trajet Pikine vers Diamniadio')).toBeLessThan(
+      text.indexOf(managementLink),
+    );
     expect(text.indexOf(trip.managementCode)).toBeLessThan(text.indexOf(managementLink));
   });
 
@@ -117,5 +119,27 @@ describe('PublishedTrip', () => {
     expect(decodeURIComponent(href.slice('whatsapp://send?text='.length))).toBe(
       publishedTripShareText(trip, managementLink),
     );
+  });
+
+  it('006-AS6: opens the WhatsApp app in the same tab, with the same form as a typed address', () => {
+    onPhone({ shareSheet: false });
+    renderWithProviders(<PublishedTrip trip={{ ...trip, departurePlace: 'Kolda' }} />);
+
+    const send = screen.getByRole('link', { name: 'Envoyer sur WhatsApp' });
+    const link = encodeURIComponent(managementLink);
+    // La forme de l'adresse qui marche, tapée dans Safari : des mots, `%20`, `%0A`, rien d'autre.
+    expect(send.getAttribute('href')).toBe(
+      'whatsapp://send?text=' +
+        'Mon%20trajet%20pour%20les%20JOJ%20Dakar%202026%0A' +
+        'Trajet%20Kolda%20vers%20Diamniadio%0A' +
+        'lun.%209%20nov.%20%C3%A0%2008%3A00%0A' +
+        '3%20places%2C%201%20000%20FCFA%20par%20place%0A' +
+        'Code%20de%20gestion%20%3A%20k7p2x9w4m1q8%0A' +
+        'Code%20%C3%A0%20garder%20pour%20vous%2C%20ne%20le%20partagez%20pas.%0A' +
+        `Lien%20de%20gestion%20%3A%20${link}`,
+    );
+    expect(send.getAttribute('href')).not.toMatch(/%E2%86%92|%C2%A0|%0A%0A/);
+    // Comme une adresse tapée : dans le même onglet.
+    expect(send).not.toHaveAttribute('target');
   });
 });
