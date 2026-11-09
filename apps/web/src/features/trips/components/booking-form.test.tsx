@@ -51,6 +51,27 @@ describe('BookingForm', () => {
     ).toBeInTheDocument();
   });
 
+  it('007-AS4: sends the ticket on WhatsApp right after booking', async () => {
+    const { user, form } = await openBookingForm('Pikine');
+    await user.type(within(form).getByLabelText('Votre nom'), 'Awa');
+    await user.type(within(form).getByLabelText('Votre téléphone'), '77 123 45 67');
+    await user.click(within(form).getByRole('button', { name: 'Confirmer la réservation' }));
+    const ticket = await screen.findByRole('region', { name: 'Place réservée' });
+
+    const send = within(ticket).getByRole('link', { name: 'Envoyer sur WhatsApp' });
+    const url = new URL(send.getAttribute('href') ?? '');
+    expect(`${url.origin}${url.pathname}`).toBe('https://api.whatsapp.com/send');
+    const lines = (url.searchParams.get('text') ?? '').split('\n');
+    const { bookingCode } = fixture.bookings.at(-1)!;
+    expect(lines).toHaveLength(6);
+    expect(lines[1]).toBe('Trajet Pikine vers Diamniadio');
+    expect(lines[2]).toContain(`à ${formatDepartureTime(pikineToDiamniadio.departureAt)}`);
+    expect(lines[3]).toBe('1 000 FCFA par place');
+    expect(lines[4]).toBe(`Code de réservation : ${bookingCode}`);
+    // Le téléphone du conducteur du trajet, pas celui du supporter.
+    expect(lines[5]).toBe('Conducteur : 77 123 45 67');
+  });
+
   it('005-AS4: shows the confirmation as a boarding-pass ticket: time, route, code in large type', async () => {
     const { user, form } = await openBookingForm('Pikine');
     await user.type(within(form).getByLabelText('Votre nom'), 'Awa');
@@ -67,12 +88,12 @@ describe('BookingForm', () => {
     );
     const { bookingCode } = fixture.bookings.at(-1)!;
     expect(ticket.querySelector('[data-part="ticket-code"]')).toHaveTextContent(bookingCode);
-    // Le conducteur s'appelle d'un geste ; aucun envoi WhatsApp : ce serait une nouveauté de produit.
+    // Le conducteur s'appelle d'un geste. L'envoi du billet sur WhatsApp, absent de TR5, est
+    // arrivé avec TR7 : voir « 007-AS4 » ci-dessus.
     expect(within(ticket).getByRole('link', { name: /77 123 45 67/ })).toHaveAttribute(
       'href',
       'tel:+221771234567',
     );
-    expect(within(ticket).queryByRole('link', { name: /WhatsApp/i })).not.toBeInTheDocument();
   });
 
   it('005-AS4: fits the thumb: full-width actions and phone-friendly fields', async () => {

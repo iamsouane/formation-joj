@@ -1,7 +1,8 @@
-import type { PublishedTripResponse } from '@joj/shared';
+import type { PublishedTripResponse, TripResponse } from '@joj/shared';
 import {
   formatDepartureDay,
   formatDepartureTime,
+  formatPhone,
   formatPlace,
   formatPrice,
   formatSeats,
@@ -49,5 +50,28 @@ export function publishedTripShareText(
     `Code de gestion : ${trip.managementCode}`,
     'Code à garder pour vous, ne le partagez pas.',
     `Lien de gestion : ${managementLink}`,
+  ].join('\n');
+}
+
+/** Ce qu'un billet de supporter contient : son trajet, son code, et le conducteur à appeler. */
+export interface BookingShare {
+  trip: Pick<TripResponse, 'departurePlace' | 'site' | 'departureAt' | 'pricePerSeat'>;
+  bookingCode: string;
+  driverPhone: string;
+}
+
+/**
+ * Le message du supporter : son billet, pour le garder sous la main et le partager. Même forme
+ * que celui du conducteur (des mots, des espaces simples, aucune ligne vide), et aucun lien : le
+ * code se saisit depuis l'accueil, « Retrouver ma réservation ».
+ */
+export function bookingShareText({ trip, bookingCode, driverPhone }: BookingShare): string {
+  return [
+    'Ma place pour les JOJ Dakar 2026',
+    `Trajet ${formatPlace(trip.departurePlace)} vers ${SITE_LABELS[trip.site]}`,
+    `${formatDepartureDay(trip.departureAt)} à ${formatDepartureTime(trip.departureAt)}`,
+    `${formatPrice(trip.pricePerSeat).replace(/\s/g, ' ')} par place`,
+    `Code de réservation : ${bookingCode}`,
+    `Conducteur : ${formatPhone(driverPhone)}`,
   ].join('\n');
 }

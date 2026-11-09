@@ -1,6 +1,5 @@
 import type { PublishedTripResponse } from '@joj/shared';
-import { type MouseEvent, useEffect, useId, useRef } from 'react';
-import { buttonVariants } from '@/components/ui/button';
+import { useEffect, useId, useRef } from 'react';
 import {
   formatDepartureDay,
   formatDepartureTime,
@@ -10,12 +9,8 @@ import {
   SITE_LABELS,
 } from './format';
 import { managementLinkOf } from './management-link';
-import {
-  isPhonePointer,
-  publishedTripShareText,
-  whatsappAppUrl,
-  whatsappShareUrl,
-} from './whatsapp-share';
+import { publishedTripShareText } from './whatsapp-share';
+import { WhatsappShareLink } from './whatsapp-share-link';
 
 /**
  * Le trajet est publié : un billet, comme celui du supporter. En haut, le trajet tel qu'il a été
@@ -29,21 +24,6 @@ export function PublishedTrip({ trip }: { trip: PublishedTripResponse }) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const link = managementLinkOf(trip.id);
   const message = publishedTripShareText(trip, link);
-  const onPhone = isPhonePointer();
-
-  /**
-   * Sur téléphone, la feuille de partage du système, avec le seul texte : un `url` à part, WhatsApp
-   * ne garderait que lui. Sans feuille de partage, le lien ouvre l'application WhatsApp ; sur
-   * ordinateur, WhatsApp Web. Si le partage échoue (hors annulation), on ouvre l'application.
-   */
-  function share(event: MouseEvent<HTMLAnchorElement>) {
-    if (!onPhone || typeof navigator.share !== 'function') return;
-    event.preventDefault();
-    navigator.share({ text: message }).catch((error: unknown) => {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      window.location.assign(whatsappAppUrl(message));
-    });
-  }
 
   // Le bouton « Publier » a disparu avec le formulaire : le focus passe au billet.
   useEffect(() => {
@@ -92,16 +72,7 @@ export function PublishedTrip({ trip }: { trip: PublishedTripResponse }) {
             </dd>
           </div>
         </dl>
-        <a
-          href={onPhone ? whatsappAppUrl(message) : whatsappShareUrl(message)}
-          onClick={share}
-          // L'application WhatsApp s'ouvre dans le même onglet, comme une adresse tapée ;
-          // WhatsApp Web, dans un nouvel onglet.
-          {...(onPhone ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
-          className={buttonVariants({ size: 'lg', className: 'thumb-action whatsapp-action' })}
-        >
-          Envoyer sur WhatsApp
-        </a>
+        <WhatsappShareLink message={message} />
       </div>
     </section>
   );

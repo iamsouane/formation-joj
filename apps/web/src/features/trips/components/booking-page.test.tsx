@@ -176,4 +176,28 @@ describe('BookingPage', () => {
       expect(within(list).getByRole('listitem')).toHaveTextContent('3 places restantes'),
     );
   });
+
+  it('007-AS4: sends the consulted ticket on WhatsApp', async () => {
+    seed(pikineTomorrow, awaBooking);
+    const user = userEvent.setup();
+    await renderRoute({ initialEntries: ['/reservation'] });
+
+    const ticket = await findTicket(user, 'AWA-2026');
+
+    const send = within(ticket).getByRole('link', { name: 'Envoyer sur WhatsApp' });
+    const url = new URL(send.getAttribute('href') ?? '');
+    expect(`${url.origin}${url.pathname}`).toBe('https://api.whatsapp.com/send');
+    // Le trajet, le code et le téléphone du conducteur, sans lien : le code se saisit sur
+    // l'accueil. Des mots et des espaces simples, aucune ligne vide, comme WhatsApp les lit.
+    expect(url.searchParams.get('text')).toBe(
+      [
+        'Ma place pour les JOJ Dakar 2026',
+        'Trajet Pikine vers Diamniadio',
+        'lun. 9 nov. à 08:00',
+        '1 000 FCFA par place',
+        'Code de réservation : AWA-2026',
+        'Conducteur : 77 654 32 10',
+      ].join('\n'),
+    );
+  });
 });

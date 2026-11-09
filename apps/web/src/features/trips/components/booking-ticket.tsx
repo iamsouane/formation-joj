@@ -22,7 +22,7 @@ export function BookingTicket({
   children,
 }: {
   booking: BookingDetailsResponse;
-  /** Les actions du billet, sous le code : annuler, tant que la réservation est active. */
+  /** Les actions du billet, sous le code : l'envoyer sur WhatsApp, l'annuler. */
   children?: ReactNode;
 }) {
   const titleId = useId();

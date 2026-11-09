@@ -11,6 +11,8 @@ import {
   phoneHref,
   SITE_LABELS,
 } from './format';
+import { bookingShareText } from './whatsapp-share';
+import { WhatsappShareLink } from './whatsapp-share-link';
 
 interface BookingConfirmationProps {
   trip: TripResponse;
@@ -21,7 +23,8 @@ interface BookingConfirmationProps {
 /**
  * La place est réservée : un billet façon carte d'embarquement. L'heure et le trajet en haut, une
  * ligne de déchirure, puis le code en gros (à garder) et le conducteur à appeler pour le
- * rendez-vous. La mascotte à la flamme saute de joie sous une pluie de confettis.
+ * rendez-vous. Le billet s'envoie sur WhatsApp, pour garder le code sous la main. La mascotte à
+ * la flamme saute de joie sous une pluie de confettis.
  */
 export function BookingConfirmation({ trip, confirmation, onDone }: BookingConfirmationProps) {
   const titleId = useId();
@@ -64,9 +67,18 @@ export function BookingConfirmation({ trip, confirmation, onDone }: BookingConfi
           <dd className="ticket-note">Appelez-le pour fixer le point de rendez-vous.</dd>
         </div>
       </dl>
-      <Button variant="outline" size="lg" onClick={onDone} className="thumb-action ticket-done">
-        Voir les autres départs
-      </Button>
+      <div className="ticket-actions">
+        <WhatsappShareLink
+          message={bookingShareText({
+            trip,
+            bookingCode: confirmation.bookingCode,
+            driverPhone: confirmation.driverPhone,
+          })}
+        />
+        <Button variant="outline" size="lg" onClick={onDone} className="thumb-action ticket-done">
+          Voir les autres départs
+        </Button>
+      </div>
     </section>
   );
 }
