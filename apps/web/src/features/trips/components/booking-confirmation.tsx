@@ -7,6 +7,7 @@ import {
   formatDepartureDay,
   formatDepartureTime,
   formatPhone,
+  formatPlace,
   phoneHref,
   SITE_LABELS,
 } from './format';
@@ -39,7 +40,7 @@ export function BookingConfirmation({ trip, confirmation, onDone }: BookingConfi
             </time>
           </p>
           <p className="ticket-route" data-part="ticket-route">
-            {trip.departurePlace} → {SITE_LABELS[trip.site]}
+            {formatPlace(trip.departurePlace)} → {SITE_LABELS[trip.site]}
           </p>
         </div>
         <FlameCelebration />

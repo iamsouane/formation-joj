@@ -409,6 +409,24 @@ describe('PublishPage', () => {
     expect(within(form).getByLabelText('Votre téléphone')).not.toHaveAttribute('aria-invalid');
   });
 
+  it('006-AS1: capitalises the departure place on display, not in the data', async () => {
+    mockControl.setTripDraft(understood({ departurePlace: 'colobane' }));
+    const { user } = await openPublishPage();
+    await user.type(screen.getByLabelText('Votre annonce WhatsApp'), ANNOUNCEMENT);
+    await user.type(screen.getByLabelText('Votre téléphone'), '77 123 45 67');
+
+    await user.click(screen.getByRole('button', { name: 'Publier' }));
+
+    const confirmation = await screen.findByRole('region', { name: 'Trajet publié' });
+    expect(confirmation.querySelector('[data-part="ticket-route"]')).toHaveTextContent(
+      'Colobane → Diamniadio',
+    );
+    const share = within(confirmation).getByRole('link', { name: 'Envoyer sur WhatsApp' });
+    expect(decodeURIComponent(share.getAttribute('href') ?? '')).toContain('Colobane → Diamniadio');
+    // La donnée reste telle que publiée : seul l'affichage change.
+    expect(fixture.trips.at(-1)?.departurePlace).toBe('colobane');
+  });
+
   it('006-AS1: leads the driver from the home page to the publication page', async () => {
     const user = userEvent.setup();
     const { router } = await renderRoute({ initialEntries: ['/'] });

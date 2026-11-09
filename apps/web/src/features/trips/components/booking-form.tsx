@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useBookSeat } from '../api/trips.queries';
 import { bookingErrorMessage } from './booking-error-message';
+import { formatPlace } from './format';
 
 interface BookingFormProps {
   trip: TripResponse;
@@ -34,7 +35,7 @@ export function BookingForm({ trip, onBooked }: BookingFormProps) {
 
   return (
     <form
-      aria-label={`Réserver depuis ${trip.departurePlace}`}
+      aria-label={`Réserver depuis ${formatPlace(trip.departurePlace)}`}
       onSubmit={submit}
       className="mt-3 flex flex-col gap-3"
     >

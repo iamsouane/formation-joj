@@ -2,6 +2,7 @@ import type { PublishedTripResponse } from '@joj/shared';
 import {
   formatDepartureDay,
   formatDepartureTime,
+  formatPlace,
   formatPrice,
   formatSeats,
   SITE_LABELS,
@@ -17,14 +18,30 @@ export function whatsappShareUrl(text: string): string {
   return `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
 }
 
-/** Le message du conducteur : son trajet, son code de gestion avec sa mise en garde, son lien. */
+/**
+ * Sur téléphone, sans feuille de partage : l'application WhatsApp, ouverte directement avec le
+ * message.
+ */
+export function whatsappAppUrl(text: string): string {
+  return `whatsapp://send?text=${encodeURIComponent(text)}`;
+}
+
+/** Vrai sur un écran tactile (le doigt pour pointeur) : un téléphone ou une tablette. */
+export function isPhonePointer(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+}
+
+/**
+ * Le message du conducteur. Le trajet et le code passent avant le lien : ils restent lisibles même
+ * si l'application qui reçoit le message ne garde que l'adresse.
+ */
 export function publishedTripShareText(
   trip: PublishedTripResponse,
   managementLink: string,
 ): string {
   return [
     'Mon trajet pour les JOJ Dakar 2026',
-    `${trip.departurePlace} → ${SITE_LABELS[trip.site]}`,
+    `${formatPlace(trip.departurePlace)} → ${SITE_LABELS[trip.site]}`,
     `${formatDepartureDay(trip.departureAt)} à ${formatDepartureTime(trip.departureAt)}`,
     `${formatSeats(trip.seats)}, ${formatPrice(trip.pricePerSeat)} par place`,
     '',

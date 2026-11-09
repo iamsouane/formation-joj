@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import {
   formatDepartureDay,
   formatDepartureTime,
+  formatPlace,
   formatPrice,
   formatRemainingSeats,
   SITE_LABELS,
@@ -59,7 +60,7 @@ export function DepartureList({
               </time>
             </p>
             <h2 className="departure-route">
-              {trip.departurePlace} → {siteLabel}
+              {formatPlace(trip.departurePlace)} → {siteLabel}
             </h2>
             <div className="departure-meta">
               {trip.remainingSeats > 0 ? (
@@ -80,8 +81,8 @@ export function DepartureList({
                 aria-expanded={open}
                 aria-label={
                   open
-                    ? `Annuler : ne pas réserver depuis ${trip.departurePlace}`
-                    : `Réserver une place depuis ${trip.departurePlace}`
+                    ? `Annuler : ne pas réserver depuis ${formatPlace(trip.departurePlace)}`
+                    : `Réserver une place depuis ${formatPlace(trip.departurePlace)}`
                 }
                 onClick={() => onToggleBooking?.(trip)}
               >

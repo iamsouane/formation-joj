@@ -82,3 +82,11 @@ export function phoneHref(phone: string): string {
 export function formatSeats(seats: number): string {
   return seats === 1 ? '1 place' : `${seats} places`;
 }
+
+/**
+ * « Colobane » : le lieu de départ tel qu'on l'affiche, avec une majuscule au début. La donnée,
+ * elle, reste telle que le conducteur ou l'assistant l'a écrite.
+ */
+export function formatPlace(place: string): string {
+  return place.charAt(0).toLocaleUpperCase('fr-FR') + place.slice(1);
+}
