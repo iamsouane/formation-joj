@@ -2014,8 +2014,8 @@ body {
 }
 
 /*
- * Le billet consulté (booking-ticket.tsx). En tête, la bande de validité, bord à bord : verte tant
- * que la réservation tient, rouge une fois annulée ; les mots le disent aussi. Elle glisse depuis
+ * Le billet consulté (booking-ticket.tsx) et le trajet géré (manage-trip-page.tsx). En tête, la
+ * bande de validité, bord à bord : verte tant que la réservation tient, rouge une fois annulée ; les mots le disent aussi. Elle glisse depuis
  * le bord du billet à son arrivée et quand la réservation change d'état, seul mouvement du billet.
  */
 .ticket-status {
@@ -2031,13 +2031,18 @@ body {
   animation: ticket-status-enter 280ms var(--ease-out-soft) both;
 }
 
+/* La bande d'un trajet qui tient est vide (manage-trip-page.tsx) : elle ne prend pas de place. */
+.ticket-status:empty {
+  display: none;
+}
+
 /* Un autre nom d'animation : la bande rejoue son entrée quand la réservation vient d'être annulée. */
-.booking-ticket:not([data-status='active']) .ticket-status {
+.ticket[data-status]:not([data-status='active']) .ticket-status {
   background: var(--destructive);
   animation-name: ticket-status-change;
 }
 
-.booking-ticket:not([data-status='active']) :is(.ticket-time, .ticket-route) {
+.ticket[data-status]:not([data-status='active']) :is(.ticket-time, .ticket-route) {
   color: var(--muted-foreground);
   text-decoration: line-through;
   text-decoration-thickness: 0.09em;

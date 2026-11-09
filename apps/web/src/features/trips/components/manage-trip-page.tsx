@@ -1,0 +1,155 @@
+import type { TripDetailsResponse } from '@joj/shared';
+import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useCancelTrip, useTrip } from '../api/trips.queries';
+import { ConfirmCancellation } from './confirm-cancellation';
+import {
+  formatDepartureDay,
+  formatDepartureTime,
+  formatPlace,
+  formatPrice,
+  formatRemainingSeats,
+  SITE_LABELS,
+} from './format';
+import { PageBand } from './page-band';
+
+/**
+ * Gérer son trajet depuis son lien de gestion. Sous le bandeau de l'accueil, le conducteur voit
+ * d'abord le trajet que son lien désigne, tel que la liste des départs le montre, pour le
+ * reconnaître ; puis il saisit son code de gestion et annule, après confirmation. Le code vit dans
+ * l'état de la page et part dans le corps de la demande, jamais dans une adresse. Un trajet déjà
+ * annulé ne demande plus rien.
+ */
+export function ManageTripPage({ tripId }: { tripId: string }) {
+  const trip = useTrip(tripId);
+  const cancellation = useCancelTrip();
+
+  return (
+    <>
+      <PageBand title={['Gérer', 'mon trajet']} />
+      {/* La colonne de `/publier` : mêmes largeurs, mêmes espacements. */}
+      <div data-column="content" className="content-column publish-content">
+        <p role="status" className="publish-status">
+          {trip.isPending && 'Chargement de votre trajet…'}
+        </p>
+        {trip.data && (
+          <ManagedTrip
+            trip={trip.data}
+            justCancelled={cancellation.isSuccess}
+            pending={cancellation.isPending}
+            onCancel={(managementCode) => cancellation.mutate({ tripId, managementCode })}
+          />
+        )}
+      </div>
+    </>
+  );
+}
+
+interface ManagedTripProps {
+  trip: TripDetailsResponse;
+  /** Le conducteur vient de l'annuler ici même : « Votre trajet est annulé ». */
+  justCancelled: boolean;
+  pending: boolean;
+  onCancel: (managementCode: string) => void;
+}
+
+/**
+ * Le trajet du lien, en billet comme les autres : l'heure, le trajet, les places restantes et la
+ * participation. Dessous, le code de gestion à saisir et l'annulation ; une fois le trajet annulé,
+ * la bande rouge le dit en tête, et il ne reste rien à saisir.
+ */
+function ManagedTrip({ trip, justCancelled, pending, onCancel }: ManagedTripProps) {
+  const titleId = useId();
+  const codeId = useId();
+  const hintId = useId();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [code, setCode] = useState('');
+  const managementCode = code.trim();
+
+  // Le bouton « Annuler mon trajet » a disparu avec l'annulation : le focus passe au trajet.
+  useEffect(() => {
+    if (justCancelled) titleRef.current?.focus();
+  }, [justCancelled]);
+
+  return (
+    <section
+      aria-labelledby={titleId}
+      className="ticket"
+      data-status={trip.cancelled ? 'cancelled' : 'active'}
+    >
+      <header className="ticket-trip">
+        <h2 id={titleId} ref={titleRef} tabIndex={-1} className="ticket-title">
+          Votre trajet
+        </h2>
+        <p className="ticket-when" data-part="ticket-time">
+          <time dateTime={trip.departureAt}>
+            <span className="ticket-time">{formatDepartureTime(trip.departureAt)}</span>{' '}
+            <span className="ticket-day">{formatDepartureDay(trip.departureAt)}</span>
+          </time>
+        </p>
+        <p className="ticket-route" data-part="ticket-route">
+          {formatPlace(trip.departurePlace)} → {SITE_LABELS[trip.site]}
+        </p>
+        <p className="ticket-terms">
+          <span>
+            {formatRemainingSeats(trip.remainingSeats)} sur {trip.seats}
+          </span>
+          <span>{formatPrice(trip.pricePerSeat)} par place</span>
+        </p>
+      </header>
+      {/*
+       * Toujours présente, vide tant que le trajet tient : l'annulation y est annoncée à la
+       * lecture. À l'écran, elle passe en tête du billet (`order` dans styles.css).
+       */}
+      <p role="status" className="ticket-status" data-part="trip-status">
+        {trip.cancelled &&
+          (justCancelled ? 'Votre trajet est annulé' : 'Ce trajet est déjà annulé')}
+      </p>
+      {trip.cancelled ? (
+        <p className="ticket-note">
+          Il n’apparaît plus dans les départs. Vos passagers le voient en consultant leur
+          réservation.
+        </p>
+      ) : (
+        <>
+          <div className="ticket-tear" aria-hidden="true" />
+          <form
+            aria-label="Annuler mon trajet"
+            noValidate
+            onSubmit={(event: FormEvent<HTMLFormElement>) => event.preventDefault()}
+            className="publish-form"
+          >
+            <div className="publish-field">
+              <Label htmlFor={codeId}>Votre code de gestion</Label>
+              <Input
+                id={codeId}
+                name="managementCode"
+                autoCapitalize="off"
+                autoCorrect="off"
+                autoComplete="off"
+                spellCheck={false}
+                aria-describedby={hintId}
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                className="code-input"
+              />
+              <p id={hintId} className="ticket-note">
+                C’est le code reçu à la publication de votre trajet.
+              </p>
+            </div>
+            <ConfirmCancellation
+              trigger="Annuler mon trajet"
+              title="Annuler votre trajet ?"
+              description="Il ne sera plus proposé aux supporters, et vos passagers le verront annulé. Une annulation est définitive."
+              keep="Garder mon trajet"
+              pending={pending}
+              canAsk={() => managementCode !== ''}
+              onConfirm={() => onCancel(managementCode)}
+            />
+          </form>
+        </>
+      )}
+    </section>
+  );
+}

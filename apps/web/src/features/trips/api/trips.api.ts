@@ -4,10 +4,13 @@ import {
   type BookingDetailsResponse,
   bookingDetailsSchema,
   type BookSeatInput,
+  type CancelTripInput,
   type PublishedTripResponse,
   publishedTripSchema,
   type PublishTripFromMessageInput,
   type PublishTripInput,
+  type TripDetailsResponse,
+  tripDetailsSchema,
   type TripResponse,
   type TripSite,
   tripListSchema,
@@ -23,6 +26,20 @@ export const tripsApi = {
     api.request<TripResponse[]>(`/trips?site=${encodeURIComponent(site)}`, {
       schema: tripListSchema,
       signal,
+    }),
+
+  /** Un trajet lu par l'identifiant de son lien de gestion : ce que la liste en montre, et s'il est annulé. */
+  trip: (tripId: string, signal?: AbortSignal) =>
+    api.request<TripDetailsResponse>(`/trips/${encodeURIComponent(tripId)}`, {
+      schema: tripDetailsSchema,
+      signal,
+    }),
+
+  /** Annule le trajet. Le code de gestion part dans le corps, jamais dans l'adresse. */
+  cancelTrip: (tripId: string, input: CancelTripInput) =>
+    api.request<void>(`/trips/${encodeURIComponent(tripId)}/cancellation`, {
+      method: 'POST',
+      body: input,
     }),
 
   bookSeat: (tripId: string, input: BookSeatInput) =>

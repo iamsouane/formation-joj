@@ -12,6 +12,7 @@ import { tripsApi } from './trips.api';
 export const tripKeys = {
   all: ['trips'] as const,
   upcoming: (site: TripSite) => [...tripKeys.all, 'upcoming', site] as const,
+  detail: (tripId: string) => [...tripKeys.all, 'detail', tripId] as const,
   booking: (bookingCode: string) => [...tripKeys.all, 'booking', bookingCode] as const,
 };
 
@@ -60,6 +61,28 @@ export function useCancelBooking() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (bookingCode: string) => tripsApi.cancelBooking(bookingCode),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+  });
+}
+
+/** Le trajet d'un lien de gestion. Jamais servi du cache : il a pu être réservé ou annulé depuis. */
+export function useTrip(tripId: string) {
+  return useQuery({
+    queryKey: tripKeys.detail(tripId),
+    queryFn: ({ signal }) => tripsApi.trip(tripId, signal),
+    staleTime: 0,
+  });
+}
+
+/**
+ * Annuler son trajet avec son code de gestion. Tout le cache des trajets est relu avant la fin de
+ * la mutation : le trajet passe à « annulé », et il quitte les listes de départs.
+ */
+export function useCancelTrip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tripId, managementCode }: { tripId: string; managementCode: string }) =>
+      tripsApi.cancelTrip(tripId, { managementCode }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
   });
 }

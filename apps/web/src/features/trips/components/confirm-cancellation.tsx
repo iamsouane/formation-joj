@@ -22,6 +22,8 @@ interface ConfirmCancellationProps {
   keep: string;
   /** L'annulation est en cours : le bouton attend, un second appui n'annule pas deux fois. */
   pending: boolean;
+  /** Avant d'ouvrir la question : `false` la garde fermée (un code qui reste à saisir). */
+  canAsk?: () => boolean;
   onConfirm: () => void;
 }
 
@@ -36,6 +38,7 @@ export function ConfirmCancellation({
   description,
   keep,
   pending,
+  canAsk,
   onConfirm,
 }: ConfirmCancellationProps) {
   return (
@@ -46,6 +49,10 @@ export function ConfirmCancellation({
           size="lg"
           className="thumb-action cancel-action"
           disabled={pending}
+          // Radix n'ouvre pas la question si l'appui a été annulé.
+          onClick={(event) => {
+            if (canAsk && !canAsk()) event.preventDefault();
+          }}
         >
           {pending ? 'Annulation en cours…' : trigger}
         </Button>

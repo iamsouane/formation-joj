@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as ReservationRouteImport } from './routes/reservation'
+import { Route as TrajetsTripIdGestionRouteImport } from './routes/trajets.$tripId.gestion'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +29,45 @@ const ReservationRoute = ReservationRouteImport.update({
   path: '/reservation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrajetsTripIdGestionRoute = TrajetsTripIdGestionRouteImport.update({
+  id: '/trajets/$tripId/gestion',
+  path: '/trajets/$tripId/gestion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/publier': typeof PublierRoute
   '/reservation': typeof ReservationRoute
+  '/trajets/$tripId/gestion': typeof TrajetsTripIdGestionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/publier': typeof PublierRoute
   '/reservation': typeof ReservationRoute
+  '/trajets/$tripId/gestion': typeof TrajetsTripIdGestionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/publier': typeof PublierRoute
   '/reservation': typeof ReservationRoute
+  '/trajets/$tripId/gestion': typeof TrajetsTripIdGestionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/publier' | '/reservation'
+  fullPaths: '/' | '/publier' | '/reservation' | '/trajets/$tripId/gestion'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/publier' | '/reservation'
-  id: '__root__' | '/' | '/publier' | '/reservation'
+  to: '/' | '/publier' | '/reservation' | '/trajets/$tripId/gestion'
+  id:
+    '__root__' | '/' | '/publier' | '/reservation' | '/trajets/$tripId/gestion'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PublierRoute: typeof PublierRoute
   ReservationRoute: typeof ReservationRoute
+  TrajetsTripIdGestionRoute: typeof TrajetsTripIdGestionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +93,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReservationRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/trajets/$tripId/gestion': {
+      id: '/trajets/$tripId/gestion'
+      path: '/trajets/$tripId/gestion'
+      fullPath: '/trajets/$tripId/gestion'
+      preLoaderRoute: typeof TrajetsTripIdGestionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +107,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PublierRoute: PublierRoute,
   ReservationRoute: ReservationRoute,
+  TrajetsTripIdGestionRoute: TrajetsTripIdGestionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
