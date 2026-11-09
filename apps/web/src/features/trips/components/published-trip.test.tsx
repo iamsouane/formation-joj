@@ -142,4 +142,54 @@ describe('PublishedTrip', () => {
     // Comme une adresse tapée : dans le même onglet.
     expect(send).not.toHaveAttribute('target');
   });
+
+  it('007-AS4: keeps the driver ticket address exactly as it was before the shared WhatsApp button', () => {
+    onPhone({ shareSheet: false });
+    // Un trajet comme en vrai : un code de gestion avec tiret et souligné, un hôte en http avec
+    // son port (celui de la page), comme sur un iPhone branché au serveur de développement.
+    const published = {
+      ...trip,
+      departurePlace: 'Kolda',
+      departureAt: '2026-11-10T08:00:00.000Z',
+      managementCode: 'T01YUxJ_wjN-',
+    };
+    expect(window.location.origin).toMatch(/^http:\/\/[^/]+:\d+$/);
+    renderWithProviders(<PublishedTrip trip={published} />);
+
+    const send = screen.getByRole('link', { name: 'Envoyer sur WhatsApp' });
+    // L'adresse que produisait le billet avant la mise en commun du bouton (TR7), à l'octet près.
+    const href = send.getAttribute('href') ?? '';
+    expect(href).toBe(
+      'whatsapp://send?text=' +
+        'Mon%20trajet%20pour%20les%20JOJ%20Dakar%202026%0A' +
+        'Trajet%20Kolda%20vers%20Diamniadio%0A' +
+        'mar.%2010%20nov.%20%C3%A0%2008%3A00%0A' +
+        '3%20places%2C%201%20000%20FCFA%20par%20place%0A' +
+        'Code%20de%20gestion%20%3A%20T01YUxJ_wjN-%0A' +
+        'Code%20%C3%A0%20garder%20pour%20vous%2C%20ne%20le%20partagez%20pas.%0A' +
+        `Lien%20de%20gestion%20%3A%20${encodeURIComponent(managementLink)}`,
+    );
+    // Le texte avant le lien, qui ferme le message ; ni flèche, ni insécable, ni ligne vide.
+    const text = decodeURIComponent(href.slice('whatsapp://send?text='.length));
+    expect(text.endsWith(managementLink)).toBe(true);
+    expect(text.indexOf('T01YUxJ_wjN-')).toBeLessThan(text.indexOf(managementLink));
+    expect(text).not.toMatch(/[→\u00a0\u202f]|\n\n/);
+    // Le même onglet, comme une adresse tapée : le lien ne porte que son adresse et son style.
+    expect([...send.attributes].map((attribute) => attribute.name).sort()).toEqual([
+      'class',
+      'href',
+    ]);
+    // Sans feuille de partage, le clic est laissé au navigateur, qui ouvre l'application.
+    let prevented: boolean | undefined;
+    document.addEventListener(
+      'click',
+      (event) => {
+        prevented = event.defaultPrevented;
+        event.preventDefault();
+      },
+      { once: true },
+    );
+    send.click();
+    expect(prevented).toBe(false);
+  });
 });
