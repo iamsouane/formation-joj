@@ -1687,11 +1687,16 @@ body {
  * Publier un trajet (publish-page.tsx). Le bandeau est celui de l'accueil ; dessous, l'annonce
  * se colle dans une bulle comme celles du logo : un trait noir et le coin haut droit replié.
  */
-/* Sous les sites : proposer un trajet, retrouver sa réservation. Côte à côte s'il y a la place. */
+/*
+ * Sous les sites : proposer un trajet, retrouver sa réservation. L'un sous l'autre à toutes les
+ * tailles : côte à côte, ils élargiraient la colonne des panneaux sur ordinateur, et la mascotte
+ * viendrait chevaucher le titre.
+ */
 .hero-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.15rem 1.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
   margin-top: 0.9rem;
 }
 
@@ -2062,11 +2067,19 @@ body {
   }
 }
 
+/* Les actions d'un billet : l'une sous l'autre au pouce, côte à côte dès qu'il y a la place. */
 .ticket-actions {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .ticket-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 /*
@@ -2084,11 +2097,18 @@ body {
   box-shadow: none;
 }
 
+/* Tout s'aligne à gauche, comme le reste de l'application, y compris sur téléphone. */
+.confirm-dialog [data-slot='alert-dialog-header'] {
+  text-align: left;
+}
+
+/* Lignes équilibrées : le point d'interrogation ne passe pas seul à la ligne. */
 .confirm-dialog-title {
   font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1.05;
+  text-wrap: balance;
 }
 
 .confirm-dialog-text {

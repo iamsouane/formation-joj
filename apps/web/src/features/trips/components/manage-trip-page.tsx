@@ -1,8 +1,13 @@
 import type { TripDetailsResponse } from '@joj/shared';
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCancelTrip, useTrip } from '../api/trips.queries';
+import {
+  CODE_MISSING_MESSAGE,
+  codeErrorMessage,
+  isCodeRefusal,
+  managementLinkErrorMessage,
+} from './code-error-message';
+import { CodeField } from './code-field';
 import { ConfirmCancellation } from './confirm-cancellation';
 import {
   formatDepartureDay,
@@ -19,7 +24,8 @@ import { PageBand } from './page-band';
  * d'abord le trajet que son lien désigne, tel que la liste des départs le montre, pour le
  * reconnaître ; puis il saisit son code de gestion et annule, après confirmation. Le code vit dans
  * l'état de la page et part dans le corps de la demande, jamais dans une adresse. Un trajet déjà
- * annulé ne demande plus rien.
+ * annulé ne demande plus rien. Chaque refus (lien qui ne désigne aucun trajet, code erroné) se lit
+ * en français.
  */
 export function ManageTripPage({ tripId }: { tripId: string }) {
   const trip = useTrip(tripId);
@@ -33,11 +39,20 @@ export function ManageTripPage({ tripId }: { tripId: string }) {
         <p role="status" className="publish-status">
           {trip.isPending && 'Chargement de votre trajet…'}
         </p>
+        {trip.isError && (
+          <p role="alert" className="font-semibold text-destructive">
+            {managementLinkErrorMessage(trip.error)}
+          </p>
+        )}
         {trip.data && (
           <ManagedTrip
             trip={trip.data}
             justCancelled={cancellation.isSuccess}
             pending={cancellation.isPending}
+            error={cancellation.isError ? cancellation.error : undefined}
+            onEdit={() => {
+              if (cancellation.isError) cancellation.reset();
+            }}
             onCancel={(managementCode) => cancellation.mutate({ tripId, managementCode })}
           />
         )}
@@ -51,6 +66,10 @@ interface ManagedTripProps {
   /** Le conducteur vient de l'annuler ici même : « Votre trajet est annulé ». */
   justCancelled: boolean;
   pending: boolean;
+  /** Le refus de la dernière annulation, tel que l'API l'a renvoyé. */
+  error: unknown;
+  /** Le conducteur corrige son code : le refus précédent ne vaut plus. */
+  onEdit: () => void;
   onCancel: (managementCode: string) => void;
 }
 
@@ -59,13 +78,24 @@ interface ManagedTripProps {
  * participation. Dessous, le code de gestion à saisir et l'annulation ; une fois le trajet annulé,
  * la bande rouge le dit en tête, et il ne reste rien à saisir.
  */
-function ManagedTrip({ trip, justCancelled, pending, onCancel }: ManagedTripProps) {
+function ManagedTrip({ trip, justCancelled, pending, error, onEdit, onCancel }: ManagedTripProps) {
   const titleId = useId();
-  const codeId = useId();
-  const hintId = useId();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const [code, setCode] = useState('');
+  const [missing, setMissing] = useState(false);
   const managementCode = code.trim();
+
+  function edit(value: string) {
+    setCode(value);
+    setMissing(false);
+    onEdit();
+  }
+
+  /** Sans code, la question ne s'ouvre pas : le conducteur est invité à le saisir. */
+  function canAsk(): boolean {
+    setMissing(managementCode === '');
+    return managementCode !== '';
+  }
 
   // Le bouton « Annuler mon trajet » a disparu avec l'annulation : le focus passe au trajet.
   useEffect(() => {
@@ -92,9 +122,12 @@ function ManagedTrip({ trip, justCancelled, pending, onCancel }: ManagedTripProp
           {formatPlace(trip.departurePlace)} → {SITE_LABELS[trip.site]}
         </p>
         <p className="ticket-terms">
-          <span>
-            {formatRemainingSeats(trip.remainingSeats)} sur {trip.seats}
-          </span>
+          {/* Un trajet annulé n'a plus de places à proposer. */}
+          {!trip.cancelled && (
+            <span>
+              {formatRemainingSeats(trip.remainingSeats)} sur {trip.seats}
+            </span>
+          )}
           <span>{formatPrice(trip.pricePerSeat)} par place</span>
         </p>
       </header>
@@ -120,31 +153,24 @@ function ManagedTrip({ trip, justCancelled, pending, onCancel }: ManagedTripProp
             onSubmit={(event: FormEvent<HTMLFormElement>) => event.preventDefault()}
             className="publish-form"
           >
-            <div className="publish-field">
-              <Label htmlFor={codeId}>Votre code de gestion</Label>
-              <Input
-                id={codeId}
-                name="managementCode"
-                autoCapitalize="off"
-                autoCorrect="off"
-                autoComplete="off"
-                spellCheck={false}
-                aria-describedby={hintId}
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                className="code-input"
-              />
-              <p id={hintId} className="ticket-note">
-                C’est le code reçu à la publication de votre trajet.
-              </p>
-            </div>
+            <CodeField
+              label="Votre code de gestion"
+              name="managementCode"
+              hint="C’est le code reçu à la publication de votre trajet."
+              value={code}
+              onChange={edit}
+              error={
+                missing ? CODE_MISSING_MESSAGE : error == null ? undefined : codeErrorMessage(error)
+              }
+              invalid={missing || isCodeRefusal(error)}
+            />
             <ConfirmCancellation
               trigger="Annuler mon trajet"
               title="Annuler votre trajet ?"
               description="Il ne sera plus proposé aux supporters, et vos passagers le verront annulé. Une annulation est définitive."
               keep="Garder mon trajet"
               pending={pending}
-              canAsk={() => managementCode !== ''}
+              canAsk={canAsk}
               onConfirm={() => onCancel(managementCode)}
             />
           </form>

@@ -7,7 +7,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { http } from 'msw';
 import { fixture, type StoredBooking, type StoredTrip } from '@/mocks/fixture';
+import { problem } from '@/mocks/handlers';
+import { server } from '@/mocks/node';
 import { renderRoute, trackRequests, writes } from '@/test/utils';
 
 const NOW = new Date('2026-11-08T15:00:00.000Z');
@@ -160,5 +163,97 @@ describe('ManageTripPage', () => {
       await screen.findByRole('region', { name: 'Aucun départ pour l’instant vers Diamniadio' }),
     ).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'Départs vers Diamniadio' })).toBeNull();
+  });
+
+  it.each([
+    ['unknown', '/trajets/0199f5c2-0000-7000-8000-0000000000ff/gestion'],
+    ['malformed', '/trajets/pas-un-identifiant/gestion'],
+  ])(
+    '007-AS7: says a management link that designates no trip is not found (%s link)',
+    async (_kind, link) => {
+      seedOnly(pikineTomorrow);
+      const seen = trackRequests();
+      await renderRoute({ initialEntries: [link] });
+
+      // Dès l'ouverture, avant toute saisie : aucun code n'est demandé.
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Ce trajet est introuvable. Vérifiez votre lien de gestion.',
+      );
+      expect(screen.queryByRole('region', { name: 'Votre trajet' })).toBeNull();
+      expect(screen.queryByRole('textbox')).toBeNull();
+      expect(writes(seen)).toEqual([]);
+    },
+  );
+
+  it('007-AS7: explains each refusal of the management link and code in French', async () => {
+    seedOnly(pikineTomorrow);
+    const user = userEvent.setup();
+    const seen = trackRequests();
+    const { router } = await renderRoute({ initialEntries: [MANAGEMENT_LINK] });
+    const trip = await tripRegion();
+    const code = within(trip).getByLabelText('Votre code de gestion');
+    const alert = (message: string) =>
+      waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message));
+    /** Demande l'annulation, puis la confirme. */
+    const cancel = async () => {
+      await user.click(within(trip).getByRole('button', { name: 'Annuler mon trajet' }));
+      await user.click(
+        within(await screen.findByRole('alertdialog')).getByRole('button', {
+          name: 'Oui, annuler',
+        }),
+      );
+    };
+    /** La fausse API refuse la prochaine annulation avec ce statut et ce code. */
+    const refuseNextCancellation = (status: number, errorCode: string) =>
+      server.use(
+        http.post(
+          '*/api/trips/:tripId/cancellation',
+          () => problem(status, errorCode, 'Refused.'),
+          {
+            once: true,
+          },
+        ),
+      );
+
+    // Sans code, la question ne s'ouvre pas : le conducteur est invité à le saisir.
+    await user.click(within(trip).getByRole('button', { name: 'Annuler mon trajet' }));
+    await alert('Saisissez votre code.');
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(writes(seen)).toEqual([]);
+
+    // Un autre code que celui du trajet (403 MANAGEMENT_CODE_INVALID).
+    await user.type(code, 'other-code');
+    expect(screen.queryByRole('alert')).toBeNull();
+    await cancel();
+    await alert('Ce code de gestion n’est pas le bon.');
+    expect(code).toHaveAttribute('aria-invalid', 'true');
+
+    // Le message s'efface dès que le conducteur corrige son code.
+    await user.type(code, '-2');
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    refuseNextCancellation(400, 'VALIDATION_FAILED');
+    await cancel();
+    await alert('Saisissez votre code.');
+
+    await user.type(code, '3');
+    refuseNextCancellation(404, 'TRIP_NOT_FOUND');
+    await cancel();
+    await alert('Ce trajet est introuvable. Vérifiez votre lien de gestion.');
+
+    await user.type(code, '4');
+    refuseNextCancellation(500, 'INTERNAL_ERROR');
+    await cancel();
+    await alert('Une erreur est survenue, réessayez.');
+
+    // Rien n'est annulé : le trajet tient, et reste dans les départs vers Diamniadio.
+    expect(trip.querySelector('[data-part="trip-status"]')).toBeEmptyDOMElement();
+    expect(fixture.trips[0]?.cancelledAt).toBeUndefined();
+    await router.navigate({ to: '/', search: { site: 'diamniadio' } });
+    expect(
+      within(await screen.findByRole('list', { name: 'Départs vers Diamniadio' })).getByRole(
+        'listitem',
+      ),
+    ).toHaveTextContent('Pikine → Diamniadio');
   });
 });

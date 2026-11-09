@@ -6,7 +6,10 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { http } from 'msw';
 import { fixture, type StoredBooking, type StoredTrip } from '@/mocks/fixture';
+import { problem } from '@/mocks/handlers';
+import { server } from '@/mocks/node';
 import { renderRoute, trackRequests, writes } from '@/test/utils';
 
 const NOW = new Date('2026-11-08T15:00:00.000Z');
@@ -199,5 +202,67 @@ describe('BookingPage', () => {
         'Conducteur : 77 654 32 10',
       ].join('\n'),
     );
+  });
+
+  it('007-AS7: explains each refusal of a booking code in French', async () => {
+    seed(pikineTomorrow, awaBooking);
+    const user = userEvent.setup();
+    const seen = trackRequests();
+    await renderRoute({ initialEntries: ['/reservation'] });
+    const code = screen.getByLabelText('Votre code de réservation');
+    const search = screen.getByRole('button', { name: 'Voir ma réservation' });
+    const alert = (message: string) =>
+      waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(message));
+    /** La fausse API refuse la prochaine consultation avec ce statut et ce code. */
+    const refuseNextSearch = (status: number, errorCode: string) =>
+      server.use(
+        http.get('*/api/bookings/:bookingCode', () => problem(status, errorCode, 'Refused.'), {
+          once: true,
+        }),
+      );
+
+    // Un champ vide ne part pas : le supporter est invité à saisir son code.
+    await user.click(search);
+    await alert('Saisissez votre code.');
+    expect(seen).toEqual([]);
+
+    // Un code inconnu de l'API (404 BOOKING_NOT_FOUND).
+    await user.type(code, 'NO-SUCH-CODE');
+    expect(screen.queryByRole('alert')).toBeNull();
+    await user.click(search);
+    await alert('Aucune réservation ne correspond à ce code. Vérifiez-le.');
+    expect(code).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('region', { name: 'Votre billet' })).toBeNull();
+
+    // Le message s'efface dès que le supporter corrige son code.
+    await user.type(code, '-2');
+    expect(screen.queryByRole('alert')).toBeNull();
+
+    refuseNextSearch(400, 'VALIDATION_FAILED');
+    await user.click(search);
+    await alert('Saisissez votre code.');
+
+    await user.type(code, '3');
+    refuseNextSearch(500, 'INTERNAL_ERROR');
+    await user.click(search);
+    await alert('Une erreur est survenue, réessayez.');
+
+    // Une annulation refusée s'explique aussi, et rien n'est annulé.
+    await user.clear(code);
+    const ticket = await findTicket(user, 'AWA-2026');
+    server.use(
+      http.post(
+        '*/api/bookings/:bookingCode/cancellation',
+        () => problem(404, 'BOOKING_NOT_FOUND', 'Refused.'),
+        { once: true },
+      ),
+    );
+    await user.click(within(ticket).getByRole('button', { name: 'Annuler ma réservation' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Oui, annuler' }),
+    );
+    await alert('Aucune réservation ne correspond à ce code. Vérifiez-le.');
+    expect(statusOf(ticket)).toHaveTextContent('Réservation active');
+    expect(fixture.bookings.find((b) => b.bookingCode === 'AWA-2026')?.cancelledAt).toBeUndefined();
   });
 });
