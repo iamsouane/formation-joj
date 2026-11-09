@@ -1,0 +1,129 @@
+/**
+ * Retrouver sa réservation depuis son téléphone, montée par la route `/reservation` sur la fausse
+ * API : le code saisi, ce qui part sur le réseau, puis le billet et sa mention. L'horloge est
+ * figée au 8 novembre 2026 à 15 h à Dakar (UTC+0) ; seule `Date` est simulée.
+ */
+import { screen, within } from '@testing-library/react';
+import userEvent, { type UserEvent } from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fixture, type StoredBooking, type StoredTrip } from '@/mocks/fixture';
+import { renderRoute, trackRequests } from '@/test/utils';
+
+const NOW = new Date('2026-11-08T15:00:00.000Z');
+
+/** Le trajet du scénario : Pikine → Diamniadio, demain à 8 h, 1 000 F par place. */
+const pikineTomorrow: StoredTrip = {
+  id: '0199f5c2-0000-7000-8000-000000000701',
+  departurePlace: 'Pikine',
+  site: 'diamniadio',
+  departureAt: '2026-11-09T08:00:00.000Z',
+  seats: 3,
+  pricePerSeat: 1000,
+  driverPhone: '776543210',
+  managementCode: 'pikine-tomorrow-code',
+};
+
+const awaBooking: StoredBooking = {
+  id: '0199f5c2-0000-7000-8000-000000000711',
+  tripId: pikineTomorrow.id,
+  passengerName: 'Awa',
+  passengerPhone: '771234567',
+  bookingCode: 'AWA-2026',
+};
+
+function seed(trip: StoredTrip, ...bookings: StoredBooking[]) {
+  fixture.trips.push({ ...trip });
+  fixture.bookings.push(...bookings.map((booking) => ({ ...booking })));
+}
+
+/** Saisit le code et demande la réservation ; renvoie le billet affiché. */
+async function findTicket(user: UserEvent, bookingCode: string) {
+  await user.type(screen.getByLabelText('Votre code de réservation'), bookingCode);
+  await user.click(screen.getByRole('button', { name: 'Voir ma réservation' }));
+  return screen.findByRole('region', { name: 'Votre billet' });
+}
+
+const statusOf = (ticket: HTMLElement) => ticket.querySelector('[data-part="ticket-status"]');
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ['Date'], now: NOW });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
+
+describe('BookingPage', () => {
+  it('007-AS1: finds a booking from the home page with its code', async () => {
+    seed(pikineTomorrow, awaBooking);
+    const user = userEvent.setup();
+    const seen = trackRequests();
+    const { router } = await renderRoute({ initialEntries: ['/'] });
+
+    // L'accès est visible sur l'accueil, et mène à la page où le code se saisit.
+    await user.click(screen.getByRole('link', { name: 'Retrouver ma réservation' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Ma réservation' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/reservation');
+
+    const ticket = await findTicket(user, 'AWA-2026');
+
+    expect(seen.filter((request) => request.path.startsWith('/api/bookings'))).toEqual([
+      { method: 'GET', path: '/api/bookings/AWA-2026', body: undefined },
+    ]);
+    expect(ticket.querySelector('[data-part="ticket-route"]')).toHaveTextContent(
+      'Pikine → Diamniadio',
+    );
+    expect(ticket.querySelector('[data-part="ticket-time"]')).toHaveTextContent(
+      /08:00\s*lun\. 9 nov\./,
+    );
+    expect(ticket).toHaveTextContent('1 000 FCFA par place');
+    expect(ticket.querySelector('[data-part="ticket-code"]')).toHaveTextContent('AWA-2026');
+    expect(within(ticket).getByRole('link', { name: '77 654 32 10' })).toHaveAttribute(
+      'href',
+      'tel:+221776543210',
+    );
+    expect(statusOf(ticket)).toHaveTextContent('Réservation active');
+    // Le code se saisit : il n'entre jamais dans l'adresse de la page.
+    expect(router.state.location.href).not.toContain('AWA-2026');
+  });
+
+  it('007-AS2: shows a cancelled booking and a cancelled trip, without offering to cancel', async () => {
+    seed(pikineTomorrow, { ...awaBooking, cancelledAt: '2026-11-08T12:00:00.000Z' });
+    seed(
+      {
+        ...pikineTomorrow,
+        id: '0199f5c2-0000-7000-8000-000000000702',
+        departurePlace: 'Rufisque',
+        managementCode: 'rufisque-code',
+        cancelledAt: '2026-11-08T13:00:00.000Z',
+      },
+      {
+        ...awaBooking,
+        id: '0199f5c2-0000-7000-8000-000000000712',
+        tripId: '0199f5c2-0000-7000-8000-000000000702',
+        bookingCode: 'AWA-RUFISQUE',
+      },
+    );
+    const user = userEvent.setup();
+    await renderRoute({ initialEntries: ['/reservation'] });
+
+    const cancelled = await findTicket(user, 'AWA-2026');
+
+    expect(statusOf(cancelled)).toHaveTextContent('Réservation annulée');
+    expect(statusOf(cancelled)).not.toHaveTextContent('Réservation active');
+    expect(screen.queryByRole('button', { name: 'Annuler ma réservation' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Envoyer sur WhatsApp' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Saisir un autre code' }));
+    const tripCancelled = await findTicket(user, 'AWA-RUFISQUE');
+
+    expect(statusOf(tripCancelled)).toHaveTextContent('Trajet annulé par le conducteur');
+    expect(tripCancelled.querySelector('[data-part="ticket-route"]')).toHaveTextContent(
+      'Rufisque → Diamniadio',
+    );
+    expect(screen.queryByRole('button', { name: 'Annuler ma réservation' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Envoyer sur WhatsApp' })).toBeNull();
+  });
+});

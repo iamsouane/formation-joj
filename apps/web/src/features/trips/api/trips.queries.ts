@@ -12,6 +12,7 @@ import { tripsApi } from './trips.api';
 export const tripKeys = {
   all: ['trips'] as const,
   upcoming: (site: TripSite) => [...tripKeys.all, 'upcoming', site] as const,
+  booking: (bookingCode: string) => [...tripKeys.all, 'booking', bookingCode] as const,
 };
 
 /**
@@ -36,6 +37,19 @@ export function useUpcomingTrips(site: TripSite) {
     return () => window.removeEventListener('pageshow', onPageShow);
   }, [queryClient]);
   return useQuery(upcomingTripsQueryOptions(site));
+}
+
+/**
+ * La réservation d'un code, une fois le code saisi. Jamais servie du cache : un billet dit où en
+ * est la réservation maintenant, et elle a pu être annulée entre deux consultations.
+ */
+export function useBooking(bookingCode: string | undefined) {
+  return useQuery({
+    queryKey: tripKeys.booking(bookingCode ?? ''),
+    queryFn: ({ signal }) => tripsApi.booking(bookingCode ?? '', signal),
+    enabled: bookingCode !== undefined,
+    staleTime: 0,
+  });
 }
 
 export function useBookSeat() {

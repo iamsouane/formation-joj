@@ -1,10 +1,17 @@
-import type { TripSite } from '@joj/shared';
+import type { BookingStatus, TripSite } from '@joj/shared';
 
 /** Le nom d'un site tel que le supporter le lit. */
 export const SITE_LABELS: Record<TripSite, string> = {
   dakar: 'Dakar',
   diamniadio: 'Diamniadio',
   saly: 'Saly',
+};
+
+/** Où en est une réservation, tel que le supporter le lit sur son billet. */
+export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
+  active: 'Réservation active',
+  cancelled: 'Réservation annulée',
+  trip_cancelled: 'Trajet annulé par le conducteur',
 };
 
 /** Dakar vit à l'heure de Dakar, quel que soit le fuseau du téléphone. */

@@ -1687,9 +1687,17 @@ body {
  * Publier un trajet (publish-page.tsx). Le bandeau est celui de l'accueil ; dessous, l'annonce
  * se colle dans une bulle comme celles du logo : un trait noir et le coin haut droit replié.
  */
+/* Sous les sites : proposer un trajet, retrouver sa réservation. Côte à côte s'il y a la place. */
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.5rem;
+  margin-top: 0.9rem;
+}
+
 .hero-drive-link {
   display: inline-block;
-  margin-top: 0.9rem;
+  padding-block: 0.2rem;
   font-weight: 700;
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -1773,7 +1781,8 @@ body {
   }
 }
 
-.published-trip-terms {
+.published-trip-terms,
+.ticket-terms {
   display: flex;
   flex-wrap: wrap;
   gap: 0.35rem 1rem;
@@ -1984,4 +1993,70 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+
+/*
+ * Retrouver sa réservation (booking-page.tsx). Le code se saisit en grand, dans la graisse du code
+ * imprimé sur le billet.
+ */
+.code-input {
+  height: 3.5rem;
+  border-width: 2px;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+/* Le titre d'un billet reçoit le focus à son arrivée, pour la lecture : il n'a pas à être cerclé. */
+.ticket-title:focus {
+  outline: none;
+}
+
+/*
+ * Le billet consulté (booking-ticket.tsx). En tête, la bande de validité, bord à bord : verte tant
+ * que la réservation tient, rouge une fois annulée ; les mots le disent aussi. Elle glisse depuis
+ * le bord du billet à son arrivée et quand la réservation change d'état, seul mouvement du billet.
+ */
+.ticket-status {
+  order: -1;
+  margin: -1.1rem -1.1rem 0;
+  padding: 0.6rem 1.1rem;
+  background: var(--joj-green);
+  color: var(--joj-white);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  animation: ticket-status-enter 280ms var(--ease-out-soft) both;
+}
+
+.booking-ticket:not([data-status='active']) .ticket-status {
+  background: var(--destructive);
+}
+
+.booking-ticket:not([data-status='active']) :is(.ticket-time, .ticket-route) {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+  text-decoration-thickness: 0.09em;
+}
+
+@keyframes ticket-status-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+@media (min-width: 640px) {
+  .ticket-status {
+    margin: -1.5rem -1.5rem 0;
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticket-status {
+    animation: none;
+  }
 }

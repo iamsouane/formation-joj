@@ -57,9 +57,15 @@ export function Hero({ site, fold, runTarget, onRunEnd, onSiteChange }: HeroProp
           <SitePicker value={site} onChange={onSiteChange} />
           {/* Le conducteur, lui, ne cherche pas de place : il en propose. */}
           {!folded && (
-            <Link to="/publier" className="hero-drive-link">
-              Vous conduisez ? Proposez un trajet
-            </Link>
+            <p className="hero-links">
+              <Link to="/publier" className="hero-drive-link">
+                Vous conduisez ? Proposez un trajet
+              </Link>
+              {/* Le supporter qui a déjà réservé revient avec son code. */}
+              <Link to="/reservation" className="hero-drive-link">
+                Retrouver ma réservation
+              </Link>
+            </p>
           )}
         </div>
       </div>

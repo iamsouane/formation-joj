@@ -1,6 +1,8 @@
 import {
   type BookingConfirmationResponse,
   bookingConfirmationSchema,
+  type BookingDetailsResponse,
+  bookingDetailsSchema,
   type BookSeatInput,
   type PublishedTripResponse,
   publishedTripSchema,
@@ -28,6 +30,13 @@ export const tripsApi = {
       method: 'POST',
       body: input,
       schema: bookingConfirmationSchema,
+    }),
+
+  /** La réservation, son statut et son trajet. Le code vient d'une saisie : il est encodé. */
+  booking: (bookingCode: string, signal?: AbortSignal) =>
+    api.request<BookingDetailsResponse>(`/bookings/${encodeURIComponent(bookingCode)}`, {
+      schema: bookingDetailsSchema,
+      signal,
     }),
 
   publish: (input: PublishTripInput) =>
