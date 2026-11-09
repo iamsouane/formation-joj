@@ -11,6 +11,7 @@ import { GetTrip } from './use-cases/get-trip';
 import { ListUpcomingTrips } from './use-cases/list-upcoming-trips';
 import { PublishTrip } from './use-cases/publish-trip';
 import { PublishTripFromMessage } from './use-cases/publish-trip-from-message';
+import { SeedDemoTrips } from './use-cases/seed-demo-trips';
 
 const HOUR = 60 * 60 * 1000;
 const inHours = (hours: number) => new Date(Date.now() + hours * HOUR);
@@ -365,3 +366,47 @@ function dakarTimeAt8(days: number): string {
 }
 
 const tomorrowAt8 = () => dakarTimeAt8(1);
+
+describe('demo trips (application layer)', () => {
+  const NOW = new Date('2026-11-09T12:30:00.000Z');
+
+  function setupDemo() {
+    const trips = new InMemoryTripRepository();
+    return { trips, seedDemoTrips: new SeedDemoTrips(trips) };
+  }
+
+  it('seeds an empty base with upcoming trips to the three sites, some seats already booked', async () => {
+    const { trips, seedDemoTrips } = setupDemo();
+
+    const created = await seedDemoTrips.execute(NOW);
+
+    const bySite = await Promise.all(TRIP_SITES.map((site) => trips.listUpcomingBySite(site, NOW)));
+    const all = bySite.flat();
+    expect(created).toBe(all.length);
+    expect(all.length).toBeGreaterThanOrEqual(6);
+    expect(all.length).toBeLessThanOrEqual(8);
+    for (const listed of bySite) expect(listed.length).toBeGreaterThanOrEqual(2);
+    // Des dates relatives : le premier départ est demain, à l'heure de Dakar (UTC+0).
+    const departures = all.map((trip) => trip.departureAt.toISOString()).sort();
+    expect(departures[0]).toBe('2026-11-10T07:30:00.000Z');
+    expect(departures.at(-1)! <= '2026-11-12T23:59:59.999Z').toBe(true);
+    // Quelques places déjà réservées, un trajet complet, et des trajets encore vides.
+    expect(all.some((trip) => trip.remainingSeats === 0)).toBe(true);
+    expect(all.some((trip) => trip.remainingSeats > 0 && trip.remainingSeats < trip.seats)).toBe(
+      true,
+    );
+    expect(all.some((trip) => trip.remainingSeats === trip.seats)).toBe(true);
+    expect(new Set(all.map((trip) => trip.managementCode)).size).toBe(all.length);
+  });
+
+  it('seeds nothing as soon as the base holds a trip', async () => {
+    const { trips, seedDemoTrips } = setupDemo();
+    await new PublishTrip(trips).execute(tripTo('saly', new Date(NOW.getTime() + 48 * HOUR)));
+
+    expect(await seedDemoTrips.execute(NOW)).toBe(0);
+    expect(await seedDemoTrips.execute(NOW)).toBe(0);
+
+    expect(await trips.listUpcomingBySite('saly', NOW)).toHaveLength(1);
+    expect(await trips.listUpcomingBySite('diamniadio', NOW)).toEqual([]);
+  });
+});

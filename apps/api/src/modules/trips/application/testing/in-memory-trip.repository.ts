@@ -12,6 +12,10 @@ export class InMemoryTripRepository extends TripRepository {
     this.rows.set(trip.id, trip);
   }
 
+  async hasTrips(): Promise<boolean> {
+    return this.rows.size > 0;
+  }
+
   async listUpcomingBySite(site: TripSite, now: Date): Promise<Trip[]> {
     return [...this.rows.values()]
       .filter((trip) => !trip.isCancelled)

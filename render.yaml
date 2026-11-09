@@ -1,0 +1,40 @@
+# Blueprint Render : un seul service web gratuit et sa base Postgres gratuite.
+# Render > New > Blueprint, puis choisir ce dépôt et cette branche. Voir « Déployer sur Render »
+# dans le README.
+services:
+  - type: web
+    name: covoiturage-joj
+    runtime: node
+    plan: free
+    region: frankfurt
+    # Node 24 est lu dans .nvmrc. pnpm est activé par corepack, à la version du champ
+    # `packageManager` de package.json. `--prod=false` : le build a besoin des devDependencies
+    # (Vite, Nest CLI), même avec NODE_ENV=production. `pnpm build` construit le front
+    # (apps/web/dist) puis l'API (apps/api/dist) ; les schémas partagés n'ont pas d'étape de build.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    # Ce que fait `pnpm start`, sans dépendre de pnpm au démarrage : appliquer les migrations (et
+    # charger la démo dans une base vide), puis lancer l'API, qui sert aussi le front, sur $PORT.
+    startCommand: node apps/api/dist/prepare-database.js && node apps/api/dist/main.js
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: covoiturage-joj-db
+          property: connectionString
+      # Les trajets de démonstration, chargés au démarrage seulement si la base est vide.
+      - key: SEED_DEMO_DATA
+        value: 'true'
+      # La clé de l'API Claude ne vit pas dans le dépôt : Render la demande à la création.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+databases:
+  - name: covoiturage-joj-db
+    plan: free
+    region: frankfurt
+    databaseName: joj
+    user: joj
+    postgresMajorVersion: '17'

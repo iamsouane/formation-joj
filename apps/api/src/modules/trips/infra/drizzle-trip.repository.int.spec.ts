@@ -167,3 +167,20 @@ describe('DrizzleTripRepository (in-memory PGlite, migrations applied)', () => {
     });
   });
 });
+
+describe('DrizzleTripRepository.hasTrips (its own empty base)', () => {
+  it('tells an empty base from one that holds a trip, cancelled or departed', async () => {
+    const connection = openDatabase({ pgliteDataDir: 'memory://' });
+    try {
+      await connection.migrate();
+      const repository = new DrizzleTripRepository(connection.db);
+      expect(await repository.hasTrips()).toBe(false);
+
+      await repository.insert(tripTo('saly', at('2026-11-01T08:00:00.000Z')));
+
+      expect(await repository.hasTrips()).toBe(true);
+    } finally {
+      await connection.close();
+    }
+  });
+});

@@ -14,6 +14,8 @@ export interface BookedTrip {
  */
 export abstract class TripRepository {
   abstract insert(trip: Trip): Promise<void>;
+  /** Vrai dès que la base contient un trajet, même annulé ou déjà parti. */
+  abstract hasTrips(): Promise<boolean>;
   /**
    * Les trajets non annulés vers `site` qui partent strictement après `now`, triés par heure de
    * départ. Dans tous les trajets renvoyés, `passengerPhones` ne compte que les réservations non annulées.

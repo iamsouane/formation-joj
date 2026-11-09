@@ -22,6 +22,6 @@ export class PublishTrip {
 }
 
 /** Secret remis au seul conducteur : 12 caractères tirés au hasard, sûrs dans une URL. */
-function newManagementCode(): string {
+export function newManagementCode(): string {
   return randomBytes(9).toString('base64url');
 }

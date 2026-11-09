@@ -9,6 +9,12 @@ describe('AppConfig', () => {
     expect(config.get('PGLITE_DATA_DIR')).toBe('.data/pglite');
   });
 
+  it('seeds the demo data only when asked to', () => {
+    expect(AppConfig.fromEnv({}).get('SEED_DEMO_DATA')).toBe(false);
+    expect(AppConfig.fromEnv({ SEED_DEMO_DATA: 'true' }).get('SEED_DEMO_DATA')).toBe(true);
+    expect(AppConfig.fromEnv({ SEED_DEMO_DATA: 'false' }).get('SEED_DEMO_DATA')).toBe(false);
+  });
+
   it('accepts a PostgreSQL URL', () => {
     const config = AppConfig.fromEnv({ DATABASE_URL: 'postgres://joj:joj@localhost:5432/joj' });
     expect(config.get('DATABASE_URL')).toBe('postgres://joj:joj@localhost:5432/joj');

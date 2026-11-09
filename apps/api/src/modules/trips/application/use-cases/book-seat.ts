@@ -37,6 +37,6 @@ export class BookSeat {
 }
 
 /** Secret remis au seul supporter : 12 caractères tirés au hasard, sûrs dans une URL. */
-function newBookingCode(): string {
+export function newBookingCode(): string {
   return randomBytes(9).toString('base64url');
 }

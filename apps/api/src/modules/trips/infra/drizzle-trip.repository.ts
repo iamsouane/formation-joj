@@ -22,6 +22,11 @@ export class DrizzleTripRepository extends TripRepository {
     await this.db.insert(trips).values(toRow(trip));
   }
 
+  async hasTrips(): Promise<boolean> {
+    const rows = await this.db.select({ id: trips.id }).from(trips).limit(1);
+    return rows.length > 0;
+  }
+
   async listUpcomingBySite(site: TripSite, now: Date): Promise<Trip[]> {
     const rows = await this.db
       .select()

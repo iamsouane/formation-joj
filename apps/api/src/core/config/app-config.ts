@@ -7,6 +7,11 @@ const envSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }).optional(),
   /** Dossier des données PGlite, relatif à apps/api ; `memory://` pour une base en mémoire. */
   PGLITE_DATA_DIR: z.string().min(1).default('.data/pglite'),
+  /**
+   * `true` : l'étape de préparation de la base (`pnpm start`) charge les trajets de démonstration,
+   * seulement si la base ne contient encore aucun trajet. Absent : rien n'est chargé.
+   */
+  SEED_DEMO_DATA: z.stringbool().default(false),
   /** Clé de l'API Claude, qui lit les annonces des conducteurs. Absente : l'assistant est indisponible. */
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
 });
