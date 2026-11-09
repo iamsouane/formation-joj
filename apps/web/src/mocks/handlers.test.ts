@@ -7,6 +7,7 @@ import {
   bookingDetailsSchema,
   publishedTripSchema,
   type TripDraft,
+  tripDetailsSchema,
   tripListSchema,
 } from '@joj/shared';
 import { describe, expect, it } from 'vitest';
@@ -281,6 +282,49 @@ describe('mock cancellations API', () => {
     const unknown = await cancelTrip('0199f5c2-0000-7000-8000-0000000000ff', 'abc');
     expect(unknown.status).toBe(404);
     expect(await unknown.json()).toMatchObject({ code: 'TRIP_NOT_FOUND' });
+  });
+
+  it('007-AS5: shows a trip (200) with its remaining seats and whether it is cancelled', async () => {
+    await bookAwa(pikineToDiamniadio.id);
+
+    const response = await call(`/api/trips/${pikineToDiamniadio.id}`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      id: pikineToDiamniadio.id,
+      departurePlace: 'Pikine',
+      site: 'diamniadio',
+      departureAt: pikineToDiamniadio.departureAt,
+      seats: 3,
+      remainingSeats: 2,
+      pricePerSeat: 1000,
+      cancelled: false,
+    });
+
+    await cancelTrip(pikineToDiamniadio.id, pikineToDiamniadio.managementCode);
+
+    const cancelled = await call(`/api/trips/${pikineToDiamniadio.id}`);
+    expect(tripDetailsSchema.parse(await cancelled.json()).cancelled).toBe(true);
+  });
+
+  it('007-AS5: never exposes the driver phone or the management code of a trip', async () => {
+    const response = await call(`/api/trips/${pikineToDiamniadio.id}`);
+
+    expect(response.status).toBe(200);
+    const text = await response.text();
+    const body: unknown = JSON.parse(text);
+    expect(body).not.toHaveProperty('driverPhone');
+    expect(body).not.toHaveProperty('managementCode');
+    expect(text).not.toContain(pikineToDiamniadio.driverPhone);
+    expect(text).not.toContain(pikineToDiamniadio.managementCode);
+  });
+
+  it('007-AS7: rejects the reading of an unknown trip with a 404 TRIP_NOT_FOUND problem', async () => {
+    const response = await call('/api/trips/0199f5c2-0000-7000-8000-0000000000ff');
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get('content-type')).toContain('application/problem+json');
+    expect(await response.json()).toMatchObject({ code: 'TRIP_NOT_FOUND', status: 404 });
   });
 
   it('003-AS7: rejects a booking on a cancelled trip with a 409 TRIP_CANCELLED problem', async () => {

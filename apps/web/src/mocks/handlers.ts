@@ -13,6 +13,7 @@ import {
   TRIP_DRAFT_FIELDS,
   tripDraftSchema,
   TRIP_SITES,
+  type TripDetailsResponse,
   type TripResponse,
   tripIdParamSchema,
   type TripSite,
@@ -177,6 +178,21 @@ export const handlers: RequestHandler[] = [
       .sort(byDeparture)
       .map(toPublic);
     return HttpResponse.json(upcoming);
+  }),
+
+  http.get('*/api/trips/:tripId', async ({ params }) => {
+    const failure = await gate('GET', '/api/trips/:tripId');
+    if (failure) return failure;
+    const param = tripIdParamSchema.safeParse(params);
+    if (!param.success) return validationFailed(param.error);
+    const { tripId } = param.data;
+
+    const trip = fixture.trips.find((candidate) => candidate.id === tripId);
+    if (trip === undefined) return tripNotFound(tripId);
+    return HttpResponse.json({
+      ...toPublic(trip),
+      cancelled: trip.cancelledAt !== undefined,
+    } satisfies TripDetailsResponse);
   }),
 
   http.post('*/api/trips', async ({ request }) => {

@@ -112,6 +112,13 @@ export type PublishedTripResponse = z.infer<typeof publishedTripSchema>;
 
 export const tripListSchema = z.array(tripSchema);
 
+/**
+ * Un trajet lu par son identifiant, depuis son lien de gestion : ce que la liste en montre, et
+ * s'il est annulé. Ni le téléphone du conducteur, ni le code de gestion.
+ */
+export const tripDetailsSchema = tripSchema.extend({ cancelled: z.boolean() });
+export type TripDetailsResponse = z.infer<typeof tripDetailsSchema>;
+
 export const BOOKING_PASSENGER_NAME_MAX_LENGTH = 100;
 export const BOOKING_PASSENGER_PHONE_MAX_LENGTH = 20;
 

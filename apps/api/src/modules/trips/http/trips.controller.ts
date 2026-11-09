@@ -9,6 +9,8 @@ import {
   publishedTripSchema,
   publishTripFromMessageSchema,
   publishTripSchema,
+  type TripDetailsResponse,
+  tripDetailsSchema,
   type TripResponse,
   tripIdParamSchema,
   tripSchema,
@@ -17,6 +19,7 @@ import {
 import { createZodDto, ZodSerializerDto } from 'nestjs-zod';
 import { BookSeat } from '../application/use-cases/book-seat';
 import { CancelTrip } from '../application/use-cases/cancel-trip';
+import { GetTrip } from '../application/use-cases/get-trip';
 import { ListUpcomingTrips } from '../application/use-cases/list-upcoming-trips';
 import { PublishTrip } from '../application/use-cases/publish-trip';
 import { PublishTripFromMessage } from '../application/use-cases/publish-trip-from-message';
@@ -26,6 +29,7 @@ class PublishTripDto extends createZodDto(publishTripSchema) {}
 class PublishTripFromMessageDto extends createZodDto(publishTripFromMessageSchema) {}
 class UpcomingTripsQueryDto extends createZodDto(upcomingTripsQuerySchema) {}
 class TripDto extends createZodDto(tripSchema) {}
+class TripDetailsDto extends createZodDto(tripDetailsSchema) {}
 class PublishedTripDto extends createZodDto(publishedTripSchema) {}
 class TripIdParamDto extends createZodDto(tripIdParamSchema) {}
 class BookSeatDto extends createZodDto(bookSeatSchema) {}
@@ -40,6 +44,7 @@ export class TripsController {
     private readonly publishTrip: PublishTrip,
     private readonly publishTripFromMessage: PublishTripFromMessage,
     private readonly listUpcomingTrips: ListUpcomingTrips,
+    private readonly getTrip: GetTrip,
     private readonly bookSeat: BookSeat,
     private readonly cancelTrip: CancelTrip,
   ) {}
@@ -49,6 +54,17 @@ export class TripsController {
   @ZodSerializerDto([TripDto])
   async list(@Query() { site }: UpcomingTripsQueryDto): Promise<TripResponse[]> {
     return (await this.listUpcomingTrips.execute(site)).map(toResponse);
+  }
+
+  /**
+   * Un trajet lu par son identifiant, celui de son lien de gestion : ce que la liste en montre, et
+   * s'il est annulé. Jamais le téléphone du conducteur ni le code de gestion.
+   */
+  @Get(':tripId')
+  @ZodSerializerDto(TripDetailsDto)
+  async show(@Param() { tripId }: TripIdParamDto): Promise<TripDetailsResponse> {
+    const trip = await this.getTrip.execute(tripId);
+    return { ...toResponse(trip), cancelled: trip.isCancelled };
   }
 
   /** Le trajet publié et son code de gestion, remis au seul conducteur. */

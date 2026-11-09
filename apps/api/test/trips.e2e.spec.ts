@@ -5,6 +5,7 @@ import {
   publishedTripSchema,
   TRIP_SITES,
   type TripDraft,
+  tripDetailsSchema,
   tripListSchema,
 } from '@joj/shared';
 import request from 'supertest';
@@ -326,6 +327,50 @@ describe('/api/trips (e2e)', () => {
     it('003-AS6: rejects the cancellation of an unknown trip (404 TRIP_NOT_FOUND)', async () => {
       const response = await cancelTrip('0199f5c2-0000-7000-8000-0000000000ff', 'abc').expect(404);
       expect(response.body).toMatchObject({ code: 'TRIP_NOT_FOUND' });
+    });
+
+    it('007-AS5: shows a trip (200) with its remaining seats and whether it is cancelled', async () => {
+      const trip = await publish();
+      await bookAwa(trip.id);
+
+      const response = await api().get(`/api/trips/${trip.id}`).expect(200);
+
+      expect(response.body).toEqual({
+        id: trip.id,
+        departurePlace: 'Pikine',
+        site: 'diamniadio',
+        departureAt: trip.departureAt,
+        seats: 3,
+        remainingSeats: 2,
+        pricePerSeat: 1000,
+        cancelled: false,
+      });
+
+      await cancelTrip(trip.id, trip.managementCode).expect(204);
+
+      const cancelled = await api().get(`/api/trips/${trip.id}`).expect(200);
+      expect(tripDetailsSchema.parse(cancelled.body).cancelled).toBe(true);
+    });
+
+    it('007-AS5: never exposes the driver phone or the management code of a trip', async () => {
+      const trip = await publish();
+      expect(trip.managementCode).toMatch(/^\S{8,}$/);
+
+      const response = await api().get(`/api/trips/${trip.id}`).expect(200);
+
+      expect(response.body).not.toHaveProperty('driverPhone');
+      expect(response.body).not.toHaveProperty('managementCode');
+      expect(response.text).not.toContain('771234567');
+      expect(response.text).not.toContain(trip.managementCode);
+    });
+
+    it('007-AS7: rejects the reading of an unknown trip (404 TRIP_NOT_FOUND)', async () => {
+      const response = await api()
+        .get('/api/trips/0199f5c2-0000-7000-8000-0000000000ff')
+        .expect(404);
+
+      expect(response.headers['content-type']).toContain('application/problem+json');
+      expect(response.body).toMatchObject({ code: 'TRIP_NOT_FOUND', status: 404 });
     });
 
     it('003-AS7: rejects a booking on a cancelled trip (409 TRIP_CANCELLED) and books nothing', async () => {

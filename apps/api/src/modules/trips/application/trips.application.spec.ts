@@ -7,6 +7,7 @@ import { BookSeat } from './use-cases/book-seat';
 import { CancelBooking } from './use-cases/cancel-booking';
 import { CancelTrip } from './use-cases/cancel-trip';
 import { GetBooking } from './use-cases/get-booking';
+import { GetTrip } from './use-cases/get-trip';
 import { ListUpcomingTrips } from './use-cases/list-upcoming-trips';
 import { PublishTrip } from './use-cases/publish-trip';
 import { PublishTripFromMessage } from './use-cases/publish-trip-from-message';
@@ -22,6 +23,7 @@ function setup() {
     listUpcomingTrips: new ListUpcomingTrips(trips),
     bookSeat: new BookSeat(trips),
     getBooking: new GetBooking(trips),
+    getTrip: new GetTrip(trips),
     cancelBooking: new CancelBooking(trips),
     cancelTrip: new CancelTrip(trips),
   };
@@ -214,6 +216,35 @@ describe('trips (application layer)', () => {
       await expect(
         cancelTrip.execute('0199f5c2-0000-7000-8000-0000000000ff', { managementCode: 'abc' }),
       ).rejects.toMatchObject({ code: 'TRIP_NOT_FOUND', kind: 'NOT_FOUND' });
+    });
+
+    it('007-AS5: gets a trip with its remaining seats and whether it is cancelled', async () => {
+      const { getTrip, cancelTrip, trip } = await bookedTrip();
+
+      const found = await getTrip.execute(trip.id);
+
+      expect(found).toMatchObject({
+        id: trip.id,
+        departurePlace: 'Pikine',
+        site: 'diamniadio',
+        departureAt: trip.departureAt,
+        seats: 3,
+        remainingSeats: 2,
+        pricePerSeat: 1000,
+        isCancelled: false,
+      });
+
+      await cancelTrip.execute(trip.id, { managementCode: trip.managementCode });
+
+      expect((await getTrip.execute(trip.id)).isCancelled).toBe(true);
+    });
+
+    it('007-AS7: rejects an unknown trip', async () => {
+      const { getTrip } = setup();
+      await expect(getTrip.execute('0199f5c2-0000-7000-8000-0000000000ff')).rejects.toMatchObject({
+        code: 'TRIP_NOT_FOUND',
+        kind: 'NOT_FOUND',
+      });
     });
   });
 });

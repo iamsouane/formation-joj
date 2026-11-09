@@ -8,6 +8,7 @@ import {
   publishTripFromMessageSchema,
   publishTripSchema,
   TRIP_MESSAGE_MAX_LENGTH,
+  tripDetailsSchema,
   tripDraftSchema,
   publishedTripSchema,
   tripIdParamSchema,
@@ -187,6 +188,31 @@ describe('bookingDetailsSchema', () => {
 
   it('003-AS5: rejects an unknown status', () => {
     expect(bookingDetailsSchema.safeParse({ ...details, status: 'departed' }).success).toBe(false);
+  });
+});
+
+describe('tripDetailsSchema', () => {
+  const trip = {
+    id: '0199f5c2-0000-7000-8000-000000000001',
+    departurePlace: 'Pikine',
+    site: 'diamniadio',
+    departureAt: '2026-11-09T08:00:00.000Z',
+    seats: 3,
+    remainingSeats: 2,
+    pricePerSeat: 1000,
+    cancelled: false,
+  };
+
+  it('007-AS5: shows the trip as the list does and whether it is cancelled, without phone or code', () => {
+    expect(
+      tripDetailsSchema.parse({ ...trip, driverPhone: '771234567', managementCode: 'abc123' }),
+    ).toEqual(trip);
+    expect(tripDetailsSchema.parse({ ...trip, cancelled: true }).cancelled).toBe(true);
+  });
+
+  it('007-AS5: rejects a trip that does not say whether it is cancelled', () => {
+    const { cancelled: _cancelled, ...withoutCancelled } = trip;
+    expect(tripDetailsSchema.safeParse(withoutCancelled).success).toBe(false);
   });
 });
 

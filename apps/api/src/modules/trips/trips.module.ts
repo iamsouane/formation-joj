@@ -5,6 +5,7 @@ import { BookSeat } from './application/use-cases/book-seat';
 import { CancelBooking } from './application/use-cases/cancel-booking';
 import { CancelTrip } from './application/use-cases/cancel-trip';
 import { GetBooking } from './application/use-cases/get-booking';
+import { GetTrip } from './application/use-cases/get-trip';
 import { ListUpcomingTrips } from './application/use-cases/list-upcoming-trips';
 import { PublishTrip } from './application/use-cases/publish-trip';
 import { PublishTripFromMessage } from './application/use-cases/publish-trip-from-message';
@@ -23,6 +24,7 @@ import { DrizzleTripRepository } from './infra/drizzle-trip.repository';
     PublishTrip,
     PublishTripFromMessage,
     ListUpcomingTrips,
+    GetTrip,
     BookSeat,
     GetBooking,
     CancelBooking,
