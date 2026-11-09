@@ -2,7 +2,7 @@
 
 **Le problème et pour qui** : pendant les JOJ, un supporter sans véhicule doit rejoindre un site (Dakar, Diamniadio, Saly) à l'heure de son épreuve, pendant que des conducteurs s'y rendent avec des places vides ; ils se cherchent sur des groupes WhatsApp où les annonces se perdent.
 
-**L'application en ligne** : `https://<à compléter>.onrender.com` (l'adresse donnée par Render après le premier déploiement, voir [Déployer sur Render](#déployer-sur-render)).
+**L'application en ligne** : https://covoiturage-joj.onrender.com (hébergement gratuit : après 15 minutes sans visite, la première page met environ une minute à revenir).
 
 **Ce qui manque** : aucune notification (un passager ne voit l'annulation de son trajet qu'en consultant sa réservation), aucun moyen de retrouver un code perdu, et sur iPhone l'envoi WhatsApp du billet du conducteur ne garde parfois que le lien de gestion.
 
