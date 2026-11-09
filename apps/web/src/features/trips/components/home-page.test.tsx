@@ -224,4 +224,24 @@ describe('HomePage', () => {
       screen.queryByRole('status', { name: 'Chargement des départs…' }),
     ).not.toBeInTheDocument();
   });
+
+  it('007-AS1: keeps the links to find a booking and to offer a trip in the folded band', async () => {
+    // Un site est choisi : le hero est replié en bandeau, là où le supporter vient de réserver.
+    const { user, router } = await open('/?site=diamniadio');
+    await screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    const band = document.querySelector('.hero[data-state="band"]');
+    expect(band).toBeInTheDocument();
+
+    const links = within(band as HTMLElement);
+    expect(
+      links.getByRole('link', { name: 'Vous conduisez ? Proposez un trajet' }),
+    ).toHaveAttribute('href', '/publier');
+    const findBooking = links.getByRole('link', { name: 'Retrouver ma réservation' });
+    expect(findBooking).toHaveAttribute('href', '/reservation');
+    // Plus discrets que sur le hero ouvert : le bandeau laisse la place aux départs.
+    expect(findBooking.closest('.hero-links')).toHaveAttribute('data-tone', 'quiet');
+
+    await user.click(findBooking);
+    await waitFor(() => expect(router.state.location.pathname).toBe('/reservation'));
+  });
 });

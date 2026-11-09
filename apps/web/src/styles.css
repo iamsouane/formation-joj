@@ -1700,6 +1700,23 @@ body {
   margin-top: 0.9rem;
 }
 
+/*
+ * Dans le bandeau replié, les deux liens se font discrets, sous le titre : petits, au trait fin,
+ * côte à côte s'il y a la place, l'un sous l'autre sinon.
+ */
+.hero-links[data-tone='quiet'] {
+  flex-flow: row wrap;
+  gap: 0 1.25rem;
+  margin-top: 0.35rem;
+}
+
+.hero-links[data-tone='quiet'] .hero-drive-link {
+  padding-block: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration-thickness: 1px;
+}
+
 .hero-drive-link {
   display: inline-block;
   padding-block: 0.2rem;

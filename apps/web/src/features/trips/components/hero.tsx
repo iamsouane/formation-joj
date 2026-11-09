@@ -30,6 +30,20 @@ export function Hero({ site, fold, runTarget, onRunEnd, onSiteChange }: HeroProp
   // Le hero entier suit le pointeur : les plans du décor s'en servent pour se décaler en profondeur.
   const { tiltHandlers } = usePointerTilt();
   const folded = fold === 'band';
+  // Le conducteur, lui, ne cherche pas de place : il en propose. Le supporter qui a déjà réservé
+  // revient avec son code. Sous les sites dans le hero ouvert ; dans le bandeau replié, plus
+  // discrets, sous le titre, à côté de la mascotte : la place y est libre, et les départs ne
+  // descendent pas. C'est là que le supporter se trouve juste après avoir réservé.
+  const links = (
+    <p className="hero-links" data-tone={folded ? 'quiet' : undefined}>
+      <Link to="/publier" className="hero-drive-link">
+        Vous conduisez ? Proposez un trajet
+      </Link>
+      <Link to="/reservation" className="hero-drive-link">
+        Retrouver ma réservation
+      </Link>
+    </p>
+  );
 
   return (
     <section
@@ -49,24 +63,14 @@ export function Hero({ site, fold, runTarget, onRunEnd, onSiteChange }: HeroProp
           {!folded && (
             <p className="hero-lede">Trouvez une place en voiture vers votre site d’épreuve.</p>
           )}
+          {folded && links}
         </div>
         <div className="hero-scene" data-slot="hero-scene">
           <MascotStage compact={folded} runTarget={runTarget} onRunEnd={onRunEnd} />
         </div>
         <div className="hero-actions" data-slot="hero-actions">
           <SitePicker value={site} onChange={onSiteChange} />
-          {/* Le conducteur, lui, ne cherche pas de place : il en propose. */}
-          {!folded && (
-            <p className="hero-links">
-              <Link to="/publier" className="hero-drive-link">
-                Vous conduisez ? Proposez un trajet
-              </Link>
-              {/* Le supporter qui a déjà réservé revient avec son code. */}
-              <Link to="/reservation" className="hero-drive-link">
-                Retrouver ma réservation
-              </Link>
-            </p>
-          )}
+          {!folded && links}
         </div>
       </div>
     </section>
