@@ -1,175 +1,117 @@
-# JOJ Dakar 2026 : point de départ de l'atelier C
+# Covoiturage des JOJ Dakar 2026
 
-**Le problème et pour qui** : un covoiturage vers les sites des JOJ (Dakar, Diamniadio, Saly), pour les supporters sans véhicule et les conducteurs qui s'y rendent avec des places vides ; le conducteur publie son trajet, le supporter trouve les départs à venir vers son site.
+**Le problème et pour qui** : pendant les JOJ, un supporter sans véhicule doit rejoindre un site (Dakar, Diamniadio, Saly) à l'heure de son épreuve, pendant que des conducteurs s'y rendent avec des places vides ; ils se cherchent sur des groupes WhatsApp où les annonces se perdent.
 
-**Lancer l'application** : `pnpm db:reset` si la base locale est ancienne ou incohérente, puis `pnpm dev` ; l'API se découvre dans Swagger sur http://localhost:3000/api/docs.
+**L'application en ligne** : `https://<à compléter>.onrender.com` (l'adresse donnée par Render après le premier déploiement, voir [Déployer sur Render](#déployer-sur-render)).
 
-**Ce qui manque** : l'annulation (d'une réservation ou d'un trajet), la publication d'un trajet depuis un message libre, et les écrans ; seule l'API existe, pour publier un trajet, lister les départs avec leurs places restantes et réserver une place.
+**Ce qui manque** : aucune notification (un passager ne voit l'annulation de son trajet qu'en consultant sa réservation), aucun moyen de retrouver un code perdu, et sur iPhone l'envoi WhatsApp du billet du conducteur ne garde parfois que le lien de gestion.
 
-Un monorepo pnpm : une API NestJS, un front React et des schémas partagés. Le socle technique est prêt (configuration, base, erreurs, client HTTP, fausse API des tests), et un premier module métier est livré : `trips` (`apps/api/src/modules/trips/`), qui publie un trajet, liste les départs à venir vers un site avec leurs places restantes (spec `specs/001-trajets`) et réserve une place (spec `specs/002-reservations`). C'est lui qui sert désormais de modèle aux modules suivants. Le module de référence, qui montre toute la chaîne du schéma partagé à l'écran, se lit sur la branche `main` (voir `CLAUDE.md`).
+## La solution
 
-L'énoncé de l'atelier C est dans [`task/ATELIER-C.md`](task/ATELIER-C.md).
+Une application web mobile gratuite, ouverte par un lien partagé sur WhatsApp, sans installation et sans compte.
 
-## Prérequis
+- **Le conducteur** colle son annonce telle qu'il l'écrit sur WhatsApp (« je pars de Pikine pour Diamniadio demain 8h, 3 places, 1000 F »), ou remplit un formulaire. Il reçoit un code et un lien de gestion, à garder, qui lui permettent d'annuler son trajet.
+- **Le supporter** choisit son site, voit les départs à venir classés par heure avec leurs places restantes et leur participation aux frais, et réserve avec son nom et son téléphone. Il reçoit un code de réservation et le téléphone du conducteur, pour fixer le point de rendez-vous.
+- **Chacun gère avec son code** : le supporter retrouve son billet, voit s'il est actif ou annulé, l'annule et l'envoie sur WhatsApp ; le conducteur ouvre son lien de gestion et annule son trajet.
 
-- **Node 24 LTS** (`node -v` doit afficher `v24.x`). Avec nvm : `nvm use`.
-- **pnpm**, via corepack (fourni avec Node) : `corepack enable`.
-- **Git**.
+Aucun paiement ne passe par l'application : la participation se règle à la descente, en espèces ou par Wave. Les écrans sont en français et portent l'identité des JOJ Dakar 2026.
 
-Docker est facultatif (voir [Base de données](#base-de-données)).
+## Les 7 tranches livrées
 
-## Installer et lancer
+Le produit est décrit dans [`specs/prd-covoiturage.md`](specs/prd-covoiturage.md) et découpé en sept tranches, chacune avec sa spec, son plan et ses tests.
+
+| Tranche | Ce qu'elle apporte                                                                                  | Spec                            |
+| ------- | --------------------------------------------------------------------------------------------------- | ------------------------------- |
+| TR1     | Publier un trajet et lister les départs à venir vers un site ; site inconnu et départ passé refusés | `specs/001-trajets`             |
+| TR2     | Réserver une place ; trajet complet, double réservation et trajet déjà parti refusés                | `specs/002-reservations`        |
+| TR3     | Annuler sa réservation (la place se libère) ou son trajet (il quitte la liste) avec son code        | `specs/003-annulations`         |
+| TR4     | Publier un trajet depuis un message libre, lu par Claude puis recontrôlé par l'application          | `specs/004-publication-message` |
+| TR5     | L'accueil sur téléphone : choisir un site, voir les départs, réserver, avec la mascotte             | `specs/005-accueil-reserver`    |
+| TR6     | L'écran du conducteur : coller son annonce ou remplir le formulaire, garder son code et son lien    | `specs/006-publier-trajet`      |
+| TR7     | Les écrans des codes : retrouver et annuler sa réservation, gérer son trajet, envoyer son billet    | `specs/007-gerer-codes`         |
+
+## Le rôle de l'IA
+
+**Dans le produit**, Claude (`claude-opus-5-5`) fait une seule chose : lire l'annonce du conducteur et en tirer un brouillon de trajet (lieu de départ, site, heure, places, participation). Une information absente de l'annonce reste vide, elle n'est jamais devinée.
+
+**L'application revalide toujours** : le brouillon passe par les mêmes contrôles qu'un trajet saisi au formulaire (site des JOJ, départ à venir, places, téléphone). Ce que Claude propose n'est jamais publié sans contrôle. Si l'annonce est incomplète, le conducteur arrive sur le formulaire avec les champs manquants signalés ; si l'assistant ne répond pas (ou si aucune clé n'est configurée), il y arrive aussi, et rien n'est publié. Aucun test n'appelle le vrai assistant : il y est remplacé par un faux.
+
+**Dans la fabrication**, l'application a été écrite avec Claude Code, en suivant la méthode ci-dessous : l'humain décide du produit et valide chaque étape, l'IA rédige, code et se fait relire.
+
+## La méthode
+
+Un développement guidé par la spec, en cinq commandes Claude Code et trois validations humaines (règles dans [`specs/constitution.md`](specs/constitution.md)) :
+
+```
+/prd <idée>     → specs/prd-nom.md : la vision, en tranches TR1, TR2…      ── l'humain valide
+/spec TRn       → specs/NNN-nom/spec.md : le quoi, en scénarios AS1, AS2…  ── l'humain valide
+/spec-plan      → plan.md : fichiers, erreurs, un test par scénario, tâches ── l'humain valide
+/tdd-task       → pour chaque tâche : test rouge → code → vert → un commit
+/converge       → traçabilité + pnpm check + relecteur indépendant → « Converged »
+```
+
+- **PRD** : pour qui, quel problème, quelle solution, et le découpage en tranches. La vision est celle de l'humain ; l'IA la challenge, elle ne l'invente pas.
+- **Specs** : ce que l'utilisateur voit et ce que le système refuse, sans technique.
+- **Plans** : le comment, couche par couche, avec un test prévu pour chaque scénario.
+- **TDD** : aucun code sans un test vu en échec pour la bonne raison (`pnpm tdd:red`) ; le titre de chaque test commence par son scénario (`007-AS3: …`), et `pnpm spec:check --trace` vérifie que chaque scénario a son test.
+- **Relecteur indépendant** : celui qui produit ne valide pas. Un sous-agent relit chaque fonctionnalité dans un contexte vierge (la base git et la spec, rien d'autre) et rend un verdict, preuves à l'appui.
+
+## Lancer en local
+
+Prérequis : **Node 24** (`nvm use`), **pnpm** par corepack (`corepack enable`) et Git. Docker est facultatif.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Puis ouvrir :
-
 - le front : http://localhost:5173
-- l'API : http://localhost:3000/api (santé : `/api/health`)
-- la doc de l'API (Swagger, pour essayer les routes) : http://localhost:3000/api/docs
+- l'API : http://localhost:3000/api (santé : `/api/health`, doc Swagger : `/api/docs`)
 
-Pour charger des données de démo (voir [Base de données](#base-de-données)) : arrêter `pnpm dev` (Ctrl+C), lancer `pnpm db:seed`, puis relancer `pnpm dev`.
+Par défaut, la base est **PGlite**, un PostgreSQL embarqué dans le process de l'API, dans `apps/api/.data/` : rien à installer. Pour un vrai PostgreSQL, `docker compose up -d` puis `DATABASE_URL=postgres://joj:joj@localhost:5432/joj` dans `apps/api/.env`. Pour que Claude lise les annonces, `ANTHROPIC_API_KEY` dans ce même fichier (ignoré par git) ; sans clé, la publication passe par le formulaire.
 
-## Commandes
+| Commande           | Effet                                                                           |
+| ------------------ | ------------------------------------------------------------------------------- |
+| `pnpm dev`         | API (port 3000) et front (port 5173) en parallèle                               |
+| `pnpm check`       | tout le dépôt : format, lint, types, tous les tests, build                      |
+| `pnpm test`        | tous les tests (Vitest), sans Docker ni réseau                                  |
+| `pnpm build`       | build du front (Vite, `apps/web/dist`) puis de l'API (SWC, `apps/api/dist`)     |
+| `pnpm start`       | production : applique les migrations, puis lance l'API, qui sert aussi le front |
+| `pnpm db:generate` | génère une migration après un changement de schéma Drizzle                      |
+| `pnpm db:reset`    | vide la base locale et réapplique les migrations (arrêter `pnpm dev` avant)     |
 
-| Commande           | Effet                                                                |
-| ------------------ | -------------------------------------------------------------------- |
-| `pnpm dev`         | API (port 3000) et front (port 5173) en parallèle                    |
-| `pnpm test`        | tous les tests (Vitest), sans Docker ni réseau                       |
-| `pnpm test:watch`  | les tests en continu                                                 |
-| `pnpm lint`        | oxlint                                                               |
-| `pnpm format`      | formate tout (oxfmt) ; `pnpm format:check` vérifie seulement         |
-| `pnpm typecheck`   | TypeScript sur tout le repo                                          |
-| `pnpm build`       | build de l'API (SWC) et du front (Vite)                              |
-| `pnpm check`       | tout le dépôt : format, lint, types, tous les tests, build           |
-| `pnpm verify`      | les seuls fichiers modifiés : format, lint, types, tests liés        |
-| `pnpm db:generate` | génère une migration après un changement de schéma Drizzle           |
-| `pnpm db:seed`     | applique les migrations et charge `apps/api/data/*.json`             |
-| `pnpm db:reset`    | vide la base locale, applique les migrations et recharge les données |
-
-## Structure
-
-```
-apps/
-  api/                      NestJS 11 + Drizzle
-    src/core/               transverse : config, erreurs (AppError, RFC 9457), base, santé
-    src/modules/<domaine>/  un module Nest par domaine (voir ci-dessous)
-    migrations/             générées par drizzle-kit, jamais éditées à la main
-    data/                   jeux de données JSON chargés par db:seed
-    test/                   tests e2e de l'API (supertest)
-  web/                      React 19 + Vite
-    src/routes/             pages (TanStack Router, un fichier = une route)
-    src/features/<nom>/     api/ (appels HTTP et hooks TanStack Query) et components/
-    src/components/ui/      composants shadcn
-    src/lib/api/            client HTTP typé
-    src/mocks/              la fausse API des tests (MSW), au même contrat que apps/api
-    src/test/               setup Vitest, fonctions de rendu, audit d'accessibilité
-packages/
-  shared/                   schémas Zod et types partagés par l'API et le front
-specs/                      constitution et specs des fonctionnalités (voir Méthode)
-task/                       énoncé de l'atelier C, pistes et grille de relecture
-tools/sdd/                  scripts des skills : spec:check, tdd:red, verify
-.claude/                    hooks, skills et sous-agent relecteur de Claude Code
-```
-
-Un module de domaine de l'API, `src/modules/<domaine>/` :
-
-```
-domain/        entités et règles métier, TypeScript pur (aucun import de Nest ni de Drizzle : vérifié par le lint)
-  <entité>.ts              <Entité>.create() applique les règles, <Entité>.restore() relit la base
-  <domaine>.errors.ts      <Entité>Error extends AppError : codes stables et catégorie
-application/   cas d'usage, un par classe, méthode execute()
-  <entité>.repository.ts   port : classe abstraite, ce dont les cas d'usage ont besoin
-  use-cases/               un fichier par action : create-<entité>.ts, list-<domaine>.ts…
-  testing/                 repository en mémoire, pour tester sans base
-infra/         persistance
-  <domaine>.schema.ts      table Drizzle (lue par drizzle-kit)
-  <entité>.mapper.ts       toDomain() et toRow()
-  drizzle-<entité>.repository.ts
-http/          controller fin : valider (DTO zod), appeler un cas d'usage, sérialiser
-<domaine>.module.ts        relie le port à son implémentation Drizzle
-```
-
-Une erreur métier est une `AppError` (code stable + catégorie VALIDATION, NOT_FOUND, CONFLICT ou BUSINESS_RULE). Le `ProblemDetailsFilter` est le seul endroit où elle devient une réponse HTTP (400, 404, 409, 422, au format RFC 9457).
-
-## Base de données
-
-**Par défaut : PGlite**, un PostgreSQL complet qui tourne dans le process de l'API. Rien à installer. Les données sont dans `apps/api/.data/` (ignoré par git), et les migrations sont appliquées au démarrage de l'API. PGlite n'accepte qu'un process à la fois : arrêter `pnpm dev` avant `pnpm db:seed` ou `pnpm db:reset` (le script le vérifie).
-
-**Avec Docker : un vrai PostgreSQL 17.**
+Pour essayer le build de production sur sa machine, sur une base jetable et un seul port :
 
 ```bash
-docker compose up -d
+pnpm build
+NODE_ENV=production PGLITE_DATA_DIR=/tmp/joj-demo SEED_DEMO_DATA=true pnpm start
+# puis http://localhost:3000 : le front et l'API (/api) sur le même port
 ```
 
-Puis créer `apps/api/.env` à partir de `apps/api/.env.example` et y décommenter `DATABASE_URL=postgres://joj:joj@localhost:5432/joj`. Relancer `pnpm dev`. Pour revenir à PGlite, recommenter la ligne. Si le port 5432 est déjà pris : `POSTGRES_PORT=5433` dans un fichier `.env` à la racine, et le même port dans `DATABASE_URL`.
+Le dépôt est un monorepo pnpm : `apps/api` (NestJS, Drizzle, un module `trips` découpé en `domain/`, `application/`, `infra/`, `http/`), `apps/web` (React, Vite, TanStack Router et Query) et `packages/shared` (schémas Zod communs à l'API et au front). Les conventions sont dans [`CLAUDE.md`](CLAUDE.md).
 
-Le code ne dépend pas du mode : un seul provider Nest fournit l'instance Drizzle (`src/core/database/`). Les tests utilisent toujours PGlite en mémoire.
+## Déployer sur Render
 
-**Données de démo** : un fichier `apps/api/data/<table>.json` par table, qui contient un tableau de lignes dont les clés sont les noms des colonnes en base (`created_at`). Un préfixe fixe l'ordre de chargement si une table en référence une autre (`01-pays.json`, `02-athletes.json`). Relancer `db:seed` ignore les lignes déjà présentes.
+Le fichier [`render.yaml`](render.yaml) décrit tout le déploiement, gratuit : une base Postgres et **un seul service web**. L'API sert aussi le front construit, sur la même origine : les pages du front (`/`, `/publier`, `/reservation`, `/trajets/:id/gestion`) reçoivent `index.html`, tout le reste est sous `/api`, et il n'y a pas de CORS à régler.
 
-## Ajouter une fonctionnalité
+1. Sur [dashboard.render.com](https://dashboard.render.com) : **New** > **Blueprint**, puis choisir ce dépôt et la branche à déployer.
+2. Render lit `render.yaml` et demande la valeur de `ANTHROPIC_API_KEY` : la saisir (elle n'est jamais dans le dépôt). Sans elle, l'application marche, mais l'annonce collée mène au formulaire.
+3. **Deploy Blueprint**. Render crée la base `covoiturage-joj-db` et le service `covoiturage-joj`, puis lance le build et le démarrage.
+4. Reporter l'adresse du service (`https://….onrender.com`) en tête de ce README.
 
-Dans cet ordre, en écrivant chaque test avant le code et en le voyant échouer. Les titres des tests (`describe`, `it`) s'écrivent en anglais et commencent par l'identifiant du scénario, précédé du numéro de la spec : `it('001-AS2: rejects a full trip', …)`. Modèle : le module `trips` du projet ; le module de référence de la branche `main` reste lisible (voir `CLAUDE.md`). Avec Claude Code, la [méthode](#méthode) suit cet ordre pour toi.
+Ce que fait Render à chaque déploiement :
 
-1. **Schéma partagé** : `packages/shared/src/<nom>.ts` (schémas Zod d'entrée et de réponse), exporté par `index.ts`.
-2. **Entité et son test** : `domain/<entité>.ts`, `domain/<nom>.errors.ts`, `domain/<entité>.spec.ts`.
-3. **Cas d'usage et leur test** avec le repository en mémoire : `application/<entité>.repository.ts` (port), `application/testing/in-memory-….ts`, `application/use-cases/*.ts`, `application/<nom>.application.spec.ts`.
-4. **Table et migration** : `infra/<nom>.schema.ts`, puis `pnpm db:generate --name=<sujet>`.
-5. **Repository Drizzle** : `infra/<entité>.mapper.ts`, `infra/drizzle-….repository.ts` et son test d'intégration `*.int.spec.ts` (PGlite en mémoire).
-6. **Controller et test e2e** : `http/<nom>.controller.ts`, `<nom>.module.ts` ajouté aux `imports` de `src/app.module.ts`, puis `test/<nom>.e2e.spec.ts`.
-7. **Fausse API** : les routes dans `apps/web/src/mocks/handlers.ts` (mêmes schémas, mêmes codes d'erreur que l'API), leurs données dans `fixture.ts`, et `handlers.test.ts`.
-8. **Écran** : dans `apps/web/src/features/<nom>/`, `api/<nom>.api.ts` (appels HTTP), `api/<nom>.queries.ts` (hooks) et leur test, puis `components/` et leurs tests, puis la route dans `apps/web/src/routes/` et son audit `*.a11y.test.tsx`.
+- **Build** : `corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build`. Node 24 est lu dans `.nvmrc` ; pnpm est à la version du champ `packageManager` de `package.json`.
+- **Démarrage** : les migrations sont appliquées, puis l'API écoute sur le port donné par Render (`PORT`). La santé est surveillée sur `/api/health`.
+- **Données de démo** : avec `SEED_DEMO_DATA=true`, huit trajets vers les trois sites (Pikine, Guédiawaye, Rufisque, Keur Massar, Thiès, Mbour…), de demain à dans trois jours, sont chargés au démarrage, seulement si la base ne contient aucun trajet. Une base déjà utilisée n'est jamais touchée.
 
-## Tests du front
+## Limites
 
-Un test s'appelle `<fichier>.test.tsx` et se place à côté de ce qu'il teste. Il commence par un court commentaire qui dit ce qu'il prouve.
+- **Logo et mascotte** : l'identité officielle des JOJ Dakar 2026 est utilisée avec l'accord des formateurs, pour ce projet de bootcamp seulement. Une diffusion publique demanderait l'accord du comité d'organisation.
+- **Heures interprétées** : si Claude comprend mal « demain » ou « 8h », le trajet publié est faux. Le contrôle ne détecte qu'un départ passé ou un site inconnu ; le conducteur voit le trajet tel qu'il a été compris et peut l'annuler.
+- **Hébergement gratuit** : le service s'endort après 15 minutes sans visite, et la première page met alors environ une minute à revenir. La base Postgres gratuite expire 30 jours après sa création, et les trajets de démo, datés par rapport au jour du premier démarrage, sont passés au bout de trois jours.
+- **Pas de notification** : sans SMS ni push, un passager n'apprend l'annulation de son trajet qu'en consultant sa réservation.
+- **Codes perdus** : un code de réservation ou de gestion qui n'a pas été noté ni envoyé sur WhatsApp ne se retrouve pas.
+- **WhatsApp sur iPhone** : le billet du conducteur, qui contient le lien de gestion, n'envoie parfois que ce lien ; celui du supporter, sans lien, envoie tout le texte. La cause n'est pas encore identifiée.
 
-- **Une seule fausse API** (`src/mocks/`), servie par MSW à tous les tests. Une requête qu'elle ne connaît pas fait échouer le test. Elle garde ses données en mémoire : un test les prépare en modifiant `fixture` (`fixture.trips = []`). `mockControl` simule une latence (`setLatency(50)`) ou une panne (`failNext('GET /api/trips')`, `failPersistently(...)`). Tout est remis à zéro après chaque test.
-- **Rendre** (`src/test/utils.tsx`) : `renderRoute({ initialEntries: ['/trajets'] })` monte l'application à une adresse, comme `main.tsx`. `renderWithProviders(<Composant />)` monte un composant seul, avec Query et un vrai router.
-- **Vérifier ce qui part sur le réseau** : `trackRequests()` enregistre méthode, chemin et corps de chaque requête ; `writes(seen)` ne garde que les écritures.
-- **Hooks** : `renderHook` avec un `QueryClient`, pour vérifier ce qui est invalidé dans le cache.
-- **Accessibilité** : `expect(axeFindings(await runAxe())).toEqual([])` audite toute la page, boîtes de dialogue comprises. Un audit par état de l'écran.
-
-Côté API, les tests s'appellent `*.spec.ts` (unitaires), `*.int.spec.ts` (intégration) et `*.e2e.spec.ts`.
-
-Un composant shadcn de plus : `pnpm dlx shadcn@latest add <composant>` dans `apps/web`.
-
-## Claude Code : hooks et relecteur
-
-Configurés dans `.claude/settings.json`, écrits en Node dans `.claude/hooks/` et testés (`pnpm test`) :
-
-- **Fin de tour (Stop)** : vérifie le format, le lint et les types des seuls fichiers changés. En cas d'échec, Claude reprend la main avec l'erreur. Si l'échec persiste au tour suivant, il est seulement signalé, pour ne pas tourner en boucle. Pour le couper le temps d'une session : `STOP_CHECK=off claude` (sous PowerShell : `$env:STOP_CHECK='off'; claude`).
-- **Avant une commande Bash** : refuse un `git commit` dont le message ne suit pas [Conventional Commits](https://www.conventionalcommits.org/fr/) (`feat(api): add bookings`), ou qui saute la vérification de pré-commit (`--no-verify`, `-n`, `LEFTHOOK=0`), en expliquant pourquoi.
-- **Avant une écriture de fichier** : refuse d'écrire un secret probable (clé d'API, token, mot de passe en clair, clé privée). Les vraies valeurs vont dans `apps/api/.env`, ignoré par git.
-
-Le sous-agent **relecteur** (`.claude/agents/relecteur.md`) relit une fonctionnalité dans un contexte vierge. Il ne modifie rien et rend un verdict, preuves à l'appui, selon une grille courte (`relecteur-grille.md`) : chaque scénario a un test, aucune règle métier dans le controller, `domain/` reste pur, les erreurs passent par `AppError`. Dans Claude Code : « relis cette fonctionnalité avec le relecteur ».
-
-Côté git, lefthook lance `pnpm verify --staged` avant chaque commit : format, lint, types et tests liés aux fichiers commités.
-
-## Méthode
-
-Développement guidé par la spec, en cinq commandes Claude Code et trois validations humaines :
-
-```
-/prd <idée>     → specs/prd-nom.md : la vision, en tranches TR1, TR2… ── challengée, tu valides → Validé
-/spec TRn       → specs/NNN-nom/spec.md (Brouillon) ── tu relis et valides → Validée
-/spec-plan      → plan.md : fichiers, erreurs, tests, 6 tâches au plus ── tu valides → Validé
-/tdd-task [Tnn] → pour chaque tâche : test rouge → code → vert → un commit
-/converge       → traçabilité + pnpm check + relecteur → « Converged » (spec Implémentée)
-```
-
-- **`/prd <idée>`** : pour qui, quel problème, quelle solution, et le découpage en tranches ; Claude pose des questions et dit où la vision est faible, sans la remplacer.
-- **`/spec TRn`** : le quoi d'une tranche du PRD, sans technique, avec des scénarios `AS1`, `AS2`…
-- **`/spec-plan`** : le comment, sur le modèle du module de référence, un test prévu par scénario.
-- **`/tdd-task`** : une tâche (`/tdd-task T03`) ou toutes ; `pnpm tdd:red` prouve que le test échoue pour la bonne raison.
-- **`/converge`** : si un manque reste, il devient une tâche ; après deux passages, c'est toi qui tranches.
-
-Les règles communes sont dans `specs/constitution.md`. Les scripts `pnpm spec:check`, `tdd:red` et `verify` (`tools/sdd/`) sont les outils des skills ; pour toi, une seule commande : `pnpm check`.
-
-Les hooks (voir ci-dessus) refusent un commit mal nommé ou qui saute `pnpm verify`, et vérifient format, lint et types à chaque fin de tour (`STOP_CHECK=off claude` pour couper ce dernier).
-
-Ces commandes sont une version réduite de [Spec Kit](https://github.com/github/spec-kit) : `/spec` ≈ `/speckit.specify`, `/spec-plan` ≈ `/speckit.plan` + `/speckit.tasks`, `/tdd-task` ≈ `/speckit.implement`, `/converge` ≈ `/speckit.analyze` plus une relecture. Pour passer au cycle complet après la formation (constitution, clarify, checklist), installe la CLI `specify` (Python, via `uv`) et lance `specify init --here --ai claude` dans ton projet.
+Projet réalisé dans le cadre du bootcamp MTN × Artefact × Anthropic.
