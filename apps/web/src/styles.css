@@ -2031,8 +2031,10 @@ body {
   animation: ticket-status-enter 280ms var(--ease-out-soft) both;
 }
 
+/* Un autre nom d'animation : la bande rejoue son entrée quand la réservation vient d'être annulée. */
 .booking-ticket:not([data-status='active']) .ticket-status {
   background: var(--destructive);
+  animation-name: ticket-status-change;
 }
 
 .booking-ticket:not([data-status='active']) :is(.ticket-time, .ticket-route) {
@@ -2048,6 +2050,56 @@ body {
   }
 }
 
+@keyframes ticket-status-change {
+  from {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+.ticket-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/*
+ * Annuler se demande en deux temps (confirm-cancellation.tsx). Le bouton d'annulation reste
+ * discret, en rouge sur blanc ; la question s'ouvre dans un cadre au trait noir, comme les billets.
+ */
+.cancel-action {
+  border: 2px solid currentColor;
+  color: var(--destructive);
+}
+
+.confirm-dialog {
+  border: 2px solid var(--joj-black);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.confirm-dialog-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.confirm-dialog-text {
+  font-size: 1rem;
+  color: var(--foreground);
+}
+
+.confirm-dialog-action {
+  background: var(--destructive);
+  color: var(--joj-white);
+}
+
+.confirm-dialog-action:hover {
+  background: #a51016;
+}
+
 @media (min-width: 640px) {
   .ticket-status {
     margin: -1.5rem -1.5rem 0;
@@ -2056,7 +2108,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ticket-status {
-    animation: none;
+  .ticket-status,
+  [data-slot^='alert-dialog'] {
+    animation: none !important;
   }
 }

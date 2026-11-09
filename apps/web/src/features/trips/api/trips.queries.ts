@@ -52,6 +52,18 @@ export function useBooking(bookingCode: string | undefined) {
   });
 }
 
+/**
+ * Annuler sa réservation. Tout le cache des trajets est relu avant la fin de la mutation : le
+ * billet passe à « annulé », et les listes de départs retrouvent la place.
+ */
+export function useCancelBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (bookingCode: string) => tripsApi.cancelBooking(bookingCode),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+  });
+}
+
 export function useBookSeat() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -39,6 +39,12 @@ export const tripsApi = {
       signal,
     }),
 
+  /** Annule la réservation : sa place redevient disponible. */
+  cancelBooking: (bookingCode: string) =>
+    api.request<void>(`/bookings/${encodeURIComponent(bookingCode)}/cancellation`, {
+      method: 'POST',
+    }),
+
   publish: (input: PublishTripInput) =>
     api.request<PublishedTripResponse>('/trips', {
       method: 'POST',

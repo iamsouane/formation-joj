@@ -3,11 +3,11 @@
  * API : le code saisi, ce qui part sur le réseau, puis le billet et sa mention. L'horloge est
  * figée au 8 novembre 2026 à 15 h à Dakar (UTC+0) ; seule `Date` est simulée.
  */
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fixture, type StoredBooking, type StoredTrip } from '@/mocks/fixture';
-import { renderRoute, trackRequests } from '@/test/utils';
+import { renderRoute, trackRequests, writes } from '@/test/utils';
 
 const NOW = new Date('2026-11-08T15:00:00.000Z');
 
@@ -125,5 +125,55 @@ describe('BookingPage', () => {
     );
     expect(screen.queryByRole('button', { name: 'Annuler ma réservation' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Envoyer sur WhatsApp' })).toBeNull();
+  });
+
+  it('007-AS3: cancels a booking after a confirmation and frees its seat', async () => {
+    // Un seul trajet vers Diamniadio : 3 places, dont celle d'Awa.
+    fixture.trips = [];
+    fixture.bookings = [];
+    seed(pikineTomorrow, awaBooking);
+    const user = userEvent.setup();
+    const seen = trackRequests();
+    const { router } = await renderRoute({ initialEntries: ['/?site=diamniadio'] });
+    const departures = () => screen.findByRole('list', { name: 'Départs vers Diamniadio' });
+    expect(within(await departures()).getByRole('listitem')).toHaveTextContent(
+      '2 places restantes',
+    );
+
+    await router.navigate({ to: '/reservation' });
+    const ticket = await findTicket(user, 'AWA-2026');
+
+    // Premier temps : choisir d'annuler ouvre la confirmation, et rien ne part.
+    await user.click(within(ticket).getByRole('button', { name: 'Annuler ma réservation' }));
+    const confirmation = await screen.findByRole('alertdialog', {
+      name: 'Annuler votre réservation ?',
+    });
+    expect(writes(seen)).toEqual([]);
+
+    // Renoncer garde la réservation.
+    await user.click(within(confirmation).getByRole('button', { name: 'Garder ma réservation' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(writes(seen)).toEqual([]);
+    expect(statusOf(ticket)).toHaveTextContent('Réservation active');
+
+    // Second temps : confirmer annule, une seule fois.
+    await user.click(within(ticket).getByRole('button', { name: 'Annuler ma réservation' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Oui, annuler' }),
+    );
+
+    await waitFor(() => expect(statusOf(ticket)).toHaveTextContent('Réservation annulée'));
+    expect(writes(seen)).toEqual([
+      { method: 'POST', path: '/api/bookings/AWA-2026/cancellation', body: undefined },
+    ]);
+    expect(screen.queryByRole('button', { name: 'Annuler ma réservation' })).toBeNull();
+
+    // La place est rendue : la liste des départs, relue à l'arrivée sur l'accueil, la compte de
+    // nouveau.
+    await router.navigate({ to: '/', search: { site: 'diamniadio' } });
+    const list = await departures();
+    await waitFor(() =>
+      expect(within(list).getByRole('listitem')).toHaveTextContent('3 places restantes'),
+    );
   });
 });

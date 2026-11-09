@@ -1,5 +1,5 @@
 import type { BookingDetailsResponse } from '@joj/shared';
-import { useEffect, useId, useRef } from 'react';
+import { type ReactNode, useEffect, useId, useRef } from 'react';
 import {
   BOOKING_STATUS_LABELS,
   formatDepartureDay,
@@ -14,18 +14,26 @@ import {
 /**
  * La réservation retrouvée avec son code : le même billet qu'après la réservation. En tête, la
  * bande de validité dit où elle en est (active, annulée, trajet annulé) ; dessous, le trajet, puis
- * sous la déchirure le code et le conducteur à appeler. Un billet qui ne vaut plus a son heure et
- * son trajet barrés.
+ * sous la déchirure le code et le conducteur à appeler, et enfin ce que le supporter peut en
+ * faire. Un billet qui ne vaut plus a son heure et son trajet barrés.
  */
-export function BookingTicket({ booking }: { booking: BookingDetailsResponse }) {
+export function BookingTicket({
+  booking,
+  children,
+}: {
+  booking: BookingDetailsResponse;
+  /** Les actions du billet, sous le code : annuler, tant que la réservation est active. */
+  children?: ReactNode;
+}) {
   const titleId = useId();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const { trip, status } = booking;
 
-  // Le bouton « Voir ma réservation » a disparu avec le formulaire : le focus passe au billet.
+  // Le bouton que le supporter vient d'actionner a disparu (« Voir ma réservation », puis
+  // « Annuler ma réservation » une fois l'annulation faite) : le focus passe au billet.
   useEffect(() => {
     titleRef.current?.focus();
-  }, []);
+  }, [status]);
 
   return (
     <section aria-labelledby={titleId} className="ticket booking-ticket" data-status={status}>
@@ -44,8 +52,11 @@ export function BookingTicket({ booking }: { booking: BookingDetailsResponse }) 
         </p>
         <p className="ticket-terms">{formatPrice(trip.pricePerSeat)} par place</p>
       </header>
-      {/* Après le titre dans la lecture, en tête du billet à l'écran (`order` dans styles.css). */}
-      <p key={status} className="ticket-status" data-part="ticket-status">
+      {/*
+       * Après le titre dans la lecture, en tête du billet à l'écran (`order` dans styles.css).
+       * `role="status"` : quand la réservation est annulée, la nouvelle mention est annoncée.
+       */}
+      <p role="status" className="ticket-status" data-part="ticket-status">
         {BOOKING_STATUS_LABELS[status]}
       </p>
       <div className="ticket-tear" aria-hidden="true" />
@@ -68,6 +79,7 @@ export function BookingTicket({ booking }: { booking: BookingDetailsResponse }) 
           )}
         </div>
       </dl>
+      {children && <div className="ticket-actions">{children}</div>}
     </section>
   );
 }
