@@ -1,7 +1,9 @@
 import type {
+  BookingDetailsResponse,
   BookSeatInput,
   PublishTripFromMessageInput,
   PublishTripInput,
+  TripDetailsResponse,
   TripSite,
 } from '@joj/shared';
 import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -54,14 +56,21 @@ export function useBooking(bookingCode: string | undefined) {
 }
 
 /**
- * Annuler sa réservation. Tout le cache des trajets est relu avant la fin de la mutation : le
- * billet passe à « annulé », et les listes de départs retrouvent la place.
+ * Annuler sa réservation. Dès que l'API a accepté, le billet en cache passe à « annulé » : c'est
+ * fait, et l'écran le dit même si le réseau tombe juste après. La relecture qui suit ne fait que
+ * rafraîchir l'affichage : le billet, et les listes de départs qui retrouvent la place.
  */
 export function useCancelBooking() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (bookingCode: string) => tripsApi.cancelBooking(bookingCode),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+    onSuccess: (_done, bookingCode) => {
+      queryClient.setQueryData<BookingDetailsResponse>(
+        tripKeys.booking(bookingCode),
+        (booking) => booking && { ...booking, status: 'cancelled' },
+      );
+      void queryClient.invalidateQueries({ queryKey: tripKeys.all });
+    },
   });
 }
 
@@ -75,15 +84,22 @@ export function useTrip(tripId: string) {
 }
 
 /**
- * Annuler son trajet avec son code de gestion. Tout le cache des trajets est relu avant la fin de
- * la mutation : le trajet passe à « annulé », et il quitte les listes de départs.
+ * Annuler son trajet avec son code de gestion. Dès que l'API a accepté, le trajet en cache passe à
+ * « annulé » : c'est fait, et l'écran le dit même si le réseau tombe juste après. La relecture qui
+ * suit ne fait que rafraîchir l'affichage : le trajet, et les listes de départs qu'il quitte.
  */
 export function useCancelTrip() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ tripId, managementCode }: { tripId: string; managementCode: string }) =>
       tripsApi.cancelTrip(tripId, { managementCode }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tripKeys.all }),
+    onSuccess: (_done, { tripId }) => {
+      queryClient.setQueryData<TripDetailsResponse>(
+        tripKeys.detail(tripId),
+        (trip) => trip && { ...trip, cancelled: true },
+      );
+      void queryClient.invalidateQueries({ queryKey: tripKeys.all });
+    },
   });
 }
 

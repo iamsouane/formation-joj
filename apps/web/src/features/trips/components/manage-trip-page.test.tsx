@@ -8,6 +8,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http } from 'msw';
+import { mockControl } from '@/mocks/control';
 import { fixture, type StoredBooking, type StoredTrip } from '@/mocks/fixture';
 import { problem } from '@/mocks/handlers';
 import { server } from '@/mocks/node';
@@ -255,5 +256,41 @@ describe('ManageTripPage', () => {
         'listitem',
       ),
     ).toHaveTextContent('Pikine → Diamniadio');
+  });
+
+  it('007-AS6: shows the trip as cancelled even when the re-read fails', async () => {
+    seedOnly(pikineTomorrow);
+    const user = userEvent.setup();
+    const seen = trackRequests();
+    await renderRoute({ initialEntries: [MANAGEMENT_LINK] });
+    const trip = await tripRegion();
+    await user.type(within(trip).getByLabelText('Votre code de gestion'), 'k7p2x9w4m1q8');
+
+    // L'API accepte l'annulation, puis ne répond plus aux lectures : le réseau est tombé.
+    mockControl.failPersistently('GET /api/trips/:tripId');
+    await user.click(within(trip).getByRole('button', { name: 'Annuler mon trajet' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Oui, annuler' }),
+    );
+
+    // L'annulation est faite : la page le dit, sans attendre une relecture qui a échoué.
+    await waitFor(() =>
+      expect(trip.querySelector('[data-part="trip-status"]')).toHaveTextContent(
+        'Votre trajet est annulé',
+      ),
+    );
+    expect(fixture.trips[0]?.cancelledAt).toBeDefined();
+    await waitFor(() =>
+      expect(
+        seen.filter((r) => r.method === 'GET' && r.path === `/api/trips/${pikineTomorrow.id}`),
+      ).toHaveLength(2),
+    );
+    expect(trip.querySelector('[data-part="trip-status"]')).toHaveTextContent(
+      'Votre trajet est annulé',
+    );
+    expect(screen.queryByLabelText('Votre code de gestion')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Annuler mon trajet' })).toBeNull();
+    // Aucun « réessayez » : il n'y a rien à refaire.
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

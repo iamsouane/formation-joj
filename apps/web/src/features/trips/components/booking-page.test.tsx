@@ -7,6 +7,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent, { type UserEvent } from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { http } from 'msw';
+import { mockControl } from '@/mocks/control';
 import { fixture, type StoredBooking, type StoredTrip } from '@/mocks/fixture';
 import { problem } from '@/mocks/handlers';
 import { server } from '@/mocks/node';
@@ -264,5 +265,32 @@ describe('BookingPage', () => {
     await alert('Aucune réservation ne correspond à ce code. Vérifiez-le.');
     expect(statusOf(ticket)).toHaveTextContent('Réservation active');
     expect(fixture.bookings.find((b) => b.bookingCode === 'AWA-2026')?.cancelledAt).toBeUndefined();
+  });
+
+  it('007-AS3: shows the booking as cancelled even when the re-read fails', async () => {
+    seed(pikineTomorrow, awaBooking);
+    const user = userEvent.setup();
+    const seen = trackRequests();
+    await renderRoute({ initialEntries: ['/reservation'] });
+    const ticket = await findTicket(user, 'AWA-2026');
+
+    // L'API accepte l'annulation, puis ne répond plus aux lectures : le réseau est tombé.
+    mockControl.failPersistently('GET /api/bookings/:bookingCode');
+    await user.click(within(ticket).getByRole('button', { name: 'Annuler ma réservation' }));
+    await user.click(
+      within(await screen.findByRole('alertdialog')).getByRole('button', { name: 'Oui, annuler' }),
+    );
+
+    // L'annulation est faite : le billet le dit, sans attendre une relecture qui a échoué.
+    await waitFor(() => expect(statusOf(ticket)).toHaveTextContent('Réservation annulée'));
+    expect(fixture.bookings.find((b) => b.bookingCode === 'AWA-2026')?.cancelledAt).toBeDefined();
+    await waitFor(() =>
+      expect(
+        seen.filter((r) => r.method === 'GET' && r.path === '/api/bookings/AWA-2026'),
+      ).toHaveLength(2),
+    );
+    expect(statusOf(ticket)).toHaveTextContent('Réservation annulée');
+    expect(screen.queryByRole('button', { name: 'Annuler ma réservation' })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

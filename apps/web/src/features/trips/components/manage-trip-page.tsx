@@ -39,7 +39,8 @@ export function ManageTripPage({ tripId }: { tripId: string }) {
         <p role="status" className="publish-status">
           {trip.isPending && 'Chargement de votre trajet…'}
         </p>
-        {trip.isError && (
+        {/* Sans trajet à montrer seulement : une relecture qui échoue ne retire pas le trajet affiché. */}
+        {trip.isError && !trip.data && (
           <p role="alert" className="font-semibold text-destructive">
             {managementLinkErrorMessage(trip.error)}
           </p>
